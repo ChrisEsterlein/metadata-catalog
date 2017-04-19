@@ -18,7 +18,6 @@ stacktrace.log
 build/
 .gradle
 .gradletasknamecache
-gradle.properties
 
 # ignore properties in subproject roots to allow local config,
 # but include properties in resource folders so they get compiled
