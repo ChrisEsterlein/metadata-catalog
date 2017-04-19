@@ -1,0 +1,29 @@
+*.class
+*.pyc
+*.out
+*.[oa]
+*.swp
+*~
+*.iws
+*.iml
+.idea/
+.settings
+stacktrace.log
+/*.zip
+/plugin.xml
+/*.log
+.DS_Store
+.project
+.classpath
+build/
+.gradle
+.gradletasknamecache
+gradle.properties
+
+# ignore properties in subproject roots to allow local config,
+# but include properties in resource folders so they get compiled
+application.yml
+application.properties
+!**/src/**/resources/application.yml
+!**/src/**/resources/application.properties
+
