@@ -8,19 +8,19 @@ buildscript{
     maven { url "http://repo.spring.io/release" }
     maven { url "http://repo.spring.io/milestone" }
     maven { url "http://repo.spring.io/snapshot" }
+    jcenter()
   }
   dependencies{
     classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    classpath 'com.bmuschko:gradle-docker-plugin:3.0.6'
   }
 }
-
-group 'ncei.catalog'
-version '1.0.0'
 
 apply plugin: 'groovy'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
+apply plugin: 'com.bmuschko.docker-remote-api'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -40,3 +40,23 @@ dependencies {
 
   testCompile 'junit:junit:4.11'
 }
+
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.Dockerfile
+
+task createDockerfile(type: Dockerfile) {
+  destFile = project.file('build/Dockerfile')
+  from 'openjdk:8'
+  workingDir '/usr/src/app'
+  copyFile "libs/${project.name}-${project.version}.jar", '/usr/src/app'
+  exposePort 8080
+  defaultCommand "java", "-jar",  "/usr/src/app/${project.name}-${project.version}.jar"
+}
+
+task buildImage(type: DockerBuildImage) {
+  dependsOn createDockerfile
+  inputDir = createDockerfile.destFile.parentFile
+  tag = "ncei/${rootProject.name}-${project.name}:${project.version}"
+}
+
+build.finalizedBy buildImage
