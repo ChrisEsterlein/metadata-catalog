@@ -33,12 +33,17 @@ repositories {
 }
 
 dependencies {
-  compile 'org.codehaus.groovy:groovy-all:2.3.11'
-  compile 'org.springframework.boot:spring-boot-starter-actuator'
-  compile 'org.springframework.boot:spring-boot-starter-web'
-  compile 'org.springframework.boot:spring-boot-starter-tomcat'
+  compile 'org.codehaus.groovy:groovy-all:2.4.10' // Need this >= 2.4 for spock
+  compile "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
+  compile "org.springframework.boot:spring-boot-starter-tomcat:${springBootVersion}"
+  compile "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
+  compile 'org.springframework.data:spring-data-elasticsearch:2.1.1.RELEASE'
 
-  testCompile 'junit:junit:4.11'
+  testCompile 'org.mock-server:mockserver-netty:3.6.2'
+  testCompile "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+  testCompile 'org.spockframework:spock-spring:1.0-groovy-2.4'
+
+  testRuntime "cglib:cglib-nodep:3.1"          // allows mocking of classes (in addition to interfaces)
 }
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
