@@ -1,0 +1,23 @@
+spring.main.show_banner: false
+
+server:
+  port: 8088
+  context-path: /index
+
+spring:
+  application:
+    name: index
+  datasource:
+    initial-size: 10
+    max-active: 20
+    maximum-pool-size: 20
+    minimum-idle: 5
+    max-idle: 5
+    max-wait: 10000
+    max-age: 600000
+    time-between-eviction-runs-millis: 5000
+    min-evictable-idle-time-millis: 60000
+    driver-class-name: oracle.jdbc.OracleDriver
+
+logging:
+  file: /data/agile_apps/logs/agiletc/catalog/${spring.application.name}.log
