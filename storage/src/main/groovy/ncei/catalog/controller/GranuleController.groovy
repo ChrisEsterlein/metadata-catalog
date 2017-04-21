@@ -91,18 +91,18 @@ class GranuleController {
   @ResponseBody
   Map deleteEntry(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response ){
     try {
-      UUID metadata_id = granuleMetadata.metadata_id
-      def content = granuleService.delete(metadata_id) ?: [:]
+      UUID granule_id = granuleMetadata.granule_id
+      def content = granuleService.delete(granule_id) ?: [:]
 
       response.status = response.SC_OK
-      String msg = 'Successfully deleted row with metadata_id: ' + metadata_id
+      String msg = 'Successfully deleted row with granule_id: ' + granule_id
       content.message = msg
       content
 
     } catch (e) {
-      def msg = granuleMetadata.metadata_id ?
-              'failed to delete records for ' + granuleMetadata.metadata_id + ' from the metadata catalog' :
-              'please specify a dataset'
+      def msg = granuleMetadata.granule_id ?
+              'failed to delete records for ' + granuleMetadata.granule_id + ' from the metadata catalog' :
+              'please specify a granule_id'
       log.error(msg, e)
       response.status = response.SC_INTERNAL_SERVER_ERROR
       [message: msg]

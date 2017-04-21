@@ -10,8 +10,8 @@ import org.springframework.data.cassandra.mapping.Table
 @Table(value= 'GranuleMetadata')
 class GranuleMetadata {
 
-  @PrimaryKeyColumn(name = "metadata_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-  UUID metadata_id
+  @PrimaryKeyColumn(name = "granule_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+  UUID granule_id
 
   @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
   Date last_update
@@ -31,7 +31,7 @@ class GranuleMetadata {
   List collection
 
   GranuleMetadata() {
-    this.metadata_id = UUIDs.timeBased()
+    this.granule_id = UUIDs.timeBased()
     this.last_update = new Date()
   }
 

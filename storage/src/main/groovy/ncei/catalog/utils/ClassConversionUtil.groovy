@@ -29,7 +29,7 @@ class ClassConversionUtil {
 
   static FileMetadata convertToFileMetadata(GranuleMetadata granuleMetadata){
     FileMetadata fileMetadata = new FileMetadata()
-    List keysNotFileMetadata = ['metadata_id', 'last_update', 'granule_schema', 'collection']
+    List keysNotFileMetadata = ['granule_id', 'last_update', 'granule_schema', 'collection']
 
     granuleMetadata.properties.each{key, value ->
       switch (key){

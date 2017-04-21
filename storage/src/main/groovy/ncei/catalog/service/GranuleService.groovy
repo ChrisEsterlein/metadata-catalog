@@ -16,9 +16,9 @@ class GranuleService {
   Map save(GranuleMetadata granuleMetadata){
     Map saveDetails = [:]
     //get existing row if there is one
-    Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.metadata_id)
+    Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
 
-    //if we have a result, we want to 'update' row by inserting the same metadata_id with a new last_update time
+    //if we have a result, we want to 'update' row by inserting the same granule_id with a new last_update time
     if(result){
       granuleMetadataRepository.save(granuleMetadata)
       saveDetails.totalResultsUpdated = 1
@@ -63,12 +63,12 @@ class GranuleService {
   List<GranuleMetadata> list(Map params){
     String dataset = params?.dataset
     String schema = params?.granule_schema
-    UUID metadata_id = params?.metadata_id
+    UUID granule_id = params?.granule_id
     Iterable<GranuleMetadata> allResults
     List<GranuleMetadata> metadataList = []
 
-    if(metadata_id){
-      allResults = granuleMetadataRepository.findByMetadataId(metadata_id)
+    if(granule_id){
+      granuleMetadataRepository.findByMetadataId(granule_id).each{metadataList.add(it)}
     }
     else if(dataset && schema){
       allResults = granuleMetadataRepository.findByDatasetAndSchema(dataset, schema)
@@ -81,12 +81,10 @@ class GranuleService {
     else if (schema){
       allResults = granuleMetadataRepository.findBySchema(schema)
       metadataList = getMostRecent(allResults)
-
     }
     else{
-      granuleMetadataRepository.findAll().each{
-        metadataList.add(it)
-      }
+      allResults = granuleMetadataRepository.findAll()
+      metadataList = getMostRecent(allResults)
     }
 
     metadataList
@@ -96,7 +94,7 @@ class GranuleService {
     Map<String, GranuleMetadata> granuleMetadataMap = [:]
     List<GranuleMetadata> mostRecent
     allResults.each{ gm ->
-      String metadataId = gm.metadata_id as String
+      String metadataId = gm.granule_id as String
       if(granuleMetadataMap[metadataId]){
         if(granuleMetadataMap[metadataId].last_update < gm.last_update){
           granuleMetadataMap[metadataId] = gm
@@ -112,9 +110,9 @@ class GranuleService {
 
   }
 
-  def delete(UUID metadata_id){
-    Date timestamp = granuleMetadataRepository.findByMetadataId(metadata_id as UUID).first().last_update as Date
-    def result = granuleMetadataRepository.deleteByMetadataId(metadata_id , timestamp)
+  def delete(UUID granule_id){
+    Date timestamp = granuleMetadataRepository.findByMetadataId(granule_id as UUID).first().last_update as Date
+    def result = granuleMetadataRepository.deleteByMetadataId(granule_id , timestamp)
 
   }
 

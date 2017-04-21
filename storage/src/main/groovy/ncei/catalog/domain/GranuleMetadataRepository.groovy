@@ -5,10 +5,10 @@ import org.springframework.data.cassandra.repository.Query
 
 interface GranuleMetadataRepository extends CassandraRepository<GranuleMetadata> {
 
-  @Query("Select * from GranuleMetadata where metadata_id =?0 and last_update=?1")
+  @Query("Select * from GranuleMetadata where granule_id =?0 and last_update=?1")
   Iterable<GranuleMetadata> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 
-  @Query("Select * from GranuleMetadata where metadata_id =?0 LIMIT 1")
+  @Query("Select * from GranuleMetadata where granule_id =?0 LIMIT 1")
   Iterable<GranuleMetadata> findByMetadataId(UUID id)
 
 //    @Query("SELECT*FROM GranuleMetadata WHERE filename=?0 LIMIT ?1")
@@ -27,19 +27,15 @@ interface GranuleMetadataRepository extends CassandraRepository<GranuleMetadata>
   Iterable<GranuleMetadata> findByDatasetAndSchema(String dataset, String schema)
 
   //this is not working
-  @Query("SELECT DISTINCT metadata_id FROM GranuleMetadata WHERE dataset=?0")
+  @Query("SELECT DISTINCT granule_id FROM GranuleMetadata WHERE dataset=?0")
   Iterable<GranuleMetadata> findDistinctTrackingIdsByDataset(String dataset)
 
 
-  @Query("SELECT metadata_id FROM GranuleMetadata WHERE metadata_id=?0 LIMIT 1")
-  Iterable<GranuleMetadata> findLatestByMetadataId(UUID metadata_id)
+  @Query("SELECT granule_id FROM GranuleMetadata WHERE granule_id=?0 LIMIT 1")
+  Iterable<GranuleMetadata> findLatestByMetadataId(UUID granule_id)
 
-  @Query("DELETE FROM GranuleMetadata WHERE metadata_id =?0 AND last_update=?1")
+  @Query("DELETE FROM GranuleMetadata WHERE granule_id =?0 AND last_update=?1")
   Iterable<GranuleMetadata> deleteByMetadataId(UUID id, Date lastUpdate)
-
-  @Query("INSERT GranuleMetadata USING TTL 20 WHERE metadata_id =?0 AND last_update=?1")
-  Iterable<GranuleMetadata> updateWithTTL(UUID id, Date lastUpdate)
-
 
 
 }
