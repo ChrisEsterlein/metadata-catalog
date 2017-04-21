@@ -43,10 +43,14 @@ CREATE TABLE IF NOT EXISTS ServicesMetadata (
     PRIMARY KEY (service_name, last_update)
 );
 
-DROP TABLE IF EXISTS MetadataSchemas;
-CREATE TABLE IF NOT EXISTS MetadataSchemas (
+DROP TABLE IF EXISTS MetadataSchema;
+CREATE TABLE IF NOT EXISTS MetadataSchema (
+    schema_id timeuuid,
     last_update timestamp,
     schema_name text,
     json_schema text,
-    PRIMARY KEY (schema_name, last_update)
+    PRIMARY KEY (schema_id, last_update)
 );
+
+CREATE INDEX IF NOT EXISTS SchemaNameIndex ON MetadataSchema (schema_name);
+
