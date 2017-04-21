@@ -28,20 +28,29 @@ targetCompatibility = 1.8
 repositories {
   mavenCentral()
   maven { url "http://repo.spring.io/release" }
-  maven{url 'https://repo.spring.io/milestone'}
-  maven{url 'https://repo.spring.io/snapshot'}
+  maven { url 'https://repo.spring.io/milestone' }
+  maven { url 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
-  compile 'org.codehaus.groovy:groovy-all:2.3.11'
+  compile 'org.codehaus.groovy:groovy-all:2.4.10'
   compile 'org.springframework.boot:spring-boot-starter-actuator'
-  compile 'org.springframework.boot:spring-boot-starter-web'
+  compile 'org.springframework.boot:spring-boot-starter-aop'
+  compile 'org.springframework.boot:spring-boot-starter-data-cassandra'
   compile 'org.springframework.boot:spring-boot-starter-tomcat'
+  compile 'org.springframework.boot:spring-boot-starter-web'
+  compile 'org.springframework.retry:spring-retry'
 
-  testCompile 'junit:junit:4.11'
+  testCompile 'org.springframework.boot:spring-boot-starter-test'
+  testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4-rc-4'
+  testCompile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
+  testCompile 'io.rest-assured:rest-assured:3.0.2'
 }
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 
 task createDockerfile(type: Dockerfile) {
@@ -59,4 +68,45 @@ task buildImage(type: DockerBuildImage) {
   tag = "ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
-build.finalizedBy buildImage
+assemble.finalizedBy buildImage
+
+task createCassandraContainer(type: DockerCreateContainer) {
+  imageId = 'cassandra'
+  portBindings = ['9042:9042']
+}
+
+task startCassandraContainer(type: DockerStartContainer) {
+  dependsOn createCassandraContainer
+  targetContainerId { createCassandraContainer.getContainerId() }
+}
+
+task stopCassandraContainer(type: DockerStopContainer) {
+  targetContainerId { createCassandraContainer.getContainerId() }
+}
+
+configurations.configure {
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
+}
+
+sourceSets {
+  integrationTest {
+    groovy.srcDir file('src/integrationTest/groovy')
+    //resources.srcDir file('src/integrationTest/resources')
+    compileClasspath += main.output + test.output + configurations.testRuntime
+    runtimeClasspath += output + compileClasspath
+  }
+}
+
+task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
+  mustRunAfter test
+  dependsOn startCassandraContainer
+  finalizedBy stopCassandraContainer
+
+  testClassesDir = sourceSets.integrationTest.output.classesDir
+  classpath = sourceSets.integrationTest.runtimeClasspath
+  reports.junitXml.destination = 'build/integration-test-results'
+  reports.html.destination = 'build/reports/integrationTests'
+}
+
+check.dependsOn integrationTest

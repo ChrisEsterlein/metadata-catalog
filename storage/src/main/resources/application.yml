@@ -1,0 +1,7 @@
+---
+cassandra:
+  keyspace: 'metacat'
+  port: '9042'
+  contactPoints:
+    - 'localhost'
+
