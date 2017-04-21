@@ -25,9 +25,10 @@ class GranuleMetadata {
   String tracking_id
   String filename
   String type
-  Integer size
+  Integer granule_size
   String granule_metadata
   String geometry
+  List collection
 
   GranuleMetadata() {
     this.metadata_id = UUIDs.timeBased()

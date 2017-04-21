@@ -1,9 +1,11 @@
 package ncei.catalog.controller
 
 import groovy.util.logging.Slf4j
+import ncei.catalog.domain.FileMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.service.GranuleService
+import ncei.catalog.utils.ClassConversionUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.web.bind.annotation.RequestBody
@@ -18,7 +20,7 @@ import javax.servlet.http.HttpServletResponse
 
 @Slf4j
 @RestController
-@RequestMapping(value = ['/', '/granule'])
+@RequestMapping(value = '/')
 class GranuleController {
 
   @Autowired
@@ -30,13 +32,17 @@ class GranuleController {
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
-  @RequestMapping(value = "/files",method = RequestMethod.GET)
+  //support old endpoint
+  @RequestMapping(value = "/files", method = RequestMethod.GET)
   @ResponseBody
-  List<GranuleMetadata> FileMetadata(HttpServletResponse response) {
+  List<FileMetadata> listFileMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
-      List<GranuleMetadata> MetadataList = new ArrayList<>()
-      granuleMetadataRepository.findAll().each{MetadataList.add(it)}
-      MetadataList
+      List<GranuleMetadata> granuleMetadataList = granuleService.list(params)
+      List<FileMetadata> fileMetadataList = []
+      granuleMetadataList.each{
+        fileMetadataList.add(ClassConversionUtil.convertToFileMetadata(it))
+      }
+      fileMetadataList
     }
     catch (e) {
       String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
@@ -48,21 +54,60 @@ class GranuleController {
     }
   }
 
-//support new and old endpoint
-  @RequestMapping(value = ["/files", "/granules"], method = [RequestMethod.POST, RequestMethod.PUT])
+  //new end point
+  @RequestMapping(value = "/granules", method = RequestMethod.GET)
   @ResponseBody
-  Map saveFileMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
-    log.info("Received post with params: $granuleMetadata")
+  List<GranuleMetadata> listGranuleMetadata(@RequestParam Map params, HttpServletResponse response) {
+    try {
+      granuleService.list(params)
+    }
+    catch (e) {
+      String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
+      // Place the error message into the returned content
+      def msg = 'Failing metadata catalog list request with: ' + exceptionMessage
+      log.error(msg, e)
+      response.status = response.SC_INTERNAL_SERVER_ERROR
+      [message: msg]
+    }
+  }
+
+//support old endpoint
+  @RequestMapping(value="/files", method = [RequestMethod.POST, RequestMethod.PUT])
+  @ResponseBody
+  Map saveFileMetadata(@RequestBody FileMetadata fileMetadata, HttpServletResponse response) {
+    log.info("Received post with params: $fileMetadata")
+    GranuleMetadata granuleMetadata = ClassConversionUtil.convertToGranuleMetadata(fileMetadata)
     granuleService.save(granuleMetadata)
   }
 
-  @RequestMapping(value = "/files/search",method = RequestMethod.GET)
+//new endpoint
+  @RequestMapping(value = "/granules", method = [RequestMethod.POST, RequestMethod.PUT])
   @ResponseBody
-  List<GranuleMetadata> ListByDataset(@RequestParam Map params) {
-    String dataset = params?.dataset
-    List<GranuleMetadata> FileMetadataList = new ArrayList<>()
-    granuleMetadataRepository.findByDataset(dataset).each{FileMetadataList.add(it)}
-    return FileMetadataList
+  Map saveGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
+    granuleService.save(granuleMetadata)
+  }
+
+  @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
+  @ResponseBody
+  Map deleteEntry(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response ){
+    try {
+      UUID metadata_id = granuleMetadata.metadata_id
+      def content = granuleService.delete(metadata_id) ?: [:]
+
+      response.status = response.SC_OK
+      String msg = 'Successfully deleted row with metadata_id: ' + metadata_id
+      content.message = msg
+      content
+
+    } catch (e) {
+      def msg = granuleMetadata.metadata_id ?
+              'failed to delete records for ' + granuleMetadata.metadata_id + ' from the metadata catalog' :
+              'please specify a dataset'
+      log.error(msg, e)
+      response.status = response.SC_INTERNAL_SERVER_ERROR
+      [message: msg]
+    }
+
   }
 
   @RequestMapping(method=RequestMethod.DELETE)
@@ -73,7 +118,7 @@ class GranuleController {
         Map content = granuleService.purge(params)
 
         log.debug( "count deleted:${content.totalResultsDeleted} content.searchTerms:${content.searchTerms}" +
-            " content.code:${content.code}")
+                " content.code:${content.code}")
         response.status = response.SC_OK
         String msg = 'Successfully purged rows with dataset: ' + params.dataset
         content.message = msg
@@ -81,8 +126,8 @@ class GranuleController {
 
       } catch (e) {
         def msg = params?.dataset ?
-            'failed to delete records for ' + params.dataset + ' from the metadata catalog' :
-            'please specify a dataset'
+                'failed to delete records for ' + params.dataset + ' from the metadata catalog' :
+                'please specify a dataset'
         log.error(msg, e)
         response.status = response.SC_INTERNAL_SERVER_ERROR
         [message: msg]

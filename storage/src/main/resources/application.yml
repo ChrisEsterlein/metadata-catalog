@@ -5,3 +5,6 @@ cassandra:
   contactPoints:
     - 'localhost'
 
+
+server:
+  context-path: /metadata-catalog

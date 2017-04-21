@@ -15,16 +15,16 @@ class GranuleService {
 
   Map save(GranuleMetadata granuleMetadata){
     Map saveDetails = [:]
+    //get existing row if there is one
+    Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.metadata_id)
 
-    if(granuleMetadataRepository.findTimestampByMetadataId(granuleMetadata.metadata_id)){
-      //when the time comes to implement versioning, one way to do this is to
-      Date timestamp = granuleMetadataRepository.findTimestampByMetadataId(granuleMetadata.metadata_id).first().last_update as Date
-      granuleMetadata.last_update = timestamp
-
+    //if we have a result, we want to 'update' row by inserting the same metadata_id with a new last_update time
+    if(result){
       granuleMetadataRepository.save(granuleMetadata)
       saveDetails.totalResultsUpdated = 1
       saveDetails.code = HttpServletResponse.SC_OK
-    }else{
+
+    }else{ //create a new one
       granuleMetadataRepository.save(granuleMetadata)
       saveDetails.code = HttpServletResponse.SC_CREATED
     }
@@ -59,4 +59,63 @@ class GranuleService {
     purgeDetails.code = HttpServletResponse.SC_OK
     purgeDetails
   }
+
+  List<GranuleMetadata> list(Map params){
+    String dataset = params?.dataset
+    String schema = params?.granule_schema
+    UUID metadata_id = params?.metadata_id
+    Iterable<GranuleMetadata> allResults
+    List<GranuleMetadata> metadataList = []
+
+    if(metadata_id){
+      allResults = granuleMetadataRepository.findByMetadataId(metadata_id)
+    }
+    else if(dataset && schema){
+      allResults = granuleMetadataRepository.findByDatasetAndSchema(dataset, schema)
+      metadataList = getMostRecent(allResults)
+    }
+    else if(dataset){
+      allResults = granuleMetadataRepository.findByDataset(dataset)
+      metadataList = getMostRecent(allResults)
+    }
+    else if (schema){
+      allResults = granuleMetadataRepository.findBySchema(schema)
+      metadataList = getMostRecent(allResults)
+
+    }
+    else{
+      granuleMetadataRepository.findAll().each{
+        metadataList.add(it)
+      }
+    }
+
+    metadataList
+  }
+
+  List<GranuleMetadata> getMostRecent(Iterable<GranuleMetadata> allResults){
+    Map<String, GranuleMetadata> granuleMetadataMap = [:]
+    List<GranuleMetadata> mostRecent
+    allResults.each{ gm ->
+      String metadataId = gm.metadata_id as String
+      if(granuleMetadataMap[metadataId]){
+        if(granuleMetadataMap[metadataId].last_update < gm.last_update){
+          granuleMetadataMap[metadataId] = gm
+        }
+      }else{
+        granuleMetadataMap[metadataId] = gm
+      }
+    }
+    mostRecent = granuleMetadataMap.collect{key, value ->
+      value
+    }
+    mostRecent
+
+  }
+
+  def delete(UUID metadata_id){
+    Date timestamp = granuleMetadataRepository.findByMetadataId(metadata_id as UUID).first().last_update as Date
+    def result = granuleMetadataRepository.deleteByMetadataId(metadata_id , timestamp)
+
+  }
+
 }
