@@ -8,11 +8,13 @@ buildscript{
     maven { url "http://repo.spring.io/release" }
     maven { url "http://repo.spring.io/milestone" }
     maven { url "http://repo.spring.io/snapshot" }
+    maven { url "https://plugins.gradle.org/m2/" }
     jcenter()
   }
   dependencies{
     classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     classpath 'com.bmuschko:gradle-docker-plugin:3.0.6'
+    classpath "gradle.plugin.com.chrisgahlert:gradle-dcompose-plugin:0.9.0"
   }
 }
 
@@ -70,6 +72,24 @@ task buildImage(type: DockerBuildImage) {
 
 assemble.finalizedBy buildImage
 
+apply plugin: "com.chrisgahlert.gradle-dcompose-plugin"
+
+project.ext.set("composeNetworkName", "${project.name}_net")
+
+dcompose {
+  createComposeFile.useTags = true
+  networks { "${project.ext.composeNetworkName}" }
+  storage {
+    image = "ncei/${rootProject.name}-${project.name}:${project.version}"
+    networks = [network("${project.ext.composeNetworkName}")]
+  }
+  db {
+    image = 'cassandra'
+    networks = [network("${project.ext.composeNetworkName}")]
+  }
+}
+
+assemble.finalizedBy createComposeFile
 task createCassandraContainer(type: DockerCreateContainer) {
   imageId = 'cassandra'
   portBindings = ['9042:9042']

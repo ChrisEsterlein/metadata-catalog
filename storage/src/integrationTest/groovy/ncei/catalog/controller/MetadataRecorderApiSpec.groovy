@@ -7,12 +7,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
 import spock.lang.Unroll
+import spock.lang.Ignore
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import static io.restassured.matcher.RestAssuredMatchers.*
 import static org.hamcrest.Matchers.*
 
-
+@Ignore
 @Unroll
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class MetadataRecorderApiSpec extends Specification {
