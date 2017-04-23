@@ -34,30 +34,36 @@ class CollectionService {
   
   List<CollectionMetadata> list(Map params){
 
+    Boolean versions = params?.versions
     String collectionName = params?.collection_name
     String schema = params?.collection_schema
-    UUID collection_id = params?.collection_id
+    UUID collection_id = params?.collection_id ? UUID.fromString(params.collection_id) : null
 
     Iterable<CollectionMetadata> allResults
     List<CollectionMetadata> metadataList = []
 
     if(collection_id){
-      collectionMetadataRepository.findByMetadataId(collection_id).each{metadataList.add(it)}
+      allResults = collectionMetadataRepository.findByMetadataId(collection_id)
     }
     else if(collectionName && schema){
       allResults = collectionMetadataRepository.findByCollectionNameAndSchema(collectionName, schema)
-      metadataList = getMostRecent(allResults)
     }
     else if(collectionName){
       allResults = collectionMetadataRepository.findByCollectionName(collectionName)
-      metadataList = getMostRecent(allResults)
     }
     else if (schema){
       allResults = collectionMetadataRepository.findBySchema(schema)
-      metadataList = getMostRecent(allResults)
     }
     else{
       allResults = collectionMetadataRepository.findAll()
+    }
+
+    //get most recent or show all versions
+    if(versions){
+      allResults.each{ gm ->
+        metadataList.add(gm)
+      }
+    }else{
       metadataList = getMostRecent(allResults)
     }
 

@@ -8,7 +8,7 @@ interface GranuleMetadataRepository extends CassandraRepository<GranuleMetadata>
   @Query("Select * from GranuleMetadata where granule_id =?0 and last_update=?1")
   Iterable<GranuleMetadata> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 
-  @Query("Select * from GranuleMetadata where granule_id =?0 LIMIT 1")
+  @Query("Select * from GranuleMetadata where granule_id =?0")
   Iterable<GranuleMetadata> findByMetadataId(UUID id)
 
 //    @Query("SELECT*FROM GranuleMetadata WHERE filename=?0 LIMIT ?1")

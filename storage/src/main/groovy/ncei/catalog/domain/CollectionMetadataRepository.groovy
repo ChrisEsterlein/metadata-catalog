@@ -8,7 +8,7 @@ interface CollectionMetadataRepository extends CassandraRepository<CollectionMet
   @Query("Select * from CollectionMetadata where collection_id =?0 and last_update=?1")
   Iterable<CollectionMetadata> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 
-  @Query("Select * from CollectionMetadata where collection_id =?0 LIMIT 1")
+  @Query("Select * from CollectionMetadata where collection_id =?0")
   Iterable<CollectionMetadata> findByMetadataId(UUID id)
 
 //    @Query("SELECT*FROM CollectionMetadata WHERE filename=?0 LIMIT ?1")

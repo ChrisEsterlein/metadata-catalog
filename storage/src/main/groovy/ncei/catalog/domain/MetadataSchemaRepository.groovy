@@ -8,7 +8,7 @@ interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
   @Query("Select * from MetadataSchema where schema_id =?0 and last_update=?1")
   Iterable<MetadataSchema> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 
-  @Query("Select * from MetadataSchema where schema_id =?0 LIMIT 1")
+  @Query("Select * from MetadataSchema where schema_id =?0")
   Iterable<MetadataSchema> findByMetadataId(UUID id)
 
 //    @Query("SELECT*FROM MetadataSchema WHERE filename=?0 LIMIT ?1")

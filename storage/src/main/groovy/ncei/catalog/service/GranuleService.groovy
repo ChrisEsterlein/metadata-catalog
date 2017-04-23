@@ -61,29 +61,36 @@ class GranuleService {
   }
 
   List<GranuleMetadata> list(Map params){
+    Boolean versions = params?.versions
     String dataset = params?.dataset
     String schema = params?.granule_schema
-    UUID granule_id = params?.granule_id
+    UUID granule_id = params?.granule_id ? UUID.fromString(params?.granule_id) : null
+
     Iterable<GranuleMetadata> allResults
     List<GranuleMetadata> metadataList = []
 
     if(granule_id){
-      granuleMetadataRepository.findByMetadataId(granule_id).each{metadataList.add(it)}
+      allResults = granuleMetadataRepository.findByMetadataId(granule_id)
     }
     else if(dataset && schema){
       allResults = granuleMetadataRepository.findByDatasetAndSchema(dataset, schema)
-      metadataList = getMostRecent(allResults)
     }
     else if(dataset){
       allResults = granuleMetadataRepository.findByDataset(dataset)
-      metadataList = getMostRecent(allResults)
     }
     else if (schema){
       allResults = granuleMetadataRepository.findBySchema(schema)
-      metadataList = getMostRecent(allResults)
     }
     else{
       allResults = granuleMetadataRepository.findAll()
+    }
+
+    //get most recent or show all versions
+    if(versions){
+      allResults.each{ gm ->
+        metadataList.add(gm)
+      }
+    }else{
       metadataList = getMostRecent(allResults)
     }
 

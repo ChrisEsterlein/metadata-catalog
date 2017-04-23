@@ -34,35 +34,42 @@ class SchemaService {
 
   List<MetadataSchema> list(Map params){
 
+    Boolean versions = params?.versions
     String schemaName = params?.schema_name
-    String schema = params?.schema_schema
-    UUID schema_id = params?.schema_id
+    UUID schema_id = params?.schema_id ? UUID.fromString(params?.schema_id) : null
+
 
     Iterable<MetadataSchema> allResults
     List<MetadataSchema> metadataList = []
 
     if(schema_id){
-      metadataSchemasRepository.findByMetadataId(schema_id).each{metadataList.add(it)}
+      allResults =  metadataSchemasRepository.findByMetadataId(schema_id)
     }
-    else if(schemaName && schema){
-      allResults = metadataSchemasRepository.findBySchemaNameAndSchema(schemaName, schema)
-      metadataList = getMostRecent(allResults)
+    else if(schemaName && schemaName){
+      allResults = metadataSchemasRepository.findBySchemaNameAndSchema(schemaName, schemaName)
     }
     else if(schemaName){
       allResults = metadataSchemasRepository.findBySchemaName(schemaName)
-      metadataList = getMostRecent(allResults)
     }
-    else if (schema){
-      allResults = metadataSchemasRepository.findBySchema(schema)
-      metadataList = getMostRecent(allResults)
+    else if (schemaName){
+      allResults = metadataSchemasRepository.findBySchema(schemaName)
     }
     else{
       allResults = metadataSchemasRepository.findAll()
+    }
+
+    //get most recent or show all versions
+    if(versions){
+      allResults.each{ gm ->
+        metadataList.add(gm)
+      }
+    }else{
       metadataList = getMostRecent(allResults)
     }
 
     metadataList
   }
+
   List<MetadataSchema> getMostRecent(Iterable<MetadataSchema> allResults){
     Map<String, MetadataSchema> metadataSchemasMap = [:]
     List<MetadataSchema> mostRecent
