@@ -13,20 +13,30 @@ class CollectionService {
   @Autowired
   CollectionMetadataRepository collectionMetadataRepository
 
-  Map save(CollectionMetadata granuleMetadata){
-    Map saveDetails = [:]
-    //get existing row if there is one
-    Iterable<CollectionMetadata> result = collectionMetadataRepository.findByMetadataId(granuleMetadata.collection_id)
+  Map save(List<CollectionMetadata> collectionMetadataList){
+    Map saveDetails = [recordsCreated:0, results : []]
 
-    //if we have a result, we want to 'update' row by inserting the same collection_id with a new last_update time
-    if(result){
-      collectionMetadataRepository.save(granuleMetadata)
-      saveDetails.totalResultsUpdated = 1
-      saveDetails.code = HttpServletResponse.SC_OK
+    collectionMetadataList.each{ collectionMetadata ->
 
-    }else{ //create a new one
-      collectionMetadataRepository.save(granuleMetadata)
-      saveDetails.code = HttpServletResponse.SC_CREATED
+      //get existing row if there is one
+      Iterable<CollectionMetadata> result = collectionMetadataRepository.findByMetadataId(collectionMetadata.collection_id)
+
+      //save the row
+      saveDetails.results.add(collectionMetadataRepository.save(collectionMetadata))
+
+      //if we have a result, we want to let the user know it 'updated'
+      if(result){
+        saveDetails.totalResultsUpdated = saveDetails.totalResultsUpdated ?
+                saveDetails.totalResultsUpdated + 1
+                : 1
+
+      }else{ //create a new one
+        saveDetails.recordsCreated = saveDetails.recordsCreated ?
+                saveDetails.recordsCreated + 1
+                : 1
+        saveDetails.code = HttpServletResponse.SC_CREATED
+      }
+
     }
 
     saveDetails

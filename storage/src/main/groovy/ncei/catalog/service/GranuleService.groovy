@@ -13,20 +13,30 @@ class GranuleService {
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
-  Map save(GranuleMetadata granuleMetadata){
-    Map saveDetails = [:]
-    //get existing row if there is one
-    Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
+  Map save(List<GranuleMetadata> granuleMetadataList){
+    Map saveDetails = [recordsCreated:0, results : []]
 
-    //if we have a result, we want to 'update' row by inserting the same granule_id with a new last_update time
-    if(result){
-      granuleMetadataRepository.save(granuleMetadata)
-      saveDetails.totalResultsUpdated = 1
-      saveDetails.code = HttpServletResponse.SC_OK
+    granuleMetadataList.each{ granuleMetadata ->
 
-    }else{ //create a new one
-      granuleMetadataRepository.save(granuleMetadata)
-      saveDetails.code = HttpServletResponse.SC_CREATED
+      //get existing row if there is one
+      Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
+
+      saveDetails.results.add(granuleMetadataRepository.save(granuleMetadata))
+
+      //if we have a result, we want to let the user know it 'updated'
+      if(result){
+        saveDetails.totalResultsUpdated = saveDetails.totalResultsUpdated ?
+                saveDetails.totalResultsUpdated + 1
+                : 1
+        saveDetails.code = HttpServletResponse.SC_OK
+
+      }else{ //create a new one
+        saveDetails.recordsCreated = saveDetails.recordsCreated ?
+                saveDetails.recordsCreated + 1
+                : 1
+        saveDetails.code = HttpServletResponse.SC_CREATED
+      }
+
     }
 
     saveDetails

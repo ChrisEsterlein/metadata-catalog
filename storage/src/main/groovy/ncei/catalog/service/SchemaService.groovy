@@ -13,20 +13,30 @@ class SchemaService {
   @Autowired
   MetadataSchemaRepository metadataSchemasRepository
 
-  Map save(MetadataSchema granuleMetadata){
-    Map saveDetails = [:]
-    //get existing row if there is one
-    Iterable<MetadataSchema> result = metadataSchemasRepository.findByMetadataId(granuleMetadata.schema_id)
+  Map save(List<MetadataSchema> schemaList){
+    Map saveDetails = [recordsCreated:0, results : []]
 
-    //if we have a result, we want to 'update' row by inserting the same schema_id with a new last_update time
-    if(result){
-      metadataSchemasRepository.save(granuleMetadata)
-      saveDetails.totalResultsUpdated = 1
-      saveDetails.code = HttpServletResponse.SC_OK
+    schemaList.each{ metadataSchema ->
 
-    }else{ //create a new one
-      metadataSchemasRepository.save(granuleMetadata)
-      saveDetails.code = HttpServletResponse.SC_CREATED
+      //get existing row if there is one
+      Iterable<MetadataSchema> result = metadataSchemasRepository.findByMetadataId(metadataSchema.schema_id)
+
+      saveDetails.results.add(metadataSchemasRepository.save(metadataSchema))
+
+      //if we have a result, we want to let the user know it 'updated'
+      if(result){
+        saveDetails.totalResultsUpdated = saveDetails.totalResultsUpdated ?
+                saveDetails.totalResultsUpdated + 1
+                : 1
+        saveDetails.code = HttpServletResponse.SC_OK
+
+      }else{ //create a new one
+        saveDetails.recordsCreated = saveDetails.recordsCreated ?
+                saveDetails.recordsCreated + 1
+                : 1
+        saveDetails.code = HttpServletResponse.SC_CREATED
+      }
+
     }
 
     saveDetails
@@ -55,14 +65,8 @@ class SchemaService {
                 : metadataSchemasRepository.findByMetadataId(id)
       }
     }
-    else if(schemaName && schemaName){
-      allResults = metadataSchemasRepository.findBySchemaNameAndSchema(schemaName, schemaName)
-    }
     else if(schemaName){
       allResults = metadataSchemasRepository.findBySchemaName(schemaName)
-    }
-    else if (schemaName){
-      allResults = metadataSchemasRepository.findBySchema(schemaName)
     }
     else{
       allResults = metadataSchemasRepository.findAll()

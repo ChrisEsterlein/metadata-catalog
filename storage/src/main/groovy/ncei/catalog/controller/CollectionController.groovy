@@ -20,8 +20,8 @@ class CollectionController {
   //new endpoint
   @RequestMapping(value = "/create", method = [RequestMethod.POST, RequestMethod.PUT])
   @ResponseBody
-  Map saveCollectionMetadata(@RequestBody CollectionMetadata collectionMetadata, HttpServletResponse response) {
-    collectionService.save(collectionMetadata)
+  Map saveCollectionMetadata(@RequestBody List<CollectionMetadata>  collectionMetadataList, HttpServletResponse response) {
+    collectionService.save(collectionMetadataList)
   }
 
   @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
