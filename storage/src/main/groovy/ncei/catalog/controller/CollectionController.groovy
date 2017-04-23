@@ -49,9 +49,12 @@ class CollectionController {
   //new end point
   @RequestMapping(method = RequestMethod.GET)
   @ResponseBody
-  List<CollectionMetadata> listCollectionMetadata(@RequestParam Map params, HttpServletResponse response) {
+  Map listCollectionMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
-      collectionService.list(params)
+      [
+        collections : collectionService.list(params),
+        searchTerms : params
+      ]
     }
     catch (e) {
       String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message

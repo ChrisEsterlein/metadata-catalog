@@ -35,14 +35,21 @@ class GranuleController {
   //support old endpoint
   @RequestMapping(value = "/files", method = RequestMethod.GET)
   @ResponseBody
-  List<FileMetadata> listFileMetadata(@RequestParam Map params, HttpServletResponse response) {
+  //  returns List<GranuleMetadata> or a [:]
+  Map listFileMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
       List<GranuleMetadata> granuleMetadataList = granuleService.list(params)
       List<FileMetadata> fileMetadataList = []
       granuleMetadataList.each{
         fileMetadataList.add(ClassConversionUtil.convertToFileMetadata(it))
       }
-      fileMetadataList
+
+      [
+        items: fileMetadataList,
+        totalResults : fileMetadataList.size(),
+        searchTerms: params, code: HttpServletResponse.SC_OK
+      ]
+
     }
     catch (e) {
       String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
@@ -57,9 +64,12 @@ class GranuleController {
   //new end point
   @RequestMapping(value = "/granules", method = RequestMethod.GET)
   @ResponseBody
-  List<GranuleMetadata> listGranuleMetadata(@RequestParam Map params, HttpServletResponse response) {
+  Map listGranuleMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
-      granuleService.list(params)
+      [
+        granules : granuleService.list(params),
+        searchTerms : params
+      ]
     }
     catch (e) {
       String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message

@@ -37,13 +37,24 @@ class CollectionService {
     Boolean versions = params?.versions
     String collectionName = params?.collection_name
     String schema = params?.collection_schema
-    UUID collection_id = params?.collection_id ? UUID.fromString(params.collection_id) : null
+    List<String> collection_ids = params?.collection_ids?.tokenize(',')
+    List<UUID> collection_uuids = []
+
+    if (collection_ids) {
+      collection_ids.each { id ->
+        collection_uuids.add(UUID.fromString(id))
+      }
+    }
 
     Iterable<CollectionMetadata> allResults
     List<CollectionMetadata> metadataList = []
 
-    if(collection_id){
-      allResults = collectionMetadataRepository.findByMetadataId(collection_id)
+    if(collection_uuids){
+      collection_uuids.each{ id ->
+        allResults = allResults ?
+                allResults + collectionMetadataRepository.findByMetadataId(id)
+                : collectionMetadataRepository.findByMetadataId(id)
+      }
     }
     else if(collectionName && schema){
       allResults = collectionMetadataRepository.findByCollectionNameAndSchema(collectionName, schema)

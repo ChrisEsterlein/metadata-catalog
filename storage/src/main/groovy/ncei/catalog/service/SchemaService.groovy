@@ -36,14 +36,24 @@ class SchemaService {
 
     Boolean versions = params?.versions
     String schemaName = params?.schema_name
-    UUID schema_id = params?.schema_id ? UUID.fromString(params?.schema_id) : null
+    List<String> schema_ids = params?.schema_ids?.tokenize(',')
+    List<UUID> schema_uuids = []
 
+    if (schema_ids) {
+      schema_ids.each { id ->
+        schema_uuids.add(UUID.fromString(id))
+      }
+    }
 
     Iterable<MetadataSchema> allResults
     List<MetadataSchema> metadataList = []
 
-    if(schema_id){
-      allResults =  metadataSchemasRepository.findByMetadataId(schema_id)
+    if(schema_uuids){
+      schema_uuids.each{ id ->
+        allResults = allResults ?
+                allResults + metadataSchemasRepository.findByMetadataId(id)
+                : metadataSchemasRepository.findByMetadataId(id)
+      }
     }
     else if(schemaName && schemaName){
       allResults = metadataSchemasRepository.findBySchemaNameAndSchema(schemaName, schemaName)

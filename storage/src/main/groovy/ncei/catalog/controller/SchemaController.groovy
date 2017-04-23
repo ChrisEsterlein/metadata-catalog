@@ -53,9 +53,13 @@ class SchemaController {
     //new end point
     @RequestMapping(method = RequestMethod.GET)
     @ResponseBody
-    List<MetadataSchema> listMetadataSchema(@RequestParam Map params, HttpServletResponse response) {
+    Map listMetadataSchema(@RequestParam Map params, HttpServletResponse response) {
       try {
-        schemaService.list(params)
+        [
+          metadata_schemas : schemaService.list(params),
+          searchTerms : params
+        ]
+
       }
       catch (e) {
         String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
