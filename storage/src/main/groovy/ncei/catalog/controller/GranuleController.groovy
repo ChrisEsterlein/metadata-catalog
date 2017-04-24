@@ -66,9 +66,11 @@ class GranuleController {
   @ResponseBody
   Map listGranuleMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
+      List results = granuleService.list(params)
       [
-        granules : granuleService.list(params),
-        searchTerms : params
+        granules : results,
+        searchTerms : params,
+        totalResults: results.size()
       ]
     }
     catch (e) {

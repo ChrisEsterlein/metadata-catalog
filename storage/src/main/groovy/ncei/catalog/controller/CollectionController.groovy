@@ -51,9 +51,11 @@ class CollectionController {
   @ResponseBody
   Map listCollectionMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
+      List results = collectionService.list(params)
       [
-        collections : collectionService.list(params),
-        searchTerms : params
+        collections : results,
+        searchTerms : params,
+        totalResults : results.size()
       ]
     }
     catch (e) {
