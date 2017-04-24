@@ -1,5 +1,5 @@
 # INDEX
-This is the Elasticsearch API for searching metadata.
+This is the Elasticsearch API for searching metadata.  It listens to a rabbit queue for work to do.
 
 ## Prerequisites:
 1. Install elasticsearch 2.4 (NOTE: version 5 isn't supported by spring data 1.5.2) - 'brew install elasticsearch'
@@ -9,11 +9,10 @@ This is the Elasticsearch API for searching metadata.
 ## Developer setup
 1. Run ./gradlew index:bootrun to start this module
 
-##API
-Save - Do a put to:
-http://localhost:8088/index/files?
-Example body (every field may not be saved in elasticsearch if not specified in the code to do so):
-{"fileName":"name2","dataset":"csb","type":"data","file_size":"1","file_metadata":"filepath","geometry":"null"}
+##RABBITMQ
+Save metadata:
+Properties: content_type = application/json
+Payload: {"task":"save"}
 
 ##Elasticsearch commands
 Search - in the index 'search_index' for parameter dataset of 'csb':
