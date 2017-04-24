@@ -75,22 +75,14 @@ class GranuleService {
     String dataset = params?.dataset
     String schema = params?.granule_schema
     List<String> granule_ids = params?.granule_ids?.tokenize(',')
-    List<UUID> granule_uuids = []
-
-    if (granule_ids) {
-      granule_ids.each { id ->
-        granule_uuids.add(UUID.fromString(id))
-      }
-    }
-
     Iterable<GranuleMetadata> allResults
     List<GranuleMetadata> metadataList = []
 
-    if(granule_uuids){
-      granule_uuids.each{ id ->
+    if (granule_ids) {
+      granule_ids.each { id ->
         allResults = allResults ?
-                allResults + granuleMetadataRepository.findByMetadataId(id)
-                : granuleMetadataRepository.findByMetadataId(id)
+                allResults + granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
+                : granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
       }
     }
     else if(dataset && schema){

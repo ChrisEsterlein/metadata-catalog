@@ -48,22 +48,14 @@ class CollectionService {
     String collectionName = params?.collection_name
     String schema = params?.collection_schema
     List<String> collection_ids = params?.collection_ids?.tokenize(',')
-    List<UUID> collection_uuids = []
-
-    if (collection_ids) {
-      collection_ids.each { id ->
-        collection_uuids.add(UUID.fromString(id))
-      }
-    }
-
     Iterable<CollectionMetadata> allResults
     List<CollectionMetadata> metadataList = []
 
-    if(collection_uuids){
-      collection_uuids.each{ id ->
+    if (collection_ids) {
+      collection_ids.each { id ->
         allResults = allResults ?
-                allResults + collectionMetadataRepository.findByMetadataId(id)
-                : collectionMetadataRepository.findByMetadataId(id)
+                allResults + collectionMetadataRepository.findByMetadataId(UUID.fromString(id))
+                : collectionMetadataRepository.findByMetadataId(UUID.fromString(id))
       }
     }
     else if(collectionName && schema){
