@@ -18,21 +18,21 @@ import javax.servlet.http.HttpServletResponse
 @ConfigurationProperties
 class Controller {
 
-    @Autowired
-    Service service
+  @Autowired
+  Service service
 
-    @RequestMapping(value = "/files", method = [RequestMethod.POST, RequestMethod.PUT])
-    @ResponseBody
-    def saveFileMetadata(@RequestBody Metadata metadataEntry, HttpServletResponse response) {
-        try {
-            log.info "Received save: $metadataEntry"
-            def saveResult = service.save(metadataEntry)
-            log.info "Saved with result: $saveResult"
-            saveResult
-        } catch (e) {
-            log.error "Error trying to save: $metadataEntry: $e"
-            response.status = response.SC_INTERNAL_SERVER_ERROR
-            [message: "Failed to save index: $metadataEntry"]
-        }
+  @RequestMapping(value = "/files", method = [RequestMethod.POST, RequestMethod.PUT])
+  @ResponseBody
+  def saveFileMetadata(@RequestBody Metadata metadataEntry, HttpServletResponse response) {
+    try {
+      log.info "Received save: $metadataEntry"
+      def saveResult = service.save(metadataEntry)
+      log.info "Saved with result: $saveResult"
+      saveResult
+    } catch (e) {
+      log.error "Error trying to save: $metadataEntry: $e"
+      response.status = response.SC_INTERNAL_SERVER_ERROR
+      [message: "Failed to save index: $metadataEntry"]
     }
+  }
 }

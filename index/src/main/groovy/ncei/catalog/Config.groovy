@@ -12,18 +12,17 @@ import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories
 
 @Configuration
-@EnableElasticsearchRepositories (basePackages =  'ncei.catalog.model')
+@EnableElasticsearchRepositories(basePackages = 'ncei.catalog.model')
 class Config {
 
-    @Value('${elasticsearch.cluster.name}')
-    String clusterName
+  @Value('${elasticsearch.cluster.name}')
+  String clusterName
 
-    @Value('${elasticsearch.host}')
-    String host
+  @Value('${elasticsearch.host}')
+  String host
 
-    @Value('${elasticsearch.port}')
-    Integer port
-
+  @Value('${elasticsearch.port}')
+  Integer port
 
 /*    @Autowired
     private MetadataRepository repository;
@@ -31,41 +30,40 @@ class Config {
     @Autowired
     private ElasticsearchTemplate template;*/
 
-    @Bean
-    Client client() throws Exception {
-        def settingsBuilder = Settings.builder()
-        /*final Path tmpDir = Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")),
-                'elasticsearch_data')
+  @Bean
+  Client client() throws Exception {
+    def settingsBuilder = Settings.builder()
+    /*final Path tmpDir = Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")),
+            'elasticsearch_data')
 */
-        settingsBuilder.put('cluster.name', clusterName)
+    settingsBuilder.put('cluster.name', clusterName)
 //        settingsBuilder.put('path.data', tmpDir.toAbsolutePath().toString())
-        def client = TransportClient.builder().settings(settingsBuilder.build()).build()
+    def client = TransportClient.builder().settings(settingsBuilder.build()).build()
 
-        client.addTransportAddress(
-                new InetSocketTransportAddress(InetAddress.getByName(host), port))
-    }
+    client.addTransportAddress(
+        new InetSocketTransportAddress(InetAddress.getByName(host), port))
+  }
 
-    @Bean
-    ElasticsearchOperations elasticsearchTemplate() throws Exception {
-        return new ElasticsearchTemplate(client())
-    }
+  @Bean
+  ElasticsearchOperations elasticsearchTemplate() throws Exception {
+    return new ElasticsearchTemplate(client())
+  }
 
-    //Embedded Elasticsearch Server
-    /*@Bean
-    public ElasticsearchOperations elasticsearchTemplate() {
-        return new ElasticsearchTemplate(nodeBuilder().local(true).node().client());
-    }*/
+  //Embedded Elasticsearch Server
+  /*@Bean
+  public ElasticsearchOperations elasticsearchTemplate() {
+      return new ElasticsearchTemplate(nodeBuilder().local(true).node().client());
+  }*/
 
+  /*    @Bean
+  ElasticsearchTemplate elasticsearchTemplate() {
+      return new ElasticsearchTemplate(getNodeClient());
+  }
 
-    /*    @Bean
-    ElasticsearchTemplate elasticsearchTemplate() {
-        return new ElasticsearchTemplate(getNodeClient());
-    }
-
-    private static NodeClient getNodeClient() {
-        return (NodeClient) nodeBuilder().clusterName(UUID.randomUUID().toString()).local(true).node()
-                .client()
-    }*/
+  private static NodeClient getNodeClient() {
+      return (NodeClient) nodeBuilder().clusterName(UUID.randomUUID().toString()).local(true).node()
+              .client()
+  }*/
 
 /*
     @Bean

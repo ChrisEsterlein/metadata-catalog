@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired
 
 @org.springframework.stereotype.Service
 class Service {
-    @Autowired
-    MetadataRepository repository
+  @Autowired
+  MetadataRepository repository
 
-    Metadata save(Metadata metadata) {
-        repository.save(metadata)
-    }
+  Metadata save(Metadata metadata) {
+    repository.save(metadata)
+  }
 }
