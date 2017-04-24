@@ -47,7 +47,7 @@ class GranuleController {
       [
         items: fileMetadataList,
         totalResults : fileMetadataList.size(),
-        searchTerms: params, code: HttpServletResponse.SC_OK
+        searchTerms: params
       ]
 
     }
@@ -89,14 +89,20 @@ class GranuleController {
   Map saveFileMetadata(@RequestBody FileMetadata fileMetadata, HttpServletResponse response) {
     log.info("Received post with params: $fileMetadata")
     GranuleMetadata granuleMetadata = ClassConversionUtil.convertToGranuleMetadata(fileMetadata)
-    granuleService.save(granuleMetadata)
+    Map results = granuleService.save(granuleMetadata)
+    //convert to support old interface
+    [
+        newRecord: ClassConversionUtil.convertToFileMetadata(results.newRecord as GranuleMetadata),
+        totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
+        code : results.code
+    ]
   }
 
 //new endpoint
   @RequestMapping(value = "/granules", method = [RequestMethod.POST, RequestMethod.PUT])
   @ResponseBody
-  Map saveGranuleMetadata(@RequestBody List<GranuleMetadata> granuleMetadataList, HttpServletResponse response) {
-    granuleService.save(granuleMetadataList)
+  Map saveGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
+    granuleService.save(granuleMetadata)
   }
 
   @RequestMapping(value = "/delete", method=RequestMethod.DELETE)

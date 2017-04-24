@@ -5,6 +5,7 @@ import io.restassured.http.ContentType
 import ncei.catalog.Application
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.annotation.Rollback
 import spock.lang.Specification
 import spock.lang.Unroll
 import spock.lang.Ignore
@@ -13,7 +14,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static io.restassured.matcher.RestAssuredMatchers.*
 import static org.hamcrest.Matchers.*
 
-@Ignore
+//@Ignore
 @Unroll
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class MetadataRecorderApiSpec extends Specification {
@@ -32,6 +33,7 @@ class MetadataRecorderApiSpec extends Specification {
     println 'hello'
   }
 
+  @Rollback
   def 'saves metadata posted by the ingest metadata recorder'() {
     def postBody = [
         trackingId  : 'ABCD',
@@ -50,11 +52,11 @@ class MetadataRecorderApiSpec extends Specification {
         .post('/files')
     .then()
         .assertThat()
-        .statusCode(500)
-        .body('trackingId', equalTo(postBody.trackingId))
-        .body('filename', equalTo(postBody.filename))
-        .body('fileSize', equalTo(postBody.fileSize))
-        .body('fileMetadata', equalTo(postBody.fileMetadata))
+        .statusCode(200)
+        .body('newRecord.trackingId', equalTo(postBody.trackingId))
+        .body('newRecord.filename', equalTo(postBody.filename))
+        .body('newRecord.fileSize', equalTo(postBody.fileSize))
+        .body('newRecord.fileMetadata', equalTo(postBody.fileMetadata))
   }
 
 }

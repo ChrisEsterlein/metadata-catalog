@@ -13,31 +13,23 @@ class SchemaService {
   @Autowired
   MetadataSchemaRepository metadataSchemasRepository
 
-  Map save(List<MetadataSchema> schemaList){
-    Map saveDetails = [recordsCreated:0, results : []]
-
-    schemaList.each{ metadataSchema ->
+  Map save(MetadataSchema metadataSchema){
+    Map saveDetails = [:]
 
       //get existing row if there is one
       Iterable<MetadataSchema> result = metadataSchemasRepository.findByMetadataId(metadataSchema.schema_id)
 
-      saveDetails.results.add(metadataSchemasRepository.save(metadataSchema))
+      saveDetails.newRecord = metadataSchemasRepository.save(metadataSchema)
 
       //if we have a result, we want to let the user know it 'updated'
       if(result){
-        saveDetails.totalResultsUpdated = saveDetails.totalResultsUpdated ?
-                saveDetails.totalResultsUpdated + 1
-                : 1
+        saveDetails.totalResultsUpdated = 1
         saveDetails.code = HttpServletResponse.SC_OK
 
       }else{ //create a new one
-        saveDetails.recordsCreated = saveDetails.recordsCreated ?
-                saveDetails.recordsCreated + 1
-                : 1
+        saveDetails.recordsCreated = 1
         saveDetails.code = HttpServletResponse.SC_CREATED
       }
-
-    }
 
     saveDetails
   }

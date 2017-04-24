@@ -19,6 +19,9 @@ class ClassConversionUtil {
         case 'file_size':
           granuleMetadata.granule_size = value as Integer
           break
+        case 'fileMetadata':
+          granuleMetadata.granule_metadata = value
+          break
         default:
           granuleMetadata."${key}" = value
           break

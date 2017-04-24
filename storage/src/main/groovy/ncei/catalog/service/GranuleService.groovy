@@ -13,30 +13,22 @@ class GranuleService {
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
-  Map save(List<GranuleMetadata> granuleMetadataList){
-    Map saveDetails = [recordsCreated:0, results : []]
+  Map save(GranuleMetadata granuleMetadata){
+    Map saveDetails = [:]
 
-    granuleMetadataList.each{ granuleMetadata ->
+    //get existing row if there is one
+    Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
 
-      //get existing row if there is one
-      Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
+    saveDetails.newRecord = granuleMetadataRepository.save(granuleMetadata)
 
-      saveDetails.results.add(granuleMetadataRepository.save(granuleMetadata))
+    //if we have a result, we want to let the user know it 'updated'
+    if(result){
+      saveDetails.totalResultsUpdated = 1
+      saveDetails.code = HttpServletResponse.SC_OK
 
-      //if we have a result, we want to let the user know it 'updated'
-      if(result){
-        saveDetails.totalResultsUpdated = saveDetails.totalResultsUpdated ?
-                saveDetails.totalResultsUpdated + 1
-                : 1
-        saveDetails.code = HttpServletResponse.SC_OK
-
-      }else{ //create a new one
-        saveDetails.recordsCreated = saveDetails.recordsCreated ?
-                saveDetails.recordsCreated + 1
-                : 1
-        saveDetails.code = HttpServletResponse.SC_CREATED
-      }
-
+    }else{ //create a new one
+      saveDetails.recordsCreated =  1
+      saveDetails.code = HttpServletResponse.SC_CREATED
     }
 
     saveDetails
