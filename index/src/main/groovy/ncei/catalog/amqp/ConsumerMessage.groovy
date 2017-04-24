@@ -8,6 +8,6 @@ class ConsumerMessage {
   Metadata metadata
 
   String toString() {
-    "task:$task, metadata:$metadata"
+    "task: $task, metadata: $metadata"
   }
 }

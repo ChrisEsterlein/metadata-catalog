@@ -12,7 +12,7 @@ This is the Elasticsearch API for searching metadata.  It listens to a rabbit qu
 ##RABBITMQ
 Save metadata:
 Properties: content_type = application/json
-Payload: {"task":"save"}
+Payload: {"task":"save" , "metadata":{"id":"1", "dataset":"csb"}}
 
 ##Elasticsearch commands
 Search - in the index 'search_index' for parameter dataset of 'csb':
