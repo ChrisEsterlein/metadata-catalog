@@ -92,10 +92,10 @@ class GranuleController {
     Map results = granuleService.save(granuleMetadata)
     //convert to support old interface
     [
-        newRecord: ClassConversionUtil.convertToFileMetadata(results.newRecord as GranuleMetadata),
-        totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
-        code : results.code
-    ]
+            totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
+            code : results.code
+    ] + (ClassConversionUtil.convertToFileMetadata(results.newRecord as GranuleMetadata)).asMap()
+
   }
 
 //new endpoint
