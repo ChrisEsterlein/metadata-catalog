@@ -36,6 +36,8 @@ class CassandraConfig {
   @Bean
   @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
   CassandraClusterFactoryBean cluster() {
+    verifyConnection()
+
     def cluster = new CassandraClusterFactoryBean()
     cluster.setContactPoints(contactPoints.join(','))
     cluster.setPort(port)
@@ -71,6 +73,29 @@ class CassandraConfig {
   @Bean
   CassandraOperations cassandraTemplate() throws Exception {
     return new CassandraTemplate(session().getObject())
+  }
+
+  private void verifyConnection() {
+    def builder = Cluster.builder()
+    contactPoints.each {
+      builder.addContactPointsWithPorts(new InetSocketAddress(InetAddress.getByName(it), port))
+    }
+    def cluster = builder.build()
+    def exception = null
+    def tries = 30
+    while (tries > 0) {
+      try {
+        cluster.connect(keyspace)
+        return
+      }
+      catch(NoHostAvailableException e) {
+        exception = e
+        tries--
+        sleep(1000)
+      }
+    }
+    throw exception ?: new IllegalStateException(
+        "Failed to verify cassandra connection on port $port for contact points $contactPoints")
   }
 
 }

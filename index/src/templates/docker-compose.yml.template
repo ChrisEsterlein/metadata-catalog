@@ -1,0 +1,21 @@
+version: '3'
+services:
+  es:
+    image: elasticsearch:2.4.0
+    networks:
+      ${network}:
+        aliases: []
+  index:
+    image: ${image}
+    environment:
+    - elasticsearch_host=es
+    networks:
+      ${network}:
+        aliases: []
+  rabbitmq:
+    image: rabbitmq:latest
+    networks:
+      ${network}:
+        aliases: []
+networks:
+  ${network} : {}

@@ -53,6 +53,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 
 task createDockerfile(type: Dockerfile) {
@@ -92,6 +93,7 @@ dcompose {
 assemble.finalizedBy createComposeFile
 task createCassandraContainer(type: DockerCreateContainer) {
   imageId = 'cassandra'
+  containerName = 'storageCassandra'
   portBindings = ['9042:9042']
 }
 
@@ -102,6 +104,11 @@ task startCassandraContainer(type: DockerStartContainer) {
 
 task stopCassandraContainer(type: DockerStopContainer) {
   targetContainerId { createCassandraContainer.getContainerId() }
+}
+
+task removeCassandraContainer(type: DockerRemoveContainer) {
+  targetContainerId { createCassandraContainer.getContainerId() }
+  force = true
 }
 
 configurations.configure {
@@ -121,7 +128,7 @@ sourceSets {
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
   dependsOn startCassandraContainer
-  finalizedBy stopCassandraContainer
+  finalizedBy stopCassandraContainer, removeCassandraContainer
 
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
