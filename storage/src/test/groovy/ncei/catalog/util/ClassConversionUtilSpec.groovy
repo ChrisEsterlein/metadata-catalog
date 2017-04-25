@@ -18,7 +18,8 @@ class ClassConversionUtilSpec extends Specification {
       "type": "file",
       "fileSize": 1024,
       "fileMetadata": "{blah: blah}",
-      "geometry": "point(1.1, 1.1)"
+      "geometry": "point(1.1, 1.1)",
+      "accessProtocol":"FILE"
     ]
 
     FileMetadata fm = new FileMetadata(fileMetadata)
@@ -28,12 +29,11 @@ class ClassConversionUtilSpec extends Specification {
 
     println "the result $resultingGm"
     then:
-
-
     assert resultingGm.tracking_id == fileMetadata.trackingId
     assert resultingGm.dataset == fileMetadata.dataset
     assert resultingGm.granule_metadata == fileMetadata.fileMetadata
     assert resultingGm.granule_size == fileMetadata.fileSize
+    assert resultingGm.access_protocol == fileMetadata.accessProtocol
 
   }
 
@@ -63,6 +63,7 @@ class ClassConversionUtilSpec extends Specification {
     assert resultingFm.dataset == granuleMetadata.dataset
     assert resultingFm.fileMetadata == granuleMetadata.granule_metadata
     assert resultingFm.fileSize == granuleMetadata.granule_size
+    assert resultingFm.accessProtocol == granuleMetadata.access_protocol
 
   }
 

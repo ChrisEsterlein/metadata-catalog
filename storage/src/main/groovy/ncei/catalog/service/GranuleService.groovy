@@ -4,7 +4,6 @@ import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-
 import javax.servlet.http.HttpServletResponse
 
 @Component
@@ -66,27 +65,36 @@ class GranuleService {
     Boolean versions = params?.versions
     String dataset = params?.dataset
     String schema = params?.granule_schema
-    List<String> granule_ids = params?.granule_ids?.tokenize(',')
+    Date startTime = params?.start_time ? new Date(params.start_time as long) : null
+    List<String> granule_ids = params?.granule_ids?.tokenize(',') ?: []
+
+    //the iterable returned from the repository class
     Iterable<GranuleMetadata> allResults
+    //the list we will populate with rows matching criteria
     List<GranuleMetadata> metadataList = []
 
-    if (granule_ids) {
-      granule_ids.each { id ->
-        allResults = allResults ?
-                allResults + granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
-                : granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
+    if(dataset && startTime){
+      Iterable<GranuleMetadata> allGmResults = granuleMetadataRepository.findByDataset(dataset)
+      allGmResults.each {
+        if(it.last_update > startTime){
+          granule_ids.add(it.granule_id as String)
+        }
       }
-    }
-    else if(dataset && schema){
-      allResults = granuleMetadataRepository.findByDatasetAndSchema(dataset, schema)
-    }
-    else if(dataset){
+    }else if(dataset){
       allResults = granuleMetadataRepository.findByDataset(dataset)
     }
     else if (schema){
       allResults = granuleMetadataRepository.findBySchema(schema)
     }
-    else{
+
+    if (granule_ids) {
+      granule_ids.each { id ->
+        allResults = allResults ?
+          allResults + granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
+          : granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
+      }
+    }
+    else if (!params){
       allResults = granuleMetadataRepository.findAll()
     }
 
@@ -123,9 +131,14 @@ class GranuleService {
   }
 
   def delete(UUID granule_id){
-    Date timestamp = granuleMetadataRepository.findByMetadataId(granule_id as UUID).first().last_update as Date
-    def result = granuleMetadataRepository.deleteByMetadataId(granule_id , timestamp)
-
+    Date timestamp
+    Iterable<GranuleMetadata> gm = granuleMetadataRepository.findByMetadataId(granule_id as UUID)
+    if(gm){
+      timestamp = gm.first().last_update as Date
+    }else{
+      throw RuntimeException("No such granule_id")
+    }
+    granuleMetadataRepository.deleteByMetadataId(granule_id , timestamp)
   }
 
 }

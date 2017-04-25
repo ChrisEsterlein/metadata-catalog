@@ -11,15 +11,15 @@ import javax.servlet.http.HttpServletResponse
 class SchemaService {
 
   @Autowired
-  MetadataSchemaRepository metadataSchemasRepository
+  MetadataSchemaRepository metadataSchemaRepository
 
   Map save(MetadataSchema metadataSchema){
     Map saveDetails = [:]
 
       //get existing row if there is one
-      Iterable<MetadataSchema> result = metadataSchemasRepository.findByMetadataId(metadataSchema.schema_id)
+      Iterable<MetadataSchema> result = metadataSchemaRepository.findByMetadataId(metadataSchema.schema_id)
 
-      saveDetails.newRecord = metadataSchemasRepository.save(metadataSchema)
+      saveDetails.newRecord = metadataSchemaRepository.save(metadataSchema)
 
       //if we have a result, we want to let the user know it 'updated'
       if(result){
@@ -45,15 +45,15 @@ class SchemaService {
     if (schema_ids) {
       schema_ids.each { id ->
         allResults = allResults ?
-                allResults + metadataSchemasRepository.findByMetadataId(UUID.fromString(id))
-                : metadataSchemasRepository.findByMetadataId(UUID.fromString(id))
+                allResults + metadataSchemaRepository.findByMetadataId(UUID.fromString(id))
+                : metadataSchemaRepository.findByMetadataId(UUID.fromString(id))
       }
     }
     else if(schemaName){
-      allResults = metadataSchemasRepository.findBySchemaName(schemaName)
+      allResults = metadataSchemaRepository.findBySchemaName(schemaName)
     }
     else{
-      allResults = metadataSchemasRepository.findAll()
+      allResults = metadataSchemaRepository.findAll()
     }
 
     //get most recent or show all versions
@@ -89,8 +89,8 @@ class SchemaService {
   }
 
   def delete(UUID schema_id){
-    Date timestamp = metadataSchemasRepository.findByMetadataId(schema_id as UUID).first().last_update as Date
-    def result = metadataSchemasRepository.deleteByMetadataId(schema_id , timestamp)
+    Date timestamp = metadataSchemaRepository.findByMetadataId(schema_id as UUID).first().last_update as Date
+    def result = metadataSchemaRepository.deleteByMetadataId(schema_id , timestamp)
 
   }
 }

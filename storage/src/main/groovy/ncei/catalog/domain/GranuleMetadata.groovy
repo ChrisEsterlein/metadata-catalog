@@ -25,6 +25,7 @@ class GranuleMetadata {
   String tracking_id
   String filename
   String type
+  String access_protocol
   Integer granule_size
   String granule_metadata
   String geometry

@@ -41,7 +41,7 @@ class MetadataRecorderApiSpec extends Specification {
     ]
 
     expect:
-    //save metadata
+    //save metadata - test for metadata-recorder
     RestAssured.given()
         .body(postBody)
         .contentType(ContentType.JSON)
@@ -54,8 +54,11 @@ class MetadataRecorderApiSpec extends Specification {
         .body('filename', equalTo(postBody.filename))
         .body('fileSize', equalTo(postBody.fileSize))
         .body('fileMetadata', equalTo(postBody.fileMetadata))
+        .body('dataset', equalTo(postBody.dataset))
+        .body('geometry', equalTo(postBody.geometry))
 
-    //get it back out using old endpoint
+
+    //get it using old endpoint - test for catalog-etl
     RestAssured.given()
         .param('dataset', 'test')
     .when()
@@ -67,9 +70,11 @@ class MetadataRecorderApiSpec extends Specification {
         .body('items[0].filename', equalTo(postBody.filename))
         .body('items[0].fileSize', equalTo(postBody.fileSize))
         .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
+        .body('dataset', equalTo(postBody.dataset))
+        .body('geometry', equalTo(postBody.geometry))
 
     //get it back out using new endpoint so we can get the granule_id we need to delete it
-    def response = RestAssured.given()
+    String response = RestAssured.given()
       .param('dataset', 'test')
     .when()
       .get('/granules')
@@ -79,11 +84,9 @@ class MetadataRecorderApiSpec extends Specification {
       .body('granules[0].filename', equalTo(postBody.filename))
       .body('granules[0].granule_size', equalTo(postBody.fileSize))
       .body('granules[0].granule_metadata', equalTo(postBody.fileMetadata))
+      .body('geometry', equalTo(postBody.geometry))
     .extract()
       .path('granules[0].granule_id' as String)
-
-    println "granule_id: $response"
-    println "granule_id Type: ${response.class}"
 
     def deleteBody = [granule_id: response as String]
 

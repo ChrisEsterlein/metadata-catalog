@@ -1,21 +1,21 @@
 package ncei.catalog.service
 
 import ncei.catalog.domain.GranuleMetadata
-import spock.lang.Ignore
+import ncei.catalog.domain.GranuleMetadataRepository
 import spock.lang.Specification
+import javax.servlet.http.HttpServletResponse
 
-@Ignore
 class GranuleServiceSpec extends Specification {
 
   GranuleService granuleService
 
   def setup(){
     granuleService = new GranuleService()
-    granuleService.granuleMetadataRepository
+    granuleService.granuleMetadataRepository = Mock(GranuleMetadataRepository)
   }
 
   def 'test granuleService save'(){
-    setup:
+    setup: 'instantiate a new granuleMetadata pogo'
     def granuleMetadataMap = [
             "granule_id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
             "tracking_id":"test-id-1",
@@ -31,11 +31,20 @@ class GranuleServiceSpec extends Specification {
 
     GranuleMetadata granuleMetadata = new GranuleMetadata(granuleMetadataMap)
 
+    Map serviceResponse =  [newRecord: granuleMetadata, recordsCreated: 1, code:HttpServletResponse.SC_CREATED]
+
     when:
-    granuleService.save(granuleMetadata)
+    Map result = granuleService.save(granuleMetadata)
 
     then:
-    granuleService.list(granuleMetadata)
+    //the service will try to find the record, which does not exist
+    1 * granuleService.granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id) >> null
+
+    //so it will create a new one
+    1 * granuleService.granuleMetadataRepository.save(granuleMetadata) >> granuleMetadata
+
+    //and build the appropriate response
+    result == serviceResponse
 
   }
 

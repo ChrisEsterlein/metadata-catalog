@@ -22,8 +22,11 @@ class ClassConversionUtil {
         case 'fileMetadata':
           granuleMetadata.granule_metadata = value
           break
+        case 'accessProtocol':
+          granuleMetadata.access_protocol = value
+          break
         default:
-          if(granuleMetadata.hasProperty(key as String)){
+          if(granuleMetadata.hasProperty(key)){
             granuleMetadata[key] = value
           }
           break
@@ -47,6 +50,9 @@ class ClassConversionUtil {
           break
         case 'granule_size':
           fileMetadata.fileSize = value as Integer
+          break
+        case 'access_protocol':
+          fileMetadata.accessProtocol = value
           break
         default:
           if(fileMetadata.hasProperty(key)){

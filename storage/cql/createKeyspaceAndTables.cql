@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS GranuleMetadata (
     filename text,
     dataset text,
     type text,
+    access_protocol text,
     granule_size int,
     granule_metadata text,
     geometry text,

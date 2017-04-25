@@ -5,6 +5,7 @@ class FileMetadata {
   String filename
   String dataset
   String type
+  String accessProtocol
   Integer fileSize
   String fileMetadata
   String geometry
