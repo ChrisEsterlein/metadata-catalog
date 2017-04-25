@@ -66,3 +66,13 @@ task buildImage(type: DockerBuildImage) {
 }
 
 build.finalizedBy buildImage
+
+task dockerCompose(type: Copy) {
+  from 'src/templates'
+  into "$buildDir"
+  include 'docker-compose.yml.template'
+  rename { file -> 'docker-compose.yml' }
+  expand(network: "${project.name}_network", image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+}
+
+assemble.finalizedBy dockerCompose
