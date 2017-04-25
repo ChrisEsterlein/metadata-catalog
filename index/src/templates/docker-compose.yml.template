@@ -14,6 +14,9 @@ services:
         aliases: []
   rabbitmq:
     image: rabbitmq:latest
+    ports:
+     - "5672:5672"
+     - "15672:15672"
     networks:
       ${network}:
         aliases: []

@@ -1,5 +1,12 @@
 elasticsearch:
   cluster:
-    name: elasticsearch_Erin
+    name: <elasticsearch_cluster>
   host: localhost
   port: 9300
+
+rabbitmq:
+  connectionfactory:
+    host: localhost
+    virtualHost: /
+    username: guest
+    password: guest

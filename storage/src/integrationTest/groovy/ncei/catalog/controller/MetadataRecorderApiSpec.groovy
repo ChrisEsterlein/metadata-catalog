@@ -28,8 +28,6 @@ class MetadataRecorderApiSpec extends Specification {
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
-
-    println 'hello'
   }
 
   def 'saves metadata posted by the ingest metadata recorder'() {
