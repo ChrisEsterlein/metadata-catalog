@@ -34,5 +34,4 @@ class GranuleMetadata {
     this.granule_id = UUIDs.timeBased()
     this.last_update = new Date()
   }
-
 }

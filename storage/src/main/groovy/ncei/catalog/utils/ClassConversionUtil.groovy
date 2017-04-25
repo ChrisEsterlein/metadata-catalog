@@ -16,14 +16,16 @@ class ClassConversionUtil {
         case 'trackingId':
           granuleMetadata.tracking_id = value
           break
-        case 'file_size':
+        case 'fileSize':
           granuleMetadata.granule_size = value as Integer
           break
         case 'fileMetadata':
           granuleMetadata.granule_metadata = value
           break
         default:
-          granuleMetadata."${key}" = value
+          if(granuleMetadata.hasProperty(key as String)){
+            granuleMetadata[key] = value
+          }
           break
       }
     }
@@ -32,7 +34,6 @@ class ClassConversionUtil {
 
   static FileMetadata convertToFileMetadata(GranuleMetadata granuleMetadata){
     FileMetadata fileMetadata = new FileMetadata()
-    List keysNotFileMetadata = ['granule_id', 'last_update', 'granule_schema', 'collection']
 
     granuleMetadata.properties.each{key, value ->
       switch (key){
@@ -45,14 +46,15 @@ class ClassConversionUtil {
           fileMetadata.trackingId = value
           break
         case 'granule_size':
-          fileMetadata.file_size = value as Integer
+          fileMetadata.fileSize = value as Integer
           break
-        case (!(key in keysNotFileMetadata) ):
-          fileMetadata."${key}" = value
+        default:
+          if(fileMetadata.hasProperty(key)){
+            fileMetadata[key] = value
+          }
           break
       }
     }
-
     fileMetadata
   }
 
