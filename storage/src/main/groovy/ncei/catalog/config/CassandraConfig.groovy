@@ -28,7 +28,7 @@ class CassandraConfig {
 
   //-- Set by @ConfigurationProperties
   String keyspace
-  List<String> contactPoints
+  String contactPoints
   Integer port
   //---
 
@@ -39,7 +39,7 @@ class CassandraConfig {
     verifyConnection()
 
     def cluster = new CassandraClusterFactoryBean()
-    cluster.setContactPoints(contactPoints.join(','))
+    cluster.setContactPoints(contactPoints)
     cluster.setPort(port)
     cluster.setReconnectionPolicy(new ExponentialReconnectionPolicy(500, 32000))
 
@@ -77,7 +77,7 @@ class CassandraConfig {
 
   private void verifyConnection() {
     def builder = Cluster.builder()
-    contactPoints.each {
+    contactPoints.split(',').each {
       builder.addContactPointsWithPorts(new InetSocketAddress(InetAddress.getByName(it), port))
     }
     def cluster = builder.build()
