@@ -16,17 +16,17 @@ class ConsumerConfig extends RabbitConfig {
   private ResultHandler scrapingResultHandler
 
   @Bean
+  Queue listenerQueue() {
+    new Queue(this.queueName, true, false, true)
+  }
+
+  @Bean
   RabbitTemplate rabbitTemplate() {
     RabbitTemplate template = new RabbitTemplate(connectionFactory())
     template.setRoutingKey(this.queueName)
     template.setQueue(this.queueName)
     template.setMessageConverter(jsonMessageConverter())
     template
-  }
-
-  @Bean
-  Queue queue() {
-    new Queue(this.queueName)
   }
 
   @Bean
