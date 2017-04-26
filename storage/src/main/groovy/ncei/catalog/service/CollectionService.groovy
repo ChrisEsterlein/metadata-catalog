@@ -74,6 +74,7 @@ class CollectionService {
 
     metadataList
   }
+
   List<CollectionMetadata> getMostRecent(Iterable<CollectionMetadata> allResults){
     Map<String, CollectionMetadata> collectionMetadataMap = [:]
     List<CollectionMetadata> mostRecent

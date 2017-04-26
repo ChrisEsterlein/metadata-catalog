@@ -8,13 +8,9 @@ buildscript{
     maven { url "http://repo.spring.io/release" }
     maven { url "http://repo.spring.io/milestone" }
     maven { url "http://repo.spring.io/snapshot" }
-    maven { url "https://plugins.gradle.org/m2/" }
-    jcenter()
   }
   dependencies{
     classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-    classpath 'com.bmuschko:gradle-docker-plugin:3.0.6'
-    classpath "gradle.plugin.com.chrisgahlert:gradle-dcompose-plugin:0.9.0"
   }
 }
 
@@ -22,7 +18,6 @@ apply plugin: 'groovy'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
-apply plugin: 'com.bmuschko.docker-remote-api'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -48,113 +43,67 @@ dependencies {
   testCompile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
   testCompile 'io.rest-assured:rest-assured:3.0.2'
 }
+project.ext.set("cassandraContainerName", "${project.name}Cassandra")
+project.ext.set("applicationContainerName", "${project.name}App")
 
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-import com.bmuschko.gradle.docker.tasks.image.DockerPullImage
-import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerWaitContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerCopyFileToContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerExecContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
-import com.bmuschko.gradle.docker.tasks.container.DockerRemoveContainer
-import com.bmuschko.gradle.docker.tasks.image.Dockerfile
-
-task createDockerfile(type: Dockerfile) {
-  destFile = project.file('build/Dockerfile')
-  from 'openjdk:8'
-  workingDir '/usr/src/app'
-  copyFile "libs/${project.name}-${project.version}.jar", '/usr/src/app'
-  exposePort 8080
-  defaultCommand "java", "-jar",  "/usr/src/app/${project.name}-${project.version}.jar"
+task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'docker') {
+  from 'src/templates'
+  into "$buildDir"
+  include 'Dockerfile.template'
+  rename { file -> 'Dockerfile' }
+  expand(jar: "${project.name}-${project.version}.jar")
 }
 
-task buildImage(type: DockerBuildImage) {
-  dependsOn createDockerfile
-  inputDir = createDockerfile.destFile.parentFile
-  tag = "ncei/${rootProject.name}-${project.name}:${project.version}"
+task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
+  dependsOn dockerFile
+  dependsOn bootRepackage
+  executable "sh"
+  args "-c", "docker build -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
-assemble.finalizedBy buildImage
+assemble.dependsOn dockerImage
 
-apply plugin: "com.chrisgahlert.gradle-dcompose-plugin"
-
-project.ext.set("composeNetworkName", "${project.name}_net")
-
-dcompose {
-  createComposeFile.useTags = true
-  networks { "${project.ext.composeNetworkName}" }
-  storage {
-    image = "ncei/${rootProject.name}-${project.name}:${project.version}"
-    networks = [network("${project.ext.composeNetworkName}")]
-  }
-  db {
-    image = 'cassandra'
-    networks = [network("${project.ext.composeNetworkName}")]
-  }
+task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
+  executable "sh"
+  // sets the environment variable cassandra_contactPoints to override application.yml
+  args "-c", "docker run -d -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
-assemble.finalizedBy createComposeFile
-
-task pullCassandraImage(type: DockerPullImage) {
-  repository = 'cassandra'
-  tag = 'latest'
+task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
 }
 
-task createCassandraContainer(type: DockerCreateContainer) {
-  dependsOn pullCassandraImage
-  imageId = 'cassandra'
-  containerName = 'storageCassandra'
-  portBindings = ['9042:9042']
+task startCassandraContainer(type:Exec, description: 'Starts the Cassandra container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true  && docker run -d --publish 9042:9042 --name ${project.ext.cassandraContainerName} cassandra"
 }
 
-task startCassandraContainer(type: DockerStartContainer) {
-  dependsOn createCassandraContainer
-  targetContainerId { createCassandraContainer.getContainerId() }
-}
-
-task pullWaitImage(type: DockerPullImage) {
-  repository = 'willwill/wait-for-it'
-  tag = 'latest'
-}
-
-task createWaitContainer(type: DockerCreateContainer) {
-  dependsOn pullWaitImage
-  imageId = 'willwill/wait-for-it'
-  cmd = ['-h', 'storageCassandra', '-p', '9042']
-}
-
-task startWaitContainer(type: DockerStartContainer) {
-  dependsOn createWaitContainer
-  targetContainerId { createWaitContainer.getContainerId() }
-}
-
-task waitForCassandra(type: DockerWaitContainer) {
-  dependsOn startCassandraContainer, startWaitContainer
-  targetContainerId { createWaitContainer.getContainerId() }
-}
-
-task copyCqlToCassandra(type: DockerCopyFileToContainer) {
+task waitForCassandra(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
   dependsOn startCassandraContainer
-  targetContainerId { createCassandraContainer.getContainerId() }
-  hostPath = './cql/createKeyspaceAndTables.cql'
-  remotePath = '/tmp'
+  executable "sh"
+  args "-c", "docker run --rm willwill/wait-for-it -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) -p 9042 -t 30"
 }
 
-task bootstrapCassandra(type: DockerExecContainer) {
-  dependsOn copyCqlToCassandra, waitForCassandra
-  targetContainerId { createCassandraContainer.getContainerId() }
-  cmd = ['cqlsh', '-f', '/tmp/createKeyspaceAndTables.cql']
+task bootstrapCassandra(type:Exec, description: 'Initializes the keyspace and tables in the Cassandra container.', group: 'docker') {
+  dependsOn waitForCassandra
+  executable "sh"
+  args "-c", "docker exec -i ${project.ext.cassandraContainerName} cqlsh <<< \"\$(cat cql/createKeyspaceAndTables.cql)\""
 }
 
-task stopCassandraContainer(type: DockerStopContainer) {
-  targetContainerId { createCassandraContainer.getContainerId() }
+task removeCassandraContainer(type:Exec, description: 'Cleans up the Cassandra container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true"
 }
 
-task removeCassandraContainer(type: DockerRemoveContainer) {
-  mustRunAfter stopCassandraContainer
-  targetContainerId { createCassandraContainer.getContainerId() }
-  force = true
+clean.dependsOn removeCassandraContainer
+clean.dependsOn dockerRemove
+
+task dockerBootrun(description: 'Rebuilds and runs the application in a docker container.', group: 'docker') {
+  dependsOn dockerRemove
+  dependsOn dockerImage
+  dependsOn bootstrapCassandra
+  dependsOn dockerRun
 }
 
 configurations.configure {
