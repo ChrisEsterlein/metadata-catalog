@@ -11,6 +11,9 @@ interface GranuleMetadataRepository extends CassandraRepository<GranuleMetadata>
   @Query("Select * from GranuleMetadata where granule_id =?0")
   Iterable<GranuleMetadata> findByMetadataId(UUID id)
 
+  @Query("Select * from GranuleMetadata where granule_id =?0 AND last_update>=?1")
+  Iterable<GranuleMetadata> findByMetadataIdFromDate(UUID id, Date date)
+
 //    @Query("SELECT*FROM GranuleMetadata WHERE filename=?0 LIMIT ?1")
 //    Iterable<GranuleMetadata> findByFilename(String filename, Integer limit)
 //
@@ -23,6 +26,7 @@ interface GranuleMetadataRepository extends CassandraRepository<GranuleMetadata>
   @Query("SELECT*FROM GranuleMetadata WHERE granule_schema=?0")
   Iterable<GranuleMetadata> findBySchema(String schema)
 
+  //this does not work, cant search two indexed fields
   @Query("SELECT*FROM GranuleMetadata WHERE dataset =?0 AND granule_schema=?1")
   Iterable<GranuleMetadata> findByDatasetAndSchema(String dataset, String schema)
 

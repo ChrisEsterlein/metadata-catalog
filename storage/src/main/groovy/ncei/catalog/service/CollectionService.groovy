@@ -13,31 +13,23 @@ class CollectionService {
   @Autowired
   CollectionMetadataRepository collectionMetadataRepository
 
-  Map save(List<CollectionMetadata> collectionMetadataList){
-    Map saveDetails = [recordsCreated:0, results : []]
-
-    collectionMetadataList.each{ collectionMetadata ->
+  Map save(CollectionMetadata collectionMetadata){
+    Map saveDetails = [:]
 
       //get existing row if there is one
       Iterable<CollectionMetadata> result = collectionMetadataRepository.findByMetadataId(collectionMetadata.collection_id)
 
       //save the row
-      saveDetails.results.add(collectionMetadataRepository.save(collectionMetadata))
+      saveDetails.newRecord = collectionMetadataRepository.save(collectionMetadata)
 
       //if we have a result, we want to let the user know it 'updated'
       if(result){
-        saveDetails.totalResultsUpdated = saveDetails.totalResultsUpdated ?
-                saveDetails.totalResultsUpdated + 1
-                : 1
-
+        saveDetails.totalResultsUpdated = 1
+        saveDetails.code = HttpServletResponse.SC_OK
       }else{ //create a new one
-        saveDetails.recordsCreated = saveDetails.recordsCreated ?
-                saveDetails.recordsCreated + 1
-                : 1
+        saveDetails.recordsCreated = 1
         saveDetails.code = HttpServletResponse.SC_CREATED
       }
-
-    }
 
     saveDetails
   }

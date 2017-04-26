@@ -16,7 +16,7 @@ class ProducerConfig extends RabbitConfig {
     template.setRoutingKey(this.queueName)
     template.setQueue(this.queueName)
     template.setMessageConverter(jsonMessageConverter())
-    return template
+    template
   }
 
   @Bean

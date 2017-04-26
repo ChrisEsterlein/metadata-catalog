@@ -24,8 +24,8 @@ class SchemaController {
     //new endpoint
     @RequestMapping(value = "/create", method = [RequestMethod.POST, RequestMethod.PUT])
     @ResponseBody
-    Map saveMetadataSchema(@RequestBody List<MetadataSchema> metadataSchemaList, HttpServletResponse response) {
-      schemaService.save(metadataSchemaList)
+    Map saveMetadataSchema(@RequestBody MetadataSchema metadataSchema, HttpServletResponse response) {
+      schemaService.save(metadataSchema)
     }
 
     @RequestMapping(value = "/delete", method=RequestMethod.DELETE)

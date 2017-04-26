@@ -13,7 +13,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static io.restassured.matcher.RestAssuredMatchers.*
 import static org.hamcrest.Matchers.*
 
-@Ignore
+//@Ignore
 @Unroll
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class MetadataRecorderApiSpec extends Specification {
@@ -41,6 +41,7 @@ class MetadataRecorderApiSpec extends Specification {
     ]
 
     expect:
+    //save metadata - test for metadata-recorder
     RestAssured.given()
         .body(postBody)
         .contentType(ContentType.JSON)
@@ -48,11 +49,59 @@ class MetadataRecorderApiSpec extends Specification {
         .post('/files')
     .then()
         .assertThat()
-        .statusCode(500)
+        .statusCode(200)  //should be a 201
         .body('trackingId', equalTo(postBody.trackingId))
         .body('filename', equalTo(postBody.filename))
         .body('fileSize', equalTo(postBody.fileSize))
         .body('fileMetadata', equalTo(postBody.fileMetadata))
+        .body('dataset', equalTo(postBody.dataset))
+        .body('geometry', equalTo(postBody.geometry))
+
+
+    //get it using old endpoint - test for catalog-etl
+    RestAssured.given()
+        .param('dataset', 'test')
+    .when()
+        .get('/files')
+    .then()
+        .assertThat()
+        .statusCode(200)
+        .body('items[0].trackingId', equalTo(postBody.trackingId))
+        .body('items[0].filename', equalTo(postBody.filename))
+        .body('items[0].fileSize', equalTo(postBody.fileSize))
+        .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
+        .body('dataset', equalTo(postBody.dataset))
+        .body('geometry', equalTo(postBody.geometry))
+
+    //get it back out using new endpoint so we can get the granule_id we need to delete it
+    String response = RestAssured.given()
+      .param('dataset', 'test')
+    .when()
+      .get('/granules')
+    .then()
+      .assertThat()
+      .statusCode(200)
+      .body('granules[0].filename', equalTo(postBody.filename))
+      .body('granules[0].granule_size', equalTo(postBody.fileSize))
+      .body('granules[0].granule_metadata', equalTo(postBody.fileMetadata))
+      .body('geometry', equalTo(postBody.geometry))
+    .extract()
+      .path('granules[0].granule_id' as String)
+
+    def deleteBody = [granule_id: response as String]
+
+    //delete it
+    RestAssured.given()
+            .body(deleteBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .delete('/delete')
+            .then()
+            .assertThat()
+            .statusCode(200)
   }
 
 }
+
+
+
