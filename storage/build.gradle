@@ -43,8 +43,8 @@ dependencies {
   testCompile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
   testCompile 'io.rest-assured:rest-assured:3.0.2'
 }
-project.ext.set("cassandraContainerName", "storageCassandra")
-project.ext.set("applicationContainerName", "storageApp")
+project.ext.set("cassandraContainerName", "${project.name}Cassandra")
+project.ext.set("applicationContainerName", "${project.name}App")
 
 task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'docker') {
   from 'src/templates'
@@ -65,6 +65,7 @@ assemble.dependsOn dockerImage
 
 task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
   executable "sh"
+  // sets the environment variable cassandra_contactPoints to override application.yml
   args "-c", "docker run -d -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
@@ -73,7 +74,7 @@ task dockerRemove(type:Exec, description: 'Removes the application container.', 
   args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
 }
 
-task startCassandraContainer(type:Exec, description: 'Starts the cassandra container.', group: 'docker') {
+task startCassandraContainer(type:Exec, description: 'Starts the Cassandra container.', group: 'docker') {
   executable "sh"
   args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true  && docker run -d --publish 9042:9042 --name ${project.ext.cassandraContainerName} cassandra"
 }
@@ -99,6 +100,7 @@ clean.dependsOn removeCassandraContainer
 clean.dependsOn dockerRemove
 
 task dockerBootrun(description: 'Rebuilds and runs the application in a docker container.', group: 'docker') {
+  dependsOn dockerRemove
   dependsOn dockerImage
   dependsOn bootstrapCassandra
   dependsOn dockerRun
