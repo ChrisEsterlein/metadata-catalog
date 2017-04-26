@@ -24,6 +24,7 @@ class CollectionMetadata {
 
     String type
     String collection_metadata
+    String geometry
 
     CollectionMetadata() {
         this.collection_id = UUIDs.timeBased()

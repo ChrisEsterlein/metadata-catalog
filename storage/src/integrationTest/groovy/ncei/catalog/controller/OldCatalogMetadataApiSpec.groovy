@@ -13,10 +13,9 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 import static io.restassured.matcher.RestAssuredMatchers.*
 import static org.hamcrest.Matchers.*
 
-//@Ignore
 @Unroll
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
-class MetadataRecorderApiSpec extends Specification {
+class OldCatalogMetadataApiSpec extends Specification {
 
   @Value('${local.server.port}')
   private String port
@@ -57,10 +56,10 @@ class MetadataRecorderApiSpec extends Specification {
         .body('dataset', equalTo(postBody.dataset))
         .body('geometry', equalTo(postBody.geometry))
 
-
     //get it using old endpoint - test for catalog-etl
     RestAssured.given()
         .param('dataset', 'test')
+        .param('start_time', (new Date() - 100))
     .when()
         .get('/files')
     .then()
@@ -70,8 +69,8 @@ class MetadataRecorderApiSpec extends Specification {
         .body('items[0].filename', equalTo(postBody.filename))
         .body('items[0].fileSize', equalTo(postBody.fileSize))
         .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
-        .body('dataset', equalTo(postBody.dataset))
-        .body('geometry', equalTo(postBody.geometry))
+        .body('items[0].dataset', equalTo(postBody.dataset))
+        .body('items[0].geometry', equalTo(postBody.geometry))
 
     //get it back out using new endpoint so we can get the granule_id we need to delete it
     String response = RestAssured.given()
@@ -84,7 +83,7 @@ class MetadataRecorderApiSpec extends Specification {
       .body('granules[0].filename', equalTo(postBody.filename))
       .body('granules[0].granule_size', equalTo(postBody.fileSize))
       .body('granules[0].granule_metadata', equalTo(postBody.fileMetadata))
-      .body('geometry', equalTo(postBody.geometry))
+      .body('granules[0].geometry', equalTo(postBody.geometry))
     .extract()
       .path('granules[0].granule_id' as String)
 

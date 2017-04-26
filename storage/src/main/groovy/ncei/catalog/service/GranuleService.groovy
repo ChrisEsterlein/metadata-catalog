@@ -73,28 +73,21 @@ class GranuleService {
     //the list we will populate with rows matching criteria
     List<GranuleMetadata> metadataList = []
 
-    if(dataset && startTime){
-      Iterable<GranuleMetadata> allGmResults = granuleMetadataRepository.findByDataset(dataset)
-      allGmResults.each {
-        if(it.last_update > startTime){
-          granule_ids.add(it.granule_id as String)
-        }
+
+    if (granule_ids) {
+      granule_ids.each { id ->
+        allResults = allResults ?
+                allResults + granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
+                : granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
       }
-    }else if(dataset){
+    }
+    else if(dataset){
       allResults = granuleMetadataRepository.findByDataset(dataset)
     }
     else if (schema){
       allResults = granuleMetadataRepository.findBySchema(schema)
     }
-
-    if (granule_ids) {
-      granule_ids.each { id ->
-        allResults = allResults ?
-          allResults + granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
-          : granuleMetadataRepository.findByMetadataId(UUID.fromString(id))
-      }
-    }
-    else if (!params){
+    else{
       allResults = granuleMetadataRepository.findAll()
     }
 
@@ -104,23 +97,26 @@ class GranuleService {
         metadataList.add(gm)
       }
     }else{
-      metadataList = getMostRecent(allResults)
+      metadataList = getMostRecent(allResults, startTime)
     }
 
     metadataList
   }
 
-  List<GranuleMetadata> getMostRecent(Iterable<GranuleMetadata> allResults){
+  //complexity O(n)
+  List<GranuleMetadata> getMostRecent(Iterable<GranuleMetadata> allResults, Date startTime = new Date(0 as long)){
     Map<String, GranuleMetadata> granuleMetadataMap = [:]
     List<GranuleMetadata> mostRecent
     allResults.each{ gm ->
-      String metadataId = gm.granule_id as String
-      if(granuleMetadataMap[metadataId]){
-        if(granuleMetadataMap[metadataId].last_update < gm.last_update){
+      if(gm.last_update > startTime){
+        String metadataId = gm.granule_id as String
+        if(granuleMetadataMap[metadataId]){
+          if(granuleMetadataMap[metadataId].last_update < gm.last_update){
+            granuleMetadataMap[metadataId] = gm
+          }
+        }else{
           granuleMetadataMap[metadataId] = gm
         }
-      }else{
-        granuleMetadataMap[metadataId] = gm
       }
     }
     mostRecent = granuleMetadataMap.collect{key, value ->
