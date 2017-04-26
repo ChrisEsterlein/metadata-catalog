@@ -9,6 +9,7 @@ services:
     image: ${image}
     environment:
     - elasticsearch_host=es
+    - rabbitmq_connectionfactory_host=rabbitmq
     networks:
       ${network}:
         aliases: []
