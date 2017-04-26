@@ -13,7 +13,7 @@ class ConsumerConfig extends RabbitConfig {
   protected final String queueName = 'index-consumer'
 
   @Autowired
-  private ResultHandler scrapingResultHandler
+  private ConsumerHandler scrapingResultHandler
 
   @Bean
   Queue listenerQueue() {
