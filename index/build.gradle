@@ -1,5 +1,5 @@
-buildscript{
-  ext{
+buildscript {
+  ext {
     springBootVersion = '1.5.2.RELEASE'
   }
   repositories {
@@ -9,7 +9,7 @@ buildscript{
     maven { url "http://repo.spring.io/milestone" }
     maven { url "http://repo.spring.io/snapshot" }
   }
-  dependencies{
+  dependencies {
     classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
   }
 }
@@ -25,8 +25,8 @@ targetCompatibility = 1.8
 repositories {
   mavenCentral()
   maven { url "http://repo.spring.io/release" }
-  maven{url 'https://repo.spring.io/milestone'}
-  maven{url 'https://repo.spring.io/snapshot'}
+  maven { url 'https://repo.spring.io/milestone' }
+  maven { url 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
@@ -40,11 +40,14 @@ dependencies {
   testCompile 'org.springframework.boot:spring-boot-starter-test'
   testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4-rc-4'
   testCompile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
+  testCompile 'io.rest-assured:rest-assured:3.0.2'
 }
 
+project.ext.set("applicationContainerName", "${project.name}App")
+project.ext.set("elasticsearchContainerName", "${project.name}Elasticsearch")
+project.ext.set("rabbitContainerName", "${project.name}Rabbit")
 
-
-task dockerFile(type: Copy) {
+task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'docker') {
   from 'src/templates'
   into "$buildDir"
   include 'Dockerfile.template'
@@ -52,12 +55,14 @@ task dockerFile(type: Copy) {
   expand(jar: "${project.name}-${project.version}.jar")
 }
 
-task dockerImage(type: Exec) {
+task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
+  dependsOn dockerFile
+  dependsOn bootRepackage
   executable "sh"
   args "-c", "docker build -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
-task dockerCompose(type: Copy) {
+task dockerCompose(type: Copy, description: 'Generates docker-compose.yml.', group: 'docker') {
   from 'src/templates'
   into "$buildDir"
   include 'docker-compose.yml.template'
@@ -65,6 +70,77 @@ task dockerCompose(type: Copy) {
   expand(network: "${project.name}_network", image: "ncei/${rootProject.name}-${project.name}:${project.version}")
 }
 
-assemble.finalizedBy dockerFile
-assemble.finalizedBy dockerImage
-assemble.finalizedBy dockerCompose
+assemble.dependsOn dockerImage
+assemble.dependsOn dockerCompose
+
+task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
+  executable "sh"
+  // sets the environment variable elasticsearch_host to override application.yml
+  args "-c", "docker run -d -e elasticsearch_host=es_hostname --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
+}
+
+task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
+}
+
+task startElasticsearchContainer(type:Exec, description: 'Starts the Elasticsearch container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && docker run -d -h es_hostname --name ${project.ext.elasticsearchContainerName} elasticsearch:2.4.0"
+}
+
+task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true"
+}
+
+task startRabbitContainer(type:Exec, description: 'Starts the Rabbit container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && docker run -d --publish 5672:5672 --publish 15672:15672 --name ${project.ext.rabbitContainerName} rabbitmq:latest"
+}
+
+task removeRabbitContainer(type:Exec, description: 'Cleans up the Rabbit container.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true"
+}
+
+clean.dependsOn removeRabbitContainer
+clean.dependsOn removeElasticsearchContainer
+clean.dependsOn dockerRemove
+
+task dockerBootrun(description: 'Rebuilds and runs the application in a docker container.', group: 'docker') {
+  dependsOn dockerRemove
+  dependsOn dockerImage
+  dependsOn startElasticsearchContainer
+  dependsOn startRabbitContainer
+  dependsOn dockerRun
+}
+
+configurations.configure {
+  integrationTestCompile.extendsFrom testCompile
+  integrationTestRuntime.extendsFrom testRuntime
+}
+
+sourceSets {
+  integrationTest {
+    groovy.srcDir file('src/integrationTest/groovy')
+    //resources.srcDir file('src/integrationTest/resources')
+    compileClasspath += main.output + test.output + configurations.testRuntime
+    runtimeClasspath += output + compileClasspath
+  }
+}
+
+task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
+  mustRunAfter test
+  dependsOn startElasticsearchContainer
+  dependsOn startRabbitContainer
+  finalizedBy removeRabbitContainer
+  finalizedBy removeElasticsearchContainer
+
+  testClassesDir = sourceSets.integrationTest.output.classesDir
+  classpath = sourceSets.integrationTest.runtimeClasspath
+  reports.junitXml.destination = 'build/integration-test-results'
+  reports.html.destination = 'build/reports/integrationTests'
+}
+
+check.dependsOn integrationTest

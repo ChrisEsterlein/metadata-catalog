@@ -27,3 +27,10 @@ elasticsearch:
   port: 9300
   cluster:
     name: elasticsearch
+
+rabbitmq:
+  connectionfactory:
+    host: localhost
+    virtualHost: /
+    username: guest
+    password: guest

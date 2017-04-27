@@ -13,7 +13,12 @@ class ConsumerConfig extends RabbitConfig {
   protected final String queueName = 'index-consumer'
 
   @Autowired
-  private ResultHandler scrapingResultHandler
+  private ConsumerHandler scrapingResultHandler
+
+  @Bean
+  Queue listenerQueue() {
+    new Queue(this.queueName, true, false, true)
+  }
 
   @Bean
   RabbitTemplate rabbitTemplate() {
@@ -22,11 +27,6 @@ class ConsumerConfig extends RabbitConfig {
     template.setQueue(this.queueName)
     template.setMessageConverter(jsonMessageConverter())
     template
-  }
-
-  @Bean
-  Queue queue() {
-    new Queue(this.queueName)
   }
 
   @Bean
