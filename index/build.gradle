@@ -62,57 +62,105 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
   args "-c", "docker build -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
-task dockerCompose(type: Copy, description: 'Generates docker-compose.yml.', group: 'docker') {
+task cleanDockerComposeYml(type:Delete, description: 'Remove generated docker-compose.yml.', group: 'docker') {
+  delete "${buildDir}/docker-compose.yml"
+}
+
+task dockerComposeYml(type: Copy, description: 'Generates docker-compose.yml.', group: 'docker') {
+  dependsOn cleanDockerComposeYml
   from 'src/templates'
   into "$buildDir"
   include 'docker-compose.yml.template'
   rename { file -> 'docker-compose.yml' }
-  expand(network: "${project.name}_network", image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+  expand(network: "net", image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+}
+
+task dockerNetwork(type: Exec, description: 'Creates a network in docker.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker network create ${project.name}_net || true"
+}
+
+task removeDockerNetwork(type: Exec, description: 'Removes docker network.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker network rm ${project.name}_net || true"
 }
 
 assemble.dependsOn dockerImage
-assemble.dependsOn dockerCompose
+assemble.dependsOn dockerComposeYml
 
 task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
+  dependsOn dockerNetwork
   executable "sh"
   // sets the environment variable elasticsearch_host to override application.yml
-  args "-c", "docker run -d -e elasticsearch_host=es_hostname --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
+  // sets the environment variable rabbitmq_connectionfactory_host to override application.yml
+  args "-c", "docker run -d --network ${project.name}_net -e rabbitmq_connectionfactory_host=rabbitmq -e elasticsearch_host=es_hostname --link ${project.ext.elasticsearchContainerName}:elasticsearch --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
 task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
+  finalizedBy removeDockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
 }
 
 task startElasticsearchContainer(type:Exec, description: 'Starts the Elasticsearch container.', group: 'docker') {
+  dependsOn dockerNetwork
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && docker run -d -h es_hostname --name ${project.ext.elasticsearchContainerName} elasticsearch:2.4.0"
+  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && docker run -d --network ${project.name}_net --net-alias es_hostname --name ${project.ext.elasticsearchContainerName} elasticsearch:2.4.0"
 }
 
 task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
+  finalizedBy removeDockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true"
 }
 
 task startRabbitContainer(type:Exec, description: 'Starts the Rabbit container.', group: 'docker') {
+  dependsOn dockerNetwork
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && docker run -d --publish 5672:5672 --publish 15672:15672 --name ${project.ext.rabbitContainerName} rabbitmq:latest"
+  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && docker run -d --network ${project.name}_net --net-alias rabbitmq --publish 5672:5672 --publish 15672:15672 --name ${project.ext.rabbitContainerName} rabbitmq:latest"
+}
+
+task waitForRabbit(type:Exec, description: 'Waits for Rabbit to be available.', group: 'docker') {
+  dependsOn startRabbitContainer
+  executable "sh"
+  args "-c", "docker run --network ${project.name}_net --rm willwill/wait-for-it -h \$(docker inspect --format='{{ .NetworkSettings.Networks.${project.name}_net.IPAddress }}' ${project.ext.rabbitContainerName}) -p 5672 -t 30"
+}
+
+task bootstrapRabbit(type:Exec, description: 'Initializes Rabbit container.', group: 'docker') {
+  dependsOn waitForRabbit
+  executable "sh"
+  args "-c", "docker exec ${project.ext.rabbitContainerName} rabbitmq-plugins enable rabbitmq_management"
 }
 
 task removeRabbitContainer(type:Exec, description: 'Cleans up the Rabbit container.', group: 'docker') {
+  finalizedBy removeDockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true"
+}
+
+task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  dependsOn dockerComposeYml
+  executable "sh"
+  args "-c", "docker-compose -f ${buildDir}/docker-compose.yml -p ${project.name} up -d"
+}
+
+task dockerComposeDown(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  executable "sh"
+  args "-c", "docker-compose -f ${buildDir}/docker-compose.yml -p ${project.name} down || true"
 }
 
 clean.dependsOn removeRabbitContainer
 clean.dependsOn removeElasticsearchContainer
 clean.dependsOn dockerRemove
+clean.dependsOn dockerComposeDown
+clean.dependsOn removeDockerNetwork
 
 task dockerBootrun(description: 'Rebuilds and runs the application in a docker container.', group: 'docker') {
+  dependsOn removeDockerNetwork
   dependsOn dockerRemove
   dependsOn dockerImage
   dependsOn startElasticsearchContainer
-  dependsOn startRabbitContainer
+  dependsOn bootstrapRabbit
   dependsOn dockerRun
 }
 
