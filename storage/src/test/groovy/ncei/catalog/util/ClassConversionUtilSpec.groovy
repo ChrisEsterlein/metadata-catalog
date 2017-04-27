@@ -49,7 +49,7 @@ class ClassConversionUtilSpec extends Specification {
             "granule_metadata": "{blah: blah}",
             "granule_schema":"schema",
             "geometry" : "point(1.1, 1.1)",
-            "collection":["FOS"]
+            "collections":["FOS"]
     ]
 
     GranuleMetadata gm = new GranuleMetadata(granuleMetadata)

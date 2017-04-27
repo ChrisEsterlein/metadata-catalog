@@ -29,7 +29,7 @@ class GranuleMetadata {
   Integer granule_size
   String granule_metadata
   String geometry
-  List collection
+  List collections
 
   GranuleMetadata() {
     this.granule_id = UUIDs.timeBased()

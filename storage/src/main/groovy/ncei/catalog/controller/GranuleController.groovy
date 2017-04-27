@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletResponse
 
 @Slf4j
 @RestController
-@RequestMapping(value = '/')
+@RequestMapping(value = ['/', '/granules'])
 class GranuleController {
 
   @Autowired
@@ -61,7 +61,6 @@ class GranuleController {
     }
   }
 
-  //new end point
   @RequestMapping(value = "/granules", method = RequestMethod.GET)
   @ResponseBody
   Map listGranuleMetadata(@RequestParam Map params, HttpServletResponse response) {
@@ -98,10 +97,15 @@ class GranuleController {
 
   }
 
-//new endpoint
-  @RequestMapping(value = "/granules", method = [RequestMethod.POST, RequestMethod.PUT])
+  @RequestMapping(value = "/create", method = [RequestMethod.POST, RequestMethod.PUT])
   @ResponseBody
   Map saveGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
+    granuleService.save(granuleMetadata)
+  }
+
+  @RequestMapping(value = "/update", method = RequestMethod.PUT)
+  @ResponseBody
+  Map updateGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
     granuleService.save(granuleMetadata)
   }
 
