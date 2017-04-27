@@ -21,11 +21,17 @@ class SchemaController {
     @Autowired
     SchemaService schemaService
 
-    //new endpoint
-    @RequestMapping(value = "/create", method = [RequestMethod.POST, RequestMethod.PUT])
+
+    @RequestMapping(value = "/create", method = RequestMethod.POST)
     @ResponseBody
     Map saveMetadataSchema(@RequestBody MetadataSchema metadataSchema, HttpServletResponse response) {
       schemaService.save(metadataSchema)
+    }
+
+    @RequestMapping(value = "/update", method = RequestMethod.PUT)
+    @ResponseBody
+    Map updateMetadataSchema(@RequestBody MetadataSchema metadataSchema, HttpServletResponse response) {
+        schemaService.save(metadataSchema)
     }
 
     @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
