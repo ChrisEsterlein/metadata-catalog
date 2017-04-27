@@ -26,9 +26,6 @@ class GranuleController {
   @Autowired
   GranuleService granuleService
 
-  @Value('${purgeEnabled:false}')
-  Boolean purgeEnabled
-
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
@@ -88,7 +85,7 @@ class GranuleController {
   Map saveFileMetadata(@RequestBody FileMetadata fileMetadata, HttpServletResponse response) {
     log.info("Received post with params: $fileMetadata")
     GranuleMetadata granuleMetadata = ClassConversionUtil.convertToGranuleMetadata(fileMetadata)
-    Map results = granuleService.save(granuleMetadata)
+    Map results = granuleService.save(granuleMetadata, true)
     //convert to support old interface
     [
             totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
@@ -97,7 +94,7 @@ class GranuleController {
 
   }
 
-  @RequestMapping(value = "/create", method = [RequestMethod.POST, RequestMethod.PUT])
+  @RequestMapping(value = "/create", method = RequestMethod.POST)
   @ResponseBody
   Map saveGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
     granuleService.save(granuleMetadata)
@@ -132,34 +129,28 @@ class GranuleController {
 
   }
 
-  @RequestMapping(method=RequestMethod.DELETE)
+  @RequestMapping(value = "/purge", method=RequestMethod.DELETE)
   @ResponseBody
-  Map  purge(@RequestParam Map params, HttpServletResponse response) {
-    if (purgeEnabled) {
+  Map  purge(@RequestBody Map params, HttpServletResponse response) {
       try {
         Map content = granuleService.purge(params)
 
-        log.debug( "count deleted:${content.totalResultsDeleted} content.searchTerms:${content.searchTerms}" +
+        log.info( "count deleted:${content.totalResultsDeleted} content.searchTerms:${content.searchTerms}" +
                 " content.code:${content.code}")
         response.status = response.SC_OK
-        String msg = 'Successfully purged rows with dataset: ' + params.dataset
+        String msg = 'Successfully purged ' + content.totalResultsDeleted + ' rows matching ' + content.searchTerms
         content.message = msg
         content
 
       } catch (e) {
         def msg = params?.dataset ?
-                'failed to delete records for ' + params.dataset + ' from the metadata catalog' :
-                'please specify a dataset'
+                'failed to delete records for ' + params.dataset + ' from the metadata catalog'
+                : (params.granule_id ?
+                  'failed to delete records for ' + params.granule_id + ' from the metadata catalog'
+                    : 'please specify purge criteria')
         log.error(msg, e)
         response.status = response.SC_INTERNAL_SERVER_ERROR
         [message: msg]
       }
-    } else {
-      def msg = 'Purge access is denied'
-      log.error(msg)
-      response.status = response.SC_FORBIDDEN
-      [message: msg]
-    }
-
   }
 }
