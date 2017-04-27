@@ -88,9 +88,47 @@ class SchemaService {
 
   }
 
-  def delete(UUID schema_id){
-    Date timestamp = metadataSchemaRepository.findByMetadataId(schema_id as UUID).first().last_update as Date
-    def result = metadataSchemaRepository.deleteByMetadataId(schema_id , timestamp)
+  //This might need optimization.
+  Map purge(Map params){
+    Map purgeDetails = [:]
+    purgeDetails.searchTerms = params
+    int count = 0
+    Iterable<MetadataSchema> items
 
+    if(params.schema_id) {
+      items = metadataSchemaRepository.findByMetadataId(UUID.fromString(params.schema_id))
+      println "schemas found for purging: $items"
+    }
+    else{
+      purgeDetails.message = 'A [schema_id] parameter is required to purge'
+      purgeDetails.totalResultsDeleted = count
+      purgeDetails.code = HttpServletResponse.SC_BAD_REQUEST
+      return purgeDetails
+    }
+
+    items.each{
+      delete(it.schema_id, it.last_update)
+      count++
+    }
+
+    purgeDetails.totalResultsDeleted = count
+    purgeDetails.code = HttpServletResponse.SC_OK
+    purgeDetails
+  }
+
+  //if a timestamp is not defined, we want to delete the most recent one
+  //if a timestamp is defined, it means this method is being used to purge all rows with a common id
+  def delete(UUID schema_id, Date timestamp = null){
+    if(timestamp){
+      metadataSchemaRepository.deleteByMetadataIdAndLastUpdate(schema_id , timestamp)
+    }else{
+      Iterable<MetadataSchema> gm = metadataSchemaRepository.findByMetadataId(schema_id as UUID)
+      if(gm){
+        timestamp = gm.first().last_update as Date
+      }else{
+        throw RuntimeException("No such schema_id")
+      }
+      metadataSchemaRepository.deleteByMetadataIdAndLastUpdate(schema_id , timestamp)
+    }
   }
 }

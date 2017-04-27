@@ -10,7 +10,6 @@ import org.springframework.data.cassandra.mapping.Table
 @Table(value='MetadataSchema')
 class MetadataSchema {
 
-
     @PrimaryKeyColumn(name = "schema_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     UUID schema_id
 

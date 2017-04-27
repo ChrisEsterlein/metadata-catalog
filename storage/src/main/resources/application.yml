@@ -4,6 +4,7 @@ cassandra:
   port: '9042'
   contactPoints: 'localhost'
 
+purgeEnabled: true
 
 server:
   context-path: /metadata-catalog

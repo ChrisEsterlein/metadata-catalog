@@ -95,10 +95,48 @@ class CollectionService {
 
   }
 
-  def delete(UUID collection_id){
-    Date timestamp = collectionMetadataRepository.findByMetadataId(collection_id as UUID).first().last_update as Date
-    def result = collectionMetadataRepository.deleteByMetadataId(collection_id , timestamp)
+  //This might need optimization.
+  Map purge(Map params){
+    Map purgeDetails = [:]
+    purgeDetails.searchTerms = params
+    int count = 0
+    Iterable<CollectionMetadata> items
 
+    if(params.collection_id) {
+      items = collectionMetadataRepository.findByMetadataId(UUID.fromString(params.collection_id))
+    }
+    else{
+      purgeDetails.message = 'A [collection_id] parameter is required to purge'
+      purgeDetails.totalResultsDeleted = count
+      purgeDetails.code = HttpServletResponse.SC_BAD_REQUEST
+      return purgeDetails
+    }
+
+    items.each{
+      delete(it.collection_id, it.last_update)
+      count++
+    }
+
+    purgeDetails.totalResultsDeleted = count
+    purgeDetails.code = HttpServletResponse.SC_OK
+    purgeDetails
+  }
+
+  //if a timestamp is not defined, we want to delete the most recent one
+  //if a timestamp is defined, it means this method is being used to purge all rows with a common id
+  def delete(UUID collection_id, Date timestamp = null){
+    if(timestamp){
+      collectionMetadataRepository.deleteByMetadataIdAndLastUpdate(collection_id , timestamp)
+    }else{
+      Iterable<CollectionMetadata> gm = collectionMetadataRepository.findByMetadataId(collection_id as UUID)
+      if(gm){
+        //get the most recent one
+        timestamp = gm.first().last_update as Date
+      }else{
+        throw RuntimeException("No such collection_id")
+      }
+      collectionMetadataRepository.deleteByMetadataIdAndLastUpdate(collection_id , timestamp)
+    }
   }
   
 }

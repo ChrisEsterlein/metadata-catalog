@@ -143,17 +143,17 @@ class GranuleApiSpec extends Specification{
                 .body('granules[0].dataset', equalTo(postBody.dataset))
                 .body('granules[0].geometry', equalTo(postBody.geometry))
 
-        then: 'we can delete the original version too'
-        //delete it
+        then: 'we can delete all versions with purge'
+        //delete all with that granule_id
         RestAssured.given()
                 .body(deleteBody)
                 .contentType(ContentType.JSON)
             .when()
-                .delete('/delete')
+                .delete('/granules/purge')
             .then()
                 .assertThat()
                 .statusCode(200)
-                .body('message' as String, equalTo('Successfully deleted row with granule_id: ' + granule_id))
+                .body('message' as String, equalTo('Successfully purged 1 rows matching ' + deleteBody))
     }
 
 }
