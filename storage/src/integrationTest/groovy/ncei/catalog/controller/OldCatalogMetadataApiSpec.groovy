@@ -29,7 +29,7 @@ class OldCatalogMetadataApiSpec extends Specification {
     RestAssured.basePath = contextPath
   }
 
-  def 'saves metadata posted by the ingest metadata recorder'() {
+  def 'test old interfaces for metadata-recorder and etl'() {
     def postBody = [
         trackingId  : 'ABCD',
         filename    : 'myfile',
@@ -98,6 +98,107 @@ class OldCatalogMetadataApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+  }
+
+  def 'update by tracking id'() {
+    def postBody = [
+            trackingId  : 'ABCD',
+            filename    : 'myfile',
+            dataset     : 'test',
+            fileSize    : 42,
+            geometry    : 'POLYGON((0 0) (0 1) (1 1) (1 0))',
+            fileMetadata: 'this is some raw scraped metadata from a header or whatever'
+    ]
+
+    when: 'we post the same tracking id twice'
+    //save metadata - test for metadata-recorder
+    RestAssured.given()
+            .body(postBody)
+            .contentType(ContentType.JSON)
+          .when()
+            .post('/files')
+          .then()
+            .assertThat()
+            .statusCode(200)  //should be a 201
+            .body('trackingId', equalTo(postBody.trackingId))
+            .body('filename', equalTo(postBody.filename))
+            .body('fileSize', equalTo(postBody.fileSize))
+            .body('fileMetadata', equalTo(postBody.fileMetadata))
+            .body('dataset', equalTo(postBody.dataset))
+            .body('geometry', equalTo(postBody.geometry))
+
+    Map updatedPostBody = postBody.clone()
+    String updatedMetadata = 'different metadata'
+    updatedPostBody.fileMetadata = updatedMetadata
+
+    RestAssured.given()
+            .body(updatedPostBody)
+            .contentType(ContentType.JSON)
+          .when()
+            .post('/files')
+          .then()
+            .assertThat()
+            .statusCode(200)  //should be a 201
+            .body('trackingId', equalTo(updatedPostBody.trackingId))
+            .body('filename', equalTo(updatedPostBody.filename))
+            .body('fileSize', equalTo(updatedPostBody.fileSize))
+            .body('fileMetadata', equalTo(updatedPostBody.fileMetadata))
+            .body('dataset', equalTo(updatedPostBody.dataset))
+            .body('geometry', equalTo(updatedPostBody.geometry))
+
+    then: 'we can see that we updated by granule_id'
+    //get it using old endpoint - test for catalog-etl
+    RestAssured.given()
+            .param('dataset', 'test')
+            .param('versions', true)
+          .when()
+            .get('/files')
+          .then()
+            .assertThat()
+            .statusCode(200)
+    //first on is the newest
+            .body('items[0].trackingId', equalTo(updatedPostBody.trackingId))
+            .body('items[0].filename', equalTo(updatedPostBody.filename))
+            .body('items[0].fileSize', equalTo(updatedPostBody.fileSize))
+            .body('items[0].fileMetadata', equalTo(updatedPostBody.fileMetadata))
+            .body('items[0].dataset', equalTo(updatedPostBody.dataset))
+            .body('items[0].geometry', equalTo(updatedPostBody.geometry))
+    //second is the original
+            .body('items[1].trackingId', equalTo(postBody.trackingId))
+            .body('items[1].filename', equalTo(postBody.filename))
+            .body('items[1].fileSize', equalTo(postBody.fileSize))
+            .body('items[1].fileMetadata', equalTo(postBody.fileMetadata))
+            .body('items[1].dataset', equalTo(postBody.dataset))
+            .body('items[1].geometry', equalTo(postBody.geometry))
+
+    //get it back out using new endpoint so we can get the granule_id we need to delete it
+    String granule_id = RestAssured.given()
+            .param('dataset', 'test')
+          .when()
+            .get('/granules')
+          .then()
+            .assertThat()
+            .statusCode(200)
+            .body('granules[0].filename', equalTo(updatedPostBody.filename))
+            .body('granules[0].granule_size', equalTo(updatedPostBody.fileSize))
+            .body('granules[0].granule_metadata', equalTo(updatedPostBody.fileMetadata))
+            .body('granules[0].geometry', equalTo(updatedPostBody.geometry))
+          .extract()
+            .path('granules[0].granule_id' as String)
+
+    def deleteBody = [granule_id: granule_id]
+
+    //purge all it
+    RestAssured.given()
+            .body(deleteBody)
+            .contentType(ContentType.JSON)
+          .when()
+            .delete('/granules/purge')
+          .then()
+            .assertThat()
+            .statusCode(200)
+            .body('message' as String, equalTo('Successfully purged 2 rows matching ' + deleteBody))
+
   }
 
 }

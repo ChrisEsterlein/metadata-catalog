@@ -1,5 +1,6 @@
 package ncei.catalog.service
 
+import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,8 +13,15 @@ class GranuleService {
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
-  Map save(GranuleMetadata granuleMetadata){
+  Map save(GranuleMetadata granuleMetadata, Boolean updateByTrackingId = false){
     Map saveDetails = [:]
+
+    if(updateByTrackingId){
+      Iterable<GranuleMetadata> latest = granuleMetadataRepository.findByTrackingId(granuleMetadata.tracking_id)
+      if(latest){
+        granuleMetadata.granule_id = latest.first().granule_id
+      }
+    }
 
     //get existing row if there is one
     Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
@@ -29,37 +37,9 @@ class GranuleService {
       saveDetails.recordsCreated =  1
       saveDetails.code = HttpServletResponse.SC_CREATED
     }
-
     saveDetails
   }
 
-  //This might need optimization.
-  //You cant delete anything without the primary key, so we first have to find rows with matching dataset
-  Map purge(Map params){
-    Map purgeDetails = [:]
-    purgeDetails.searchTerms = params
-    String dataset
-    int count = 0
-
-    if(!params.dataset) {
-      purgeDetails.message = 'A [dataset] parameter is required to purge'
-      purgeDetails.totalResultsDeleted = count
-      purgeDetails.code = HttpServletResponse.SC_BAD_REQUEST
-      return purgeDetails
-    }else{
-      dataset = params.dataset
-    }
-
-    List items = granuleMetadataRepository.findByDataset(dataset)
-    items.each{
-      granuleMetadataRepository.delete(it.tracking_id)
-      count++
-    }
-
-    purgeDetails.totalResultsDeleted = count
-    purgeDetails.code = HttpServletResponse.SC_OK
-    purgeDetails
-  }
 
   List<GranuleMetadata> list(Map params){
     Boolean versions = params?.versions
@@ -99,11 +79,9 @@ class GranuleService {
     }else{
       metadataList = getMostRecent(allResults, startTime)
     }
-
     metadataList
   }
 
-  //complexity O(n)
   List<GranuleMetadata> getMostRecent(Iterable<GranuleMetadata> allResults, Date startTime = new Date(0 as long)){
     Map<String, GranuleMetadata> granuleMetadataMap = [:]
     List<GranuleMetadata> mostRecent
@@ -123,18 +101,47 @@ class GranuleService {
       value
     }
     mostRecent
-
   }
 
-  def delete(UUID granule_id){
-    Date timestamp
-    Iterable<GranuleMetadata> gm = granuleMetadataRepository.findByMetadataId(granule_id as UUID)
-    if(gm){
-      timestamp = gm.first().last_update as Date
-    }else{
-      throw RuntimeException("No such granule_id")
+  //This might need optimization.
+  Map purge(Map params){
+    Map purgeDetails = [:]
+    purgeDetails.searchTerms = params
+    int count = 0
+    Iterable<GranuleMetadata> items
+
+    if(params.granule_id) {
+      items = granuleMetadataRepository.findByMetadataId(UUID.fromString(params.granule_id))
     }
-    granuleMetadataRepository.deleteByMetadataId(granule_id , timestamp)
+    else{
+      purgeDetails.message = 'A [dataset] or [granule_id] parameter is required to purge'
+      purgeDetails.totalResultsDeleted = count
+      purgeDetails.code = HttpServletResponse.SC_BAD_REQUEST
+      return purgeDetails
+    }
+
+    items.each{
+      delete(it.granule_id, it.last_update)
+      count++
+    }
+
+    purgeDetails.totalResultsDeleted = count
+    purgeDetails.code = HttpServletResponse.SC_OK
+    purgeDetails
+  }
+
+  def delete(UUID granule_id, Date timestamp = null){
+    if(timestamp){
+      granuleMetadataRepository.deleteByMetadataIdAndLastUpdate(granule_id , timestamp)
+    }else{
+      Iterable<CollectionMetadata> gm = granuleMetadataRepository.findByMetadataId(granule_id as UUID)
+      if(gm){
+        timestamp = gm.first().last_update as Date
+      }else{
+        throw RuntimeException("No such granule_id")
+      }
+      granuleMetadataRepository.deleteByMetadataIdAndLastUpdate(granule_id , timestamp)
+    }
   }
 
 }

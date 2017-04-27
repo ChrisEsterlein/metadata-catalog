@@ -27,6 +27,6 @@ interface CollectionMetadataRepository extends CassandraRepository<CollectionMet
   Iterable<CollectionMetadata> findLatestByMetadataId(UUID collection_id)
 
   @Query("DELETE FROM CollectionMetadata WHERE collection_id =?0 AND last_update=?1")
-  Iterable<CollectionMetadata> deleteByMetadataId(UUID id, Date lastUpdate)
+  Iterable<CollectionMetadata> deleteByMetadataIdAndLastUpdate(UUID id, Date lastUpdate)
 
 }

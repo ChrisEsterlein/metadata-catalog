@@ -28,6 +28,6 @@ interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
   Iterable<MetadataSchema> findLatestByMetadataId(UUID schema_id)
 
   @Query("DELETE FROM MetadataSchema WHERE schema_id =?0 AND last_update=?1")
-  Iterable<MetadataSchema> deleteByMetadataId(UUID id, Date lastUpdate)
+  Iterable<MetadataSchema> deleteByMetadataIdAndLastUpdate(UUID id, Date lastUpdate)
 
 }

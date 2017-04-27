@@ -55,11 +55,20 @@ task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'do
   expand(jar: "${project.name}-${project.version}.jar")
 }
 
+def getDateTime() {
+  return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
+}
+
 task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
   dependsOn dockerFile
   dependsOn bootRepackage
   executable "sh"
-  args "-c", "docker build -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+  args "-c", "docker build --no-cache \
+    --label ncei.${rootProject.name}-version=${project.version} \
+    --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
+    --label ncei.${rootProject.name}-name=${project.ext.applicationContainerName} \
+    --label ncei.${rootProject.name}-vendor=NCEI \
+    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
 task cleanDockerComposeYml(type:Delete, description: 'Remove generated docker-compose.yml.', group: 'docker') {

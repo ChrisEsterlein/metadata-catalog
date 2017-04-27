@@ -138,15 +138,15 @@ class CollectionApiSpec extends Specification{
                 .body('collections[0].geometry', equalTo(postBody.geometry))
 
         then: 'we can delete the original version too'
-        //delete it
+        //delete all with that granule_id
         RestAssured.given()
                 .body(deleteBody)
                 .contentType(ContentType.JSON)
             .when()
-                .delete('/collections/delete')
+                .delete('/collections/purge')
             .then()
                 .assertThat()
                 .statusCode(200)
-                .body('message' as String, equalTo('Successfully deleted row with collection_id: ' + collection_id))
+                .body('message' as String, equalTo('Successfully purged 1 rows matching ' + deleteBody))
     }
 }

@@ -118,15 +118,15 @@ class ShemaApiSpec extends Specification{
                 .body('schemas[0].json_schema', equalTo(postBody.json_schema))
 
         then: 'we can delete the original version too'
-        //delete it
+        //delete all with that schema_id
         RestAssured.given()
                 .body(deleteBody)
                 .contentType(ContentType.JSON)
             .when()
-                .delete('/schemas/delete')
+                .delete('/schemas/purge')
             .then()
                 .assertThat()
                 .statusCode(200)
-                .body('message' as String, equalTo('Successfully deleted row with schema_id: ' + schema_id))
+                .body('message' as String, equalTo('Successfully purged 1 rows matching ' + deleteBody))
     }
 }

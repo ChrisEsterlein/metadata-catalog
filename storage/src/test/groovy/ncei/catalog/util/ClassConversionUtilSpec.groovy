@@ -27,7 +27,6 @@ class ClassConversionUtilSpec extends Specification {
     when:
     GranuleMetadata resultingGm = ClassConversionUtil.convertToGranuleMetadata(fm)
 
-    println "the result $resultingGm"
     then:
     assert resultingGm.tracking_id == fileMetadata.trackingId
     assert resultingGm.dataset == fileMetadata.dataset
@@ -57,7 +56,6 @@ class ClassConversionUtilSpec extends Specification {
     when:
     FileMetadata resultingFm = ClassConversionUtil.convertToFileMetadata(gm)
 
-    println "result $resultingFm"
     then:
     assert resultingFm.trackingId == granuleMetadata.tracking_id
     assert resultingFm.dataset == granuleMetadata.dataset

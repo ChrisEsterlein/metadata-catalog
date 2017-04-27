@@ -24,14 +24,14 @@ class CollectionController {
     collectionService.save(collectionMetadata)
   }
 
-  @RequestMapping(value = "/update", method =RequestMethod.PUT)
+  @RequestMapping(value = "/update", method = RequestMethod.PUT)
   @ResponseBody
   Map updateCollectionMetadata(@RequestBody CollectionMetadata  collectionMetadata, HttpServletResponse response) {
     //need try/catch
     collectionService.save(collectionMetadata)
   }
 
-  @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
+  @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
   @ResponseBody
   Map deleteEntry(@RequestBody CollectionMetadata collectionMetadata, HttpServletResponse response ){
     try {
@@ -75,4 +75,30 @@ class CollectionController {
     }
 
   }
+  
+  @RequestMapping(value = "/purge", method=RequestMethod.DELETE)
+  @ResponseBody
+  Map  purge(@RequestBody Map params, HttpServletResponse response) {
+
+    try {
+      Map content = collectionService.purge(params)
+
+      log.info( "count deleted:${content.totalResultsDeleted} content.searchTerms:${content.searchTerms}" +
+              " content.code:${content.code}")
+      response.status = response.SC_OK
+      String msg = 'Successfully purged ' + content.totalResultsDeleted + ' rows matching ' + content.searchTerms
+      content.message = msg
+      content
+
+    } catch (e) {
+      def msg = params.collection_id ?
+              'failed to delete records for ' + params.collection_id + ' from the metadata catalog'
+              : 'please specify purge criteria'
+      log.error(msg, e)
+      response.status = response.SC_INTERNAL_SERVER_ERROR
+      [message: msg]
+    }
+
+  }
+  
 }

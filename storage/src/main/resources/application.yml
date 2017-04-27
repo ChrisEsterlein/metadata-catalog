@@ -4,6 +4,5 @@ cassandra:
   port: '9042'
   contactPoints: 'localhost'
 
-
 server:
   context-path: /metadata-catalog
