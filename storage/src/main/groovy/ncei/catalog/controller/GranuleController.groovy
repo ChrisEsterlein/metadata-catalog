@@ -26,9 +26,6 @@ class GranuleController {
   @Autowired
   GranuleService granuleService
 
-  @Value('${purgeEnabled:false}')
-  Boolean purgeEnabled
-
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
