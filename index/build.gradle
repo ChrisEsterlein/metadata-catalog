@@ -93,7 +93,7 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
   executable "sh"
   // sets the environment variable elasticsearch_host to override application.yml
   // sets the environment variable rabbitmq_connectionfactory_host to override application.yml
-  args "-c", "docker run -d --network ${project.name}_net -e rabbitmq_connectionfactory_host=rabbitmq -e elasticsearch_host=es_hostname --link ${project.ext.elasticsearchContainerName}:elasticsearch --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
+  args "-c", "docker run -d --network ${project.name}_net -e rabbitmq_connectionfactory_host=rabbitmq -e elasticsearch_host=es_hostname --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
 task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
