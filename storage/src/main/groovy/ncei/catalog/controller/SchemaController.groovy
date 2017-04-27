@@ -56,7 +56,6 @@ class SchemaController {
       }
     }
 
-    //new end point
     @RequestMapping(method = RequestMethod.GET)
     @ResponseBody
     Map listMetadataSchema(@RequestParam Map params, HttpServletResponse response) {

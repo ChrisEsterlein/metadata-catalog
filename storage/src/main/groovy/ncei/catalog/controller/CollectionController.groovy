@@ -17,7 +17,6 @@ class CollectionController {
   @Autowired
   CollectionService collectionService
 
-  //new endpoint
   @RequestMapping(value = "/create", method = RequestMethod.POST)
   @ResponseBody
   Map saveCollectionMetadata(@RequestBody CollectionMetadata  collectionMetadata, HttpServletResponse response) {
@@ -25,7 +24,6 @@ class CollectionController {
     collectionService.save(collectionMetadata)
   }
 
-  //new endpoint
   @RequestMapping(value = "/update", method =RequestMethod.PUT)
   @ResponseBody
   Map updateCollectionMetadata(@RequestBody CollectionMetadata  collectionMetadata, HttpServletResponse response) {
