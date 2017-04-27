@@ -10,21 +10,21 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class ConsumerConfig extends RabbitConfig {
-  protected final String queueName = 'index-consumer'
+  final static String queueName = 'index-consumer'
 
   @Autowired
   private ConsumerHandler scrapingResultHandler
 
   @Bean
   Queue listenerQueue() {
-    new Queue(this.queueName, true, false, true)
+    new Queue(queueName, true, false, true)
   }
 
   @Bean
   RabbitTemplate rabbitTemplate() {
     RabbitTemplate template = new RabbitTemplate(connectionFactory())
-    template.setRoutingKey(this.queueName)
-    template.setQueue(this.queueName)
+    template.setRoutingKey(queueName)
+    template.setQueue(queueName)
     template.setMessageConverter(jsonMessageConverter())
     template
   }
@@ -33,7 +33,7 @@ class ConsumerConfig extends RabbitConfig {
   SimpleMessageListenerContainer listenerContainer() {
     SimpleMessageListenerContainer container = new SimpleMessageListenerContainer()
     container.setConnectionFactory(connectionFactory())
-    container.setQueueNames(this.queueName)
+    container.setQueueNames(queueName)
     container.setMessageListener(messageListenerAdapter())
     container
   }
