@@ -5,11 +5,9 @@ import ncei.catalog.amqp.ConsumerConfig
 import ncei.catalog.amqp.ConsumerMessage
 import ncei.catalog.model.Metadata
 import ncei.catalog.repository.MetadataRepository
-import org.mockito.MockitoAnnotations
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -25,18 +23,18 @@ class IndexRabbitApiSpec extends Specification {
   @Autowired
   RabbitTemplate rabbitTemplate
 
-  @Ignore
   def 'rabbit save to elastic search works' () {
     setup:
+    def metadata = new Metadata(id:'1', dataset: 'testDataset', fileName: 'testFileName')
     ConsumerMessage message = new ConsumerMessage()
     message.setTask('save')
-    message.setMetadata(new Metadata(id:'1', dataset: 'testDataset', fileName: 'testFileName'))
+    message.setMetadata(metadata)
 
     when:
     rabbitTemplate.convertAndSend(ConsumerConfig.queueName, message)
 
     then:
-    repository.save(message.metadata) == "{id:'1'}"
+    repository.save(message.metadata) == metadata
   }
 }
 
