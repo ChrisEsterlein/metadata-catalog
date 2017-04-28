@@ -55,7 +55,7 @@ class GranuleApiSpec extends Specification{
             .body('newRecord.geometry', equalTo(postBody.geometry))
 
         then: 'we can select it back out and get the granule_id' //granule_id is also returned in post response
-        String granule_id = RestAssured.given()
+        Map granuleMetdata = RestAssured.given()
                 .contentType(ContentType.JSON)
             .when()
                 .get('/granules')
@@ -68,14 +68,13 @@ class GranuleApiSpec extends Specification{
                 .body('granules[0].dataset', equalTo(postBody.dataset))
                 .body('granules[0].geometry', equalTo(postBody.geometry))
             .extract()
-                .path('granules[0].granule_id')
+                .path('granules[0]')
 
         when: 'we update the postBody with the granule_id and new metadata'
 
         String updatedMetadata = "different metadata"
-        Map updatedPostBody = postBody.clone() as Map
+        Map updatedPostBody = granuleMetdata.clone() as Map
         updatedPostBody.granule_metadata = updatedMetadata
-        updatedPostBody.granule_id = granule_id
 
         then: 'we can update it (create a new version)'
         RestAssured.given()
@@ -116,7 +115,7 @@ class GranuleApiSpec extends Specification{
 
 
         then: 'submit the delete body to delete the latest version'
-        def deleteBody = [granule_id: granule_id]
+        def deleteBody = [granule_id: updatedPostBody.granule_id]
 
         //delete it
         RestAssured.given()
@@ -127,7 +126,7 @@ class GranuleApiSpec extends Specification{
             .then()
                 .assertThat()
                 .statusCode(200)
-                .body('message' as String, equalTo('Successfully deleted row with granule_id: ' + granule_id))
+                .body('message' as String, equalTo('Successfully deleted row with granule_id: ' + updatedPostBody.granule_id))
 
         and: 'we can select the previous version back out'
         RestAssured.given()

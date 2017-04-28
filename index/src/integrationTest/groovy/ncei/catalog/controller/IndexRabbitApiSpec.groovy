@@ -23,9 +23,13 @@ class IndexRabbitApiSpec extends Specification {
   @Autowired
   RabbitTemplate rabbitTemplate
 
-  def 'rabbit save to elastic search works' () {
+  void setup() {
+    repository.deleteAll()
+  }
+
+  def 'rabbit save to elastic search works'() {
     setup:
-    def metadata = new Metadata(id:'1', dataset: 'testDataset', fileName: 'testFileName')
+    def metadata = new Metadata(id: '1', dataset: 'testDataset', fileName: 'testFileName')
     ConsumerMessage message = new ConsumerMessage()
     message.setTask('save')
     message.setMetadata(metadata)

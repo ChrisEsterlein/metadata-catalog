@@ -30,8 +30,14 @@ class SchemaController {
 
     @RequestMapping(value = "/update", method = RequestMethod.PUT)
     @ResponseBody
-    Map updateMetadataSchema(@RequestBody MetadataSchema metadataSchema, HttpServletResponse response) {
-        schemaService.save(metadataSchema)
+    Map updateMetadataSchema(@RequestBody Map metadataSchema, HttpServletResponse response) {
+        if(metadataSchema?.schema_id && metadataSchema?.last_update){
+            metadataSchema.last_update = new Date(metadataSchema.last_update as Long)
+            metadataSchema.schema_id = UUID.fromString(metadataSchema.schema_id)
+            schemaService.save(new MetadataSchema(metadataSchema))
+        }else{
+            return ['message': 'To update a record you must provide a schema_id and the last_update field from the previous version']
+        }
     }
 
     @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
