@@ -114,7 +114,7 @@ task dockerRemove(type:Exec, description: 'Removes the application container.', 
 task startElasticsearchContainer(type:Exec, description: 'Starts the Elasticsearch container.', group: 'docker') {
   dependsOn dockerNetwork
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && docker run -d --network ${project.name}_net --net-alias es_hostname --name ${project.ext.elasticsearchContainerName} elasticsearch:2.4.0"
+  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && docker run -d --network ${project.name}_net --net-alias es_hostname --publish 9300:9300 --publish 9200:9200 --name ${project.ext.elasticsearchContainerName} elasticsearch:2.4.0"
 }
 
 task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
@@ -126,7 +126,7 @@ task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elastic
 task startRabbitContainer(type:Exec, description: 'Starts the Rabbit container.', group: 'docker') {
   dependsOn dockerNetwork
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && docker run -d --network ${project.name}_net --net-alias rabbitmq --publish 5672:5672 --publish 15672:15672 --name ${project.ext.rabbitContainerName} rabbitmq:latest"
+  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && docker run -d --network ${project.name}_net --net-alias rabbitmq --publish 5672:5672 --publish 15672:15672 --expose 5672 --name ${project.ext.rabbitContainerName} rabbitmq:latest"
 }
 
 task waitForRabbit(type:Exec, description: 'Waits for Rabbit to be available.', group: 'docker') {
@@ -190,7 +190,7 @@ sourceSets {
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
   dependsOn startElasticsearchContainer
-  dependsOn startRabbitContainer
+  dependsOn bootstrapRabbit
   finalizedBy removeRabbitContainer
   finalizedBy removeElasticsearchContainer
 
