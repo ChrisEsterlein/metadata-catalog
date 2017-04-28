@@ -19,17 +19,23 @@ class SchemaService {
       //get existing row if there is one
       Iterable<MetadataSchema> result = metadataSchemaRepository.findByMetadataId(metadataSchema.schema_id)
 
-      saveDetails.newRecord = metadataSchemaRepository.save(metadataSchema)
-
       //if we have a result, we want to let the user know it 'updated'
       if(result){
-        saveDetails.totalResultsUpdated = 1
-        saveDetails.code = HttpServletResponse.SC_OK
-
+        if(result.first().last_update != metadataSchema.last_update){
+          saveDetails.message = 'You are not editing the most recent version.'
+          saveDetails.code = HttpServletResponse.SC_CONFLICT
+          return saveDetails
+        }else{
+          metadataSchema.last_update = new Date()
+          saveDetails.totalResultsUpdated = 1
+          saveDetails.code = HttpServletResponse.SC_OK
+        }
       }else{ //create a new one
         saveDetails.recordsCreated = 1
         saveDetails.code = HttpServletResponse.SC_CREATED
       }
+
+    saveDetails.newRecord = metadataSchemaRepository.save(metadataSchema)
 
     saveDetails
   }

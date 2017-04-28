@@ -1,5 +1,6 @@
 package ncei.catalog.service
 
+import groovy.util.logging.Slf4j
 import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
@@ -7,39 +8,54 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import javax.servlet.http.HttpServletResponse
 
+@Slf4j
 @Component
 class GranuleService {
 
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
-  Map save(GranuleMetadata granuleMetadata, Boolean updateByTrackingId = false){
+  Map save(GranuleMetadata granuleMetadata, Boolean isLegacyEndpoint = false){
     Map saveDetails = [:]
 
-    if(updateByTrackingId){
+    //to update by the old primary key, tracking_id
+    if(isLegacyEndpoint){
       Iterable<GranuleMetadata> latest = granuleMetadataRepository.findByTrackingId(granuleMetadata.tracking_id)
       if(latest){
-        granuleMetadata.granule_id = latest.first().granule_id
+        GranuleMetadata existingRecord = latest.first()
+        granuleMetadata.granule_id = existingRecord.granule_id
+        granuleMetadata.last_update = existingRecord.last_update
       }
     }
 
     //get existing row if there is one
     Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
 
-    saveDetails.newRecord = granuleMetadataRepository.save(granuleMetadata)
-
+    //build response, set update time
     //if we have a result, we want to let the user know it 'updated'
     if(result){
-      saveDetails.totalResultsUpdated = 1
-      saveDetails.code = HttpServletResponse.SC_OK
-
+        // only allow updating on the most recent version
+        // except for metadata-recorder because it doesn't post last_update
+      if(result.first().last_update != granuleMetadata.last_update && !isLegacyEndpoint){
+        saveDetails.message = 'You are not editing the most recent version.'
+        saveDetails.code = HttpServletResponse.SC_CONFLICT
+        return saveDetails
+      }else{
+        granuleMetadata.last_update = new Date()
+        saveDetails.totalResultsUpdated = 1
+        saveDetails.code = HttpServletResponse.SC_OK
+      }
     }else{ //create a new one
+      granuleMetadata.last_update = new Date()
       saveDetails.recordsCreated =  1
       saveDetails.code = HttpServletResponse.SC_CREATED
     }
+
+    //save the record
+    saveDetails.newRecord = granuleMetadataRepository.save(granuleMetadata)
+
     saveDetails
   }
-
 
   List<GranuleMetadata> list(Map params){
     Boolean versions = params?.versions
@@ -130,6 +146,8 @@ class GranuleService {
     purgeDetails
   }
 
+  //if a timestamp is not defined, we want to delete the most recent one
+  //if a timestamp is defined, it means this method is being used to purge all rows with a common id
   def delete(UUID granule_id, Date timestamp = null){
     if(timestamp){
       granuleMetadataRepository.deleteByMetadataIdAndLastUpdate(granule_id , timestamp)
