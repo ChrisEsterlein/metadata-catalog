@@ -55,7 +55,7 @@ task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'do
   expand(jar: "${project.name}-${project.version}.jar")
 }
 
-def getDateTime() {
+static def getDateTime() {
   return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
 }
 
@@ -102,7 +102,12 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
   executable "sh"
   // sets the environment variable elasticsearch_host to override application.yml
   // sets the environment variable rabbitmq_connectionfactory_host to override application.yml
-  args "-c", "docker run -d --network ${project.name}_net -e rabbitmq_connectionfactory_host=rabbitmq -e elasticsearch_host=es_hostname --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
+  args "-c", "docker run -d \
+    --network ${project.name}_net \
+    -e rabbitmq_connectionfactory_host=rabbitmq \
+    -e elasticsearch_host=es_hostname \
+    --name ${project.ext.applicationContainerName} \
+    ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
 task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
@@ -114,7 +119,14 @@ task dockerRemove(type:Exec, description: 'Removes the application container.', 
 task startElasticsearchContainer(type:Exec, description: 'Starts the Elasticsearch container.', group: 'docker') {
   dependsOn dockerNetwork
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && docker run -d --network ${project.name}_net --net-alias es_hostname --publish 9300:9300 --publish 9200:9200 --name ${project.ext.elasticsearchContainerName} elasticsearch:2.4.0"
+  args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && \
+    docker run -d \
+    --network ${project.name}_net \
+    --net-alias es_hostname \
+    --publish 9300:9300 \
+    --publish 9200:9200 \
+    --name ${project.ext.elasticsearchContainerName} \
+    elasticsearch:2.4.0"
 }
 
 task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
@@ -126,13 +138,24 @@ task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elastic
 task startRabbitContainer(type:Exec, description: 'Starts the Rabbit container.', group: 'docker') {
   dependsOn dockerNetwork
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && docker run -d --network ${project.name}_net --net-alias rabbitmq --publish 5672:5672 --publish 15672:15672 --expose 5672 --name ${project.ext.rabbitContainerName} rabbitmq:latest"
+  args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && \
+    docker run -d \
+    --network ${project.name}_net \
+    --net-alias rabbitmq \
+    --publish 5672:5672 \
+    --publish 15672:15672 \
+    --name ${project.ext.rabbitContainerName} \
+    rabbitmq:latest"
 }
 
 task waitForRabbit(type:Exec, description: 'Waits for Rabbit to be available.', group: 'docker') {
   dependsOn startRabbitContainer
   executable "sh"
-  args "-c", "docker run --network ${project.name}_net --rm willwill/wait-for-it -h \$(docker inspect --format='{{ .NetworkSettings.Networks.${project.name}_net.IPAddress }}' ${project.ext.rabbitContainerName}) -p 5672 -t 30"
+  args "-c", "docker run \
+    --network ${project.name}_net \
+    --rm willwill/wait-for-it \
+    -h \$(docker inspect --format='{{ .NetworkSettings.Networks.${project.name}_net.IPAddress }}' ${project.ext.rabbitContainerName}) \
+    -p 5672 -t 30"
 }
 
 task bootstrapRabbit(type:Exec, description: 'Initializes Rabbit container.', group: 'docker') {

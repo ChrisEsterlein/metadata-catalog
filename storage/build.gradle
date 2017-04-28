@@ -54,7 +54,7 @@ task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'do
   expand(jar: "${project.name}-${project.version}.jar")
 }
 
-def getDateTime() {
+static def getDateTime() {
   return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
 }
 
@@ -75,7 +75,10 @@ assemble.dependsOn dockerImage
 task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
   executable "sh"
   // sets the environment variable cassandra_contactPoints to override application.yml
-  args "-c", "docker run -d -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) --name ${project.ext.applicationContainerName} ncei/${rootProject.name}-${project.name}:${project.version}"
+  args "-c", "docker run -d \
+    -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
+    -name ${project.ext.applicationContainerName} \
+    ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
 task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
@@ -85,19 +88,27 @@ task dockerRemove(type:Exec, description: 'Removes the application container.', 
 
 task startCassandraContainer(type:Exec, description: 'Starts the Cassandra container.', group: 'docker') {
   executable "sh"
-  args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true  && docker run -d --publish 9042:9042 --name ${project.ext.cassandraContainerName} cassandra"
+  args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true  && \
+    docker run -d \
+    --publish 9042:9042 \
+    --name ${project.ext.cassandraContainerName} \
+    cassandra"
 }
 
 task waitForCassandra(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
   dependsOn startCassandraContainer
   executable "sh"
-  args "-c", "docker run --rm willwill/wait-for-it -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) -p 9042 -t 30"
+  args "-c", "docker run \
+    --rm willwill/wait-for-it \
+    -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
+    -p 9042 -t 30"
 }
 
 task bootstrapCassandra(type:Exec, description: 'Initializes the keyspace and tables in the Cassandra container.', group: 'docker') {
   dependsOn waitForCassandra
   executable "sh"
-  args "-c", "docker exec -i ${project.ext.cassandraContainerName} cqlsh <<< \"\$(cat cql/createKeyspaceAndTables.cql)\""
+  args "-c", "docker exec -i \
+    ${project.ext.cassandraContainerName} cqlsh <<< \"\$(cat cql/createKeyspaceAndTables.cql)\""
 }
 
 task removeCassandraContainer(type:Exec, description: 'Cleans up the Cassandra container.', group: 'docker') {
