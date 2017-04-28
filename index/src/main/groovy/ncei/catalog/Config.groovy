@@ -1,5 +1,6 @@
 package ncei.catalog
 
+import groovy.util.logging.Slf4j
 import org.elasticsearch.client.Client
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
@@ -11,6 +12,7 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories
 
+@Slf4j
 @Configuration
 @EnableElasticsearchRepositories(basePackages = 'ncei.catalog.model')
 class Config {
@@ -38,6 +40,7 @@ class Config {
 */
     settingsBuilder.put('cluster.name', clusterName)
 //        settingsBuilder.put('path.data', tmpDir.toAbsolutePath().toString())
+    log.info "Elasticsearch repository cluster name = $clusterName"
     def client = TransportClient.builder().settings(settingsBuilder.build()).build()
 
     client.addTransportAddress(
