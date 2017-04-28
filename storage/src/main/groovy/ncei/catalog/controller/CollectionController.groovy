@@ -26,9 +26,15 @@ class CollectionController {
 
   @RequestMapping(value = "/update", method = RequestMethod.PUT)
   @ResponseBody
-  Map updateCollectionMetadata(@RequestBody CollectionMetadata  collectionMetadata, HttpServletResponse response) {
+  Map updateCollectionMetadata(@RequestBody Map  collectionMetadata, HttpServletResponse response) {
     //need try/catch
-    collectionService.save(collectionMetadata)
+    if(collectionMetadata?.collection_id && collectionMetadata?.last_update){
+      collectionMetadata.last_update = new Date(collectionMetadata.last_update as Long)
+      collectionMetadata.collection_id = UUID.fromString(collectionMetadata.collection_id)
+      collectionService.save(new CollectionMetadata(collectionMetadata))
+    }else{
+      return ['message': 'To update a record you must provide a collection_id and the last_update field from the previous version']
+    }
   }
 
   @RequestMapping(value = "/delete", method = RequestMethod.DELETE)

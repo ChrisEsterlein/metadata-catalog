@@ -19,17 +19,24 @@ class CollectionService {
       //get existing row if there is one
       Iterable<CollectionMetadata> result = collectionMetadataRepository.findByMetadataId(collectionMetadata.collection_id)
 
-      //save the row
-      saveDetails.newRecord = collectionMetadataRepository.save(collectionMetadata)
-
       //if we have a result, we want to let the user know it 'updated'
       if(result){
-        saveDetails.totalResultsUpdated = 1
-        saveDetails.code = HttpServletResponse.SC_OK
+        if(result.first().last_update != collectionMetadata.last_update){
+          saveDetails.message = 'You are not editing the most recent version.'
+          saveDetails.code = HttpServletResponse.SC_CONFLICT
+          return saveDetails
+        }else{
+          collectionMetadata.last_update = new Date()
+          saveDetails.totalResultsUpdated = 1
+          saveDetails.code = HttpServletResponse.SC_OK
+        }
       }else{ //create a new one
         saveDetails.recordsCreated = 1
         saveDetails.code = HttpServletResponse.SC_CREATED
       }
+
+    //save the row
+    saveDetails.newRecord = collectionMetadataRepository.save(collectionMetadata)
 
     saveDetails
   }

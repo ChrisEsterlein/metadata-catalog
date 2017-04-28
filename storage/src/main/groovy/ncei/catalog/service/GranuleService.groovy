@@ -16,30 +16,38 @@ class GranuleService {
   Map save(GranuleMetadata granuleMetadata, Boolean updateByTrackingId = false){
     Map saveDetails = [:]
 
+    //to update by the old primary key, tracking_id
     if(updateByTrackingId){
       Iterable<GranuleMetadata> latest = granuleMetadataRepository.findByTrackingId(granuleMetadata.tracking_id)
       if(latest){
-        granuleMetadata.granule_id = latest.first().granule_id
+        UUID existingId = latest.first().granule_id
+        granuleMetadata.granule_id = existingId
       }
     }
 
     //get existing row if there is one
     Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
 
-    saveDetails.newRecord = granuleMetadataRepository.save(granuleMetadata)
-
     //if we have a result, we want to let the user know it 'updated'
     if(result){
-      saveDetails.totalResultsUpdated = 1
-      saveDetails.code = HttpServletResponse.SC_OK
-
+      if(result.first().last_update != granuleMetadata.last_update){
+        saveDetails.message = 'You are not editing the most recent version.'
+        saveDetails.code = HttpServletResponse.SC_CONFLICT
+        return saveDetails
+      }else{
+        granuleMetadata.last_update = new Date()
+        saveDetails.totalResultsUpdated = 1
+        saveDetails.code = HttpServletResponse.SC_OK
+      }
     }else{ //create a new one
       saveDetails.recordsCreated =  1
       saveDetails.code = HttpServletResponse.SC_CREATED
     }
+
+    saveDetails.newRecord = granuleMetadataRepository.save(granuleMetadata)
+
     saveDetails
   }
-
 
   List<GranuleMetadata> list(Map params){
     Boolean versions = params?.versions
@@ -130,6 +138,8 @@ class GranuleService {
     purgeDetails
   }
 
+  //if a timestamp is not defined, we want to delete the most recent one
+  //if a timestamp is defined, it means this method is being used to purge all rows with a common id
   def delete(UUID granule_id, Date timestamp = null){
     if(timestamp){
       granuleMetadataRepository.deleteByMetadataIdAndLastUpdate(granule_id , timestamp)

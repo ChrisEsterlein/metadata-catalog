@@ -88,8 +88,10 @@ class GranuleController {
     Map results = granuleService.save(granuleMetadata, true)
     //convert to support old interface
     [
+            //recordsCreated -> totalResultsUpdated because that is what old catalog-metadata did
             totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
             code : results.code
+    //flatten the map because that is what old catalog-metadata did
     ] + (ClassConversionUtil.convertToFileMetadata(results.newRecord as GranuleMetadata)).asMap()
 
   }
@@ -102,8 +104,15 @@ class GranuleController {
 
   @RequestMapping(value = "/update", method = RequestMethod.PUT)
   @ResponseBody
-  Map updateGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
-    granuleService.save(granuleMetadata)
+  //we dont want to cast to a GranuleMetadata object here because granule_id and last_update will be instantiated by default
+  Map updateGranuleMetadata(@RequestBody Map granuleMetadata, HttpServletResponse response) {
+    if(granuleMetadata?.granule_id && granuleMetadata?.last_update){
+      granuleMetadata.last_update = new Date(granuleMetadata.last_update as Long)
+      granuleMetadata.granule_id = UUID.fromString(granuleMetadata.granule_id)
+      granuleService.save(new GranuleMetadata(granuleMetadata))
+    }else{
+      return ['message': 'To update a record you must provide a granule_id and the last_update field from the previous version']
+    }
   }
 
   @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
