@@ -1,5 +1,6 @@
 package ncei.catalog.service
 
+import groovy.util.logging.Slf4j
 import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
@@ -7,30 +8,35 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import javax.servlet.http.HttpServletResponse
 
+@Slf4j
 @Component
 class GranuleService {
 
   @Autowired
   GranuleMetadataRepository granuleMetadataRepository
 
-  Map save(GranuleMetadata granuleMetadata, Boolean updateByTrackingId = false){
+  Map save(GranuleMetadata granuleMetadata, Boolean isLegacyEndpoint = false){
     Map saveDetails = [:]
 
     //to update by the old primary key, tracking_id
-    if(updateByTrackingId){
+    if(isLegacyEndpoint){
       Iterable<GranuleMetadata> latest = granuleMetadataRepository.findByTrackingId(granuleMetadata.tracking_id)
       if(latest){
-        UUID existingId = latest.first().granule_id
-        granuleMetadata.granule_id = existingId
+        GranuleMetadata existingRecord = latest.first()
+        granuleMetadata.granule_id = existingRecord.granule_id
+        granuleMetadata.last_update = existingRecord.last_update
       }
     }
 
     //get existing row if there is one
     Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
 
+    //build response, set update time
     //if we have a result, we want to let the user know it 'updated'
     if(result){
-      if(result.first().last_update != granuleMetadata.last_update){
+        // only allow updating on the most recent version
+        // except for metadata-recorder because it doesn't post last_update
+      if(result.first().last_update != granuleMetadata.last_update && !isLegacyEndpoint){
         saveDetails.message = 'You are not editing the most recent version.'
         saveDetails.code = HttpServletResponse.SC_CONFLICT
         return saveDetails
@@ -40,10 +46,12 @@ class GranuleService {
         saveDetails.code = HttpServletResponse.SC_OK
       }
     }else{ //create a new one
+      granuleMetadata.last_update = new Date()
       saveDetails.recordsCreated =  1
       saveDetails.code = HttpServletResponse.SC_CREATED
     }
 
+    //save the record
     saveDetails.newRecord = granuleMetadataRepository.save(granuleMetadata)
 
     saveDetails

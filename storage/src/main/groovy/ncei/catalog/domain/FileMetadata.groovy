@@ -2,6 +2,7 @@ package ncei.catalog.domain
 
 class FileMetadata {
   String trackingId
+  String last_update
   String filename
   String dataset
   String type

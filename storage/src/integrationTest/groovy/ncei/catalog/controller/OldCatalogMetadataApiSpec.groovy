@@ -119,7 +119,7 @@ class OldCatalogMetadataApiSpec extends Specification {
             .post('/files')
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
+            .statusCode(200)  //should be 201
             .body('trackingId', equalTo(postBody.trackingId))
             .body('filename', equalTo(postBody.filename))
             .body('fileSize', equalTo(postBody.fileSize))
@@ -138,7 +138,7 @@ class OldCatalogMetadataApiSpec extends Specification {
             .post('/files')
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
+            .statusCode(200)  //should be a 200
             .body('trackingId', equalTo(updatedPostBody.trackingId))
             .body('filename', equalTo(updatedPostBody.filename))
             .body('fileSize', equalTo(updatedPostBody.fileSize))

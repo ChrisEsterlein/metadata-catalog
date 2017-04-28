@@ -83,7 +83,7 @@ class GranuleController {
   @RequestMapping(value="/files", method = [RequestMethod.POST, RequestMethod.PUT])
   @ResponseBody
   Map saveFileMetadata(@RequestBody FileMetadata fileMetadata, HttpServletResponse response) {
-    log.info("Received post with params: $fileMetadata")
+    log.info("Received post with params: ${fileMetadata.asMap()}")
     GranuleMetadata granuleMetadata = ClassConversionUtil.convertToGranuleMetadata(fileMetadata)
     Map results = granuleService.save(granuleMetadata, true)
     //convert to support old interface

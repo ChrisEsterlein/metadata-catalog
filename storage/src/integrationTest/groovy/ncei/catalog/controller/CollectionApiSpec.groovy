@@ -50,7 +50,7 @@ class CollectionApiSpec extends Specification{
                 .body('newRecord.type', equalTo(postBody.type))
 
         then: 'we can select it back out to get the collection_id'
-        String collection_id = RestAssured.given()
+        Map collectionMetdata = RestAssured.given()
                 .contentType(ContentType.JSON)
             .when()
                 .get('/collections')
@@ -63,14 +63,13 @@ class CollectionApiSpec extends Specification{
                 .body('collections[0].geometry', equalTo(postBody.geometry))
                 .body('collections[0].type', equalTo(postBody.type))
             .extract()
-                .path('collections[0].collection_id')
+                .path('collections[0]')
 
         when: 'we update the postBody with the collection_id and new metadata'
 
         String updatedMetadata = "different metadata"
-        Map updatedPostBody = postBody.clone() as Map
+        Map updatedPostBody = collectionMetdata.clone()
         updatedPostBody.collection_metadata = updatedMetadata
-        updatedPostBody.collection_id = collection_id
 
         then: 'we can update it (create a new version)'
         RestAssured.given()
@@ -110,7 +109,7 @@ class CollectionApiSpec extends Specification{
                 .body('collections[1].type', equalTo(postBody.type))
 
         then: 'submit the delete body to delete the latest version'
-        def deleteBody = [collection_id: collection_id]
+        def deleteBody = [collection_id: updatedPostBody.collection_id]
 
         //delete it
         RestAssured.given()
@@ -121,7 +120,7 @@ class CollectionApiSpec extends Specification{
             .then()
                 .assertThat()
                 .statusCode(200)
-                .body('message' as String, equalTo('Successfully deleted row with collection_id: ' + collection_id))
+                .body('message' as String, equalTo('Successfully deleted row with collection_id: ' + updatedPostBody.collection_id))
 
         and: 'we can select the previous version back out'
         RestAssured.given()

@@ -45,7 +45,7 @@ class ShemaApiSpec extends Specification{
                 .body('newRecord.json_schema', equalTo(postBody.json_schema))
 
         then: 'we can select it back out to get the schema_id'
-        String schema_id = RestAssured.given()
+        Map metadataSchema = RestAssured.given()
                 .contentType(ContentType.JSON)
             .when()
                 .get('/schemas')
@@ -55,14 +55,13 @@ class ShemaApiSpec extends Specification{
                 .body('schemas[0].schema_name', equalTo(postBody.schema_name))
                 .body('schemas[0].json_schema', equalTo(postBody.json_schema))
             .extract()
-                .path('schemas[0].schema_id')
+                .path('schemas[0]')
 
         when: 'we update the postBody with the schema_id and new metadata'
 
         String updatedMetadata = "different metadata"
-        Map updatedPostBody = postBody.clone() as Map
+        Map updatedPostBody = metadataSchema.clone()
         updatedPostBody.json_schema = updatedMetadata
-        updatedPostBody.schema_id = schema_id
 
         then: 'we can update it (create a new version)'
         RestAssured.given()
@@ -93,7 +92,7 @@ class ShemaApiSpec extends Specification{
                 .body('schemas[1].json_schema', equalTo(postBody.json_schema))
 
         then: 'submit the delete body to delete the latest version'
-        def deleteBody = [schema_id: schema_id]
+        def deleteBody = [schema_id: updatedPostBody.schema_id]
 
         //delete it
         RestAssured.given()
@@ -104,7 +103,7 @@ class ShemaApiSpec extends Specification{
             .then()
                 .assertThat()
                 .statusCode(200)
-                .body('message' as String, equalTo('Successfully deleted row with schema_id: ' + schema_id))
+                .body('message' as String, equalTo('Successfully deleted row with schema_id: ' + updatedPostBody.schema_id))
 
         and: 'we can select the previous version back out'
         RestAssured.given()
