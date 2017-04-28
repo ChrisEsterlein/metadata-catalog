@@ -1,0 +1,11 @@
+task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images.', group: 'docker') {
+  executable "sh" //TODO move to root project
+  args "-c", "docker rmi \$(docker images -aq --filter dangling=true) || true"
+
+  // to clean up all our custom images:
+  //docker rmi \$(docker images -aq --filter "label=ncei.metadata-catalog-vendor")
+}
+
+task clean {
+  dependsOn cleanDockerImages
+}
