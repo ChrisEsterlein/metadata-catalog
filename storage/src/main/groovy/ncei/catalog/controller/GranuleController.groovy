@@ -58,7 +58,25 @@ class GranuleController {
     }
   }
 
-  @RequestMapping(value = "/granules", method = RequestMethod.GET)
+
+//support old endpoint
+  @RequestMapping(value="/files", method = [RequestMethod.POST, RequestMethod.PUT])
+  @ResponseBody
+  Map saveFileMetadata(@RequestBody FileMetadata fileMetadata, HttpServletResponse response) {
+    log.info("Received post with params: ${fileMetadata.asMap()}")
+    GranuleMetadata granuleMetadata = ClassConversionUtil.convertToGranuleMetadata(fileMetadata)
+    Map results = granuleService.save(granuleMetadata, true)
+    //convert to support old interface
+    [
+            //recordsCreated -> totalResultsUpdated because that is what old catalog-metadata did
+            totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
+            code : results.code
+            //flatten the map because that is what old catalog-metadata did
+    ] + (ClassConversionUtil.convertToFileMetadata(results.newRecord as GranuleMetadata)).asMap()
+
+  }
+
+  @RequestMapping(method = RequestMethod.GET)
   @ResponseBody
   Map listGranuleMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
@@ -79,30 +97,13 @@ class GranuleController {
     }
   }
 
-//support old endpoint
-  @RequestMapping(value="/files", method = [RequestMethod.POST, RequestMethod.PUT])
-  @ResponseBody
-  Map saveFileMetadata(@RequestBody FileMetadata fileMetadata, HttpServletResponse response) {
-    log.info("Received post with params: ${fileMetadata.asMap()}")
-    GranuleMetadata granuleMetadata = ClassConversionUtil.convertToGranuleMetadata(fileMetadata)
-    Map results = granuleService.save(granuleMetadata, true)
-    //convert to support old interface
-    [
-            //recordsCreated -> totalResultsUpdated because that is what old catalog-metadata did
-            totalResultsUpdated: results?.recordsCreated ?: (results.totalResultsUpdated ?: 0),
-            code : results.code
-    //flatten the map because that is what old catalog-metadata did
-    ] + (ClassConversionUtil.convertToFileMetadata(results.newRecord as GranuleMetadata)).asMap()
-
-  }
-
-  @RequestMapping(value = "/create", method = RequestMethod.POST)
+  @RequestMapping(method = RequestMethod.POST)
   @ResponseBody
   Map saveGranuleMetadata(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response) {
     granuleService.save(granuleMetadata)
   }
 
-  @RequestMapping(value = "/update", method = RequestMethod.PUT)
+  @RequestMapping(method = RequestMethod.PUT)
   @ResponseBody
   //we dont want to cast to a GranuleMetadata object here because granule_id and last_update will be instantiated by default
   Map updateGranuleMetadata(@RequestBody Map granuleMetadata, HttpServletResponse response) {
@@ -115,7 +116,7 @@ class GranuleController {
     }
   }
 
-  @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
+  @RequestMapping(method=RequestMethod.DELETE)
   @ResponseBody
   Map deleteEntry(@RequestBody GranuleMetadata granuleMetadata, HttpServletResponse response ){
     try {
@@ -138,7 +139,7 @@ class GranuleController {
 
   }
 
-  @RequestMapping(value = "/purge", method=RequestMethod.DELETE)
+  @RequestMapping(method=RequestMethod.DELETE)
   @ResponseBody
   Map  purge(@RequestBody Map params, HttpServletResponse response) {
       try {

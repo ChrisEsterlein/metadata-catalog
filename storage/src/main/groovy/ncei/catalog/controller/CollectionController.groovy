@@ -17,14 +17,14 @@ class CollectionController {
   @Autowired
   CollectionService collectionService
 
-  @RequestMapping(value = "/create", method = RequestMethod.POST)
+  @RequestMapping(method = RequestMethod.POST)
   @ResponseBody
   Map saveCollectionMetadata(@RequestBody CollectionMetadata  collectionMetadata, HttpServletResponse response) {
     //need try/catch
     collectionService.save(collectionMetadata)
   }
 
-  @RequestMapping(value = "/update", method = RequestMethod.PUT)
+  @RequestMapping(method = RequestMethod.PUT)
   @ResponseBody
   Map updateCollectionMetadata(@RequestBody Map  collectionMetadata, HttpServletResponse response) {
     //need try/catch
@@ -37,7 +37,7 @@ class CollectionController {
     }
   }
 
-  @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
+  @RequestMapping(method = RequestMethod.DELETE)
   @ResponseBody
   Map deleteEntry(@RequestBody CollectionMetadata collectionMetadata, HttpServletResponse response ){
     try {
@@ -82,7 +82,7 @@ class CollectionController {
 
   }
   
-  @RequestMapping(value = "/purge", method=RequestMethod.DELETE)
+  @RequestMapping(value='/purge', method=RequestMethod.DELETE)
   @ResponseBody
   Map  purge(@RequestBody Map params, HttpServletResponse response) {
 

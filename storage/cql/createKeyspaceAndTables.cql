@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS GranuleMetadata (
     geometry text,
     granule_schema text,
     collections list<text>,
+    deleted boolean,
     PRIMARY KEY ((granule_id), last_update)
 ) with CLUSTERING order by (last_update desc);
 
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS CollectionMetadata (
     type text,
     collection_metadata text,
     geometry text,
+    deleted boolean,
     PRIMARY KEY ((collection_id), last_update)
 ) with CLUSTERING order by (last_update desc);
 
@@ -41,7 +43,8 @@ CREATE TABLE IF NOT EXISTS ServicesMetadata (
     service_name text,
     service_schema text,
     service_metadata text,
-    PRIMARY KEY (service_name, last_update)
+    deleted boolean,
+PRIMARY KEY (service_name, last_update)
 ) with CLUSTERING order by (last_update desc);
 
 DROP TABLE IF EXISTS MetadataSchema;
@@ -50,7 +53,8 @@ CREATE TABLE IF NOT EXISTS MetadataSchema (
     last_update timestamp,
     schema_name text,
     json_schema text,
-    PRIMARY KEY (schema_id, last_update)
+    deleted boolean,
+PRIMARY KEY (schema_id, last_update)
 ) with CLUSTERING order by (last_update desc);
 
 CREATE INDEX IF NOT EXISTS SchemaNameIndex ON MetadataSchema (schema_name);

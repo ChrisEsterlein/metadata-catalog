@@ -22,13 +22,13 @@ class SchemaController {
     SchemaService schemaService
 
 
-    @RequestMapping(value = "/create", method = RequestMethod.POST)
+    @RequestMapping(method = RequestMethod.POST)
     @ResponseBody
     Map saveMetadataSchema(@RequestBody MetadataSchema metadataSchema, HttpServletResponse response) {
       schemaService.save(metadataSchema)
     }
 
-    @RequestMapping(value = "/update", method = RequestMethod.PUT)
+    @RequestMapping(method = RequestMethod.PUT)
     @ResponseBody
     Map updateMetadataSchema(@RequestBody Map metadataSchema, HttpServletResponse response) {
         if(metadataSchema?.schema_id && metadataSchema?.last_update){
@@ -40,7 +40,7 @@ class SchemaController {
         }
     }
 
-    @RequestMapping(value = "/delete", method=RequestMethod.DELETE)
+    @RequestMapping(method=RequestMethod.DELETE)
     @ResponseBody
     Map deleteEntry(@RequestBody MetadataSchema metadataSchema, HttpServletResponse response ){
       try {
@@ -83,7 +83,7 @@ class SchemaController {
       }
   }
 
-    @RequestMapping(value = "/purge", method=RequestMethod.DELETE)
+    @RequestMapping(method=RequestMethod.DELETE)
     @ResponseBody
     Map  purge(@RequestBody Map params, HttpServletResponse response) {
 
