@@ -2,6 +2,9 @@ version: '3'
 services:
   es:
     image: elasticsearch:2.4.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
     networks:
       ${network}:
         aliases: []
