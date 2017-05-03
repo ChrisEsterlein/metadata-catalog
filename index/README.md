@@ -13,11 +13,15 @@ The following is required if not using the docker containers to run Elasticsearc
 1. Run ./gradlew index:bootrun to start this module
 1. Run ./gradlew index:dockerBootrun to start this module in containers
 
-##RABBITMQ
+##Saving via RABBITMQ
 Save metadata:
 Properties: content_type = application/json
-Payload: {"task":"save" , "metadata":{"id":"1", "dataset":"csb"}}
+Payload: {"task":"save", "metadata":{"id":"1", "dataset":"csb"}}
+
+##Searching via REST
+http://localhost:8088/index/search?q=dataset=csb
+The parameter is a simple query string as a parameter as a URI search as defined by Elastcisearch.
 
 ##Elasticsearch commands
-Search - in the index 'search_index' for parameter dataset of 'csb':
+URI Search - simple query string as a parameter
 http://localhost:9200/search_index/_search?q=dataset:csb

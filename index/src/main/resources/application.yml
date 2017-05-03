@@ -27,6 +27,7 @@ elasticsearch:
   port: 9300
   cluster:
     name: elasticsearch
+  hostName: http://localhost:9200
 
 rabbitmq:
   connectionfactory:
