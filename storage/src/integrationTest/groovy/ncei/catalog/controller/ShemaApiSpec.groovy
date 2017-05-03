@@ -44,7 +44,7 @@ class ShemaApiSpec extends Specification{
                 .body('newRecord.schema_name', equalTo(postBody.schema_name))
                 .body('newRecord.json_schema', equalTo(postBody.json_schema))
 
-        then: 'we can select it back out to get the schema_id'
+        then: 'we can list all records, get the id for the record we just created and use it to as a path variable'
         Map metadataSchema = RestAssured.given()
                 .contentType(ContentType.JSON)
             .when()
@@ -57,6 +57,16 @@ class ShemaApiSpec extends Specification{
             .extract()
                 .path('schemas[0]')
 
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+            .when()
+                .get("/schemas/${metadataSchema.schema_id}")
+            .then()
+                .assertThat()
+                .statusCode(200)  //should be a 201
+                .body('schemas[0].schema_name', equalTo(postBody.schema_name))
+                .body('schemas[0].json_schema', equalTo(postBody.json_schema))
+
         when: 'we update the postBody with the schema_id and new metadata'
 
         String updatedMetadata = "different metadata"
@@ -68,7 +78,7 @@ class ShemaApiSpec extends Specification{
                 .body(updatedPostBody)
                 .contentType(ContentType.JSON)
             .when()
-                .put('/schemas')
+                .put("/schemas/${metadataSchema.schema_id}")
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201

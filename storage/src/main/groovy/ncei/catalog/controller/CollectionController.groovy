@@ -24,7 +24,7 @@ class CollectionController {
     collectionService.save(collectionMetadata)
   }
 
-  @RequestMapping(method = RequestMethod.PUT)
+  @RequestMapping(value= "/{collectionId}", method = RequestMethod.PUT)
   @ResponseBody
   Map updateCollectionMetadata(@RequestBody Map  collectionMetadata, HttpServletResponse response) {
     //need try/catch
@@ -34,6 +34,50 @@ class CollectionController {
       collectionService.save(new CollectionMetadata(collectionMetadata))
     }else{
       return ['message': 'To update a record you must provide a collection_id and the last_update field from the previous version']
+    }
+  }
+
+  @RequestMapping(method = RequestMethod.GET)
+  @ResponseBody
+  Map listCollectionMetadata(@RequestParam Map params, HttpServletResponse response) {
+    try {
+      List results = collectionService.list(params)
+      [
+              collections : results,
+              searchTerms : params,
+              totalResults : results.size()
+      ]
+    }
+    catch (e) {
+      String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
+      // Place the error message into the returned content
+      def msg = 'Failing metadata catalog list request with: ' + exceptionMessage
+      log.error(msg, e)
+      response.status = response.SC_INTERNAL_SERVER_ERROR
+      [message: msg]
+    }
+
+  }
+
+  @RequestMapping(value= "/{collectionId}", method = RequestMethod.GET)
+  @ResponseBody
+  Map listCollectionMetadataById(@PathVariable collectionId, @RequestParam Map params, HttpServletResponse response) {
+    try {
+      params.collection_ids = collectionId
+      List results = collectionService.list(params)
+      [
+              collections : results,
+              searchTerms : params,
+              totalResults : results.size()
+      ]
+    }
+    catch (e) {
+      String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
+      // Place the error message into the returned content
+      def msg = 'Failing metadata catalog list request with: ' + exceptionMessage
+      log.error(msg, e)
+      response.status = response.SC_INTERNAL_SERVER_ERROR
+      [message: msg]
     }
   }
 
@@ -57,29 +101,6 @@ class CollectionController {
       response.status = response.SC_INTERNAL_SERVER_ERROR
       [message: msg]
     }
-  }
-
-  //new end point
-  @RequestMapping(method = RequestMethod.GET)
-  @ResponseBody
-  Map listCollectionMetadata(@RequestParam Map params, HttpServletResponse response) {
-    try {
-      List results = collectionService.list(params)
-      [
-        collections : results,
-        searchTerms : params,
-        totalResults : results.size()
-      ]
-    }
-    catch (e) {
-      String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
-      // Place the error message into the returned content
-      def msg = 'Failing metadata catalog list request with: ' + exceptionMessage
-      log.error(msg, e)
-      response.status = response.SC_INTERNAL_SERVER_ERROR
-      [message: msg]
-    }
-
   }
   
   @RequestMapping(value='/purge', method=RequestMethod.DELETE)

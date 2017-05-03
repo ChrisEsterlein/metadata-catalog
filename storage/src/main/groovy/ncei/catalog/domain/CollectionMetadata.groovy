@@ -25,6 +25,7 @@ class CollectionMetadata {
     String type
     String collection_metadata
     String geometry
+    Boolean deleted
 
     CollectionMetadata() {
         this.collection_id = UUIDs.timeBased()

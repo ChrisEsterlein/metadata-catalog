@@ -20,6 +20,7 @@ class MetadataSchema {
     String schema_name
 
     String json_schema
+    Boolean deleted
 
     MetadataSchema() {
         this.schema_id = UUIDs.timeBased()

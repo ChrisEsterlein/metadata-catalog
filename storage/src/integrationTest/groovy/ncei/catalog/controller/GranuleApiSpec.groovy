@@ -54,8 +54,8 @@ class GranuleApiSpec extends Specification{
             .body('newRecord.dataset', equalTo(postBody.dataset))
             .body('newRecord.geometry', equalTo(postBody.geometry))
 
-        then: 'we can select it back out and get the granule_id' //granule_id is also returned in post response
-        Map granuleMetdata = RestAssured.given()
+        then: 'we can list all records, get the id for the record we just created and use it to as a path variable'
+        Map granuleMetadata = RestAssured.given()
                 .contentType(ContentType.JSON)
             .when()
                 .get('/granules')
@@ -70,10 +70,23 @@ class GranuleApiSpec extends Specification{
             .extract()
                 .path('granules[0]')
 
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+            .when()
+                .get("/granules/${granuleMetadata.granule_id}")
+            .then()
+                .assertThat()
+                .statusCode(200)  //should be a 201
+                .body('granules[0].filename', equalTo(postBody.filename) )
+                .body('granules[0].granule_size', equalTo(postBody.granule_size))
+                .body('granules[0].granule_metadata', equalTo(postBody.granule_metadata))
+                .body('granules[0].dataset', equalTo(postBody.dataset))
+                .body('granules[0].geometry', equalTo(postBody.geometry))
+
         when: 'we update the postBody with the granule_id and new metadata'
 
         String updatedMetadata = "different metadata"
-        Map updatedPostBody = granuleMetdata.clone() as Map
+        Map updatedPostBody = granuleMetadata.clone() as Map
         updatedPostBody.granule_metadata = updatedMetadata
 
         then: 'we can update it (create a new version)'
@@ -81,7 +94,7 @@ class GranuleApiSpec extends Specification{
                 .body(updatedPostBody)
                 .contentType(ContentType.JSON)
             .when()
-                .put('/granules')
+                .put("/granules/${granuleMetadata.granule_id}")
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -93,10 +106,9 @@ class GranuleApiSpec extends Specification{
 
         and: 'we can get both version'
         RestAssured.given()
-                .param('dataset', 'test')
                 .param('versions', true)
             .when()
-                .get('/granules')
+                .get("/granules/${granuleMetadata.granule_id}")
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201

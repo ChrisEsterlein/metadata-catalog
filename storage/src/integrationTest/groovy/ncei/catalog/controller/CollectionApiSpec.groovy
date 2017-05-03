@@ -49,8 +49,8 @@ class CollectionApiSpec extends Specification{
                 .body('newRecord.geometry', equalTo(postBody.geometry))
                 .body('newRecord.type', equalTo(postBody.type))
 
-        then: 'we can select it back out to get the collection_id'
-        Map collectionMetdata = RestAssured.given()
+        then: 'we can list all collections, get the id for the record we just created and use it to as a path variable'
+        Map collectionMetadata = RestAssured.given()
                 .contentType(ContentType.JSON)
             .when()
                 .get('/collections')
@@ -65,10 +65,24 @@ class CollectionApiSpec extends Specification{
             .extract()
                 .path('collections[0]')
 
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+            .when()
+                .get("/collections/${collectionMetadata.collection_id}")
+            .then()
+                .assertThat()
+                .statusCode(200)  //should be a 201
+                .body('collections[0].collection_name', equalTo(postBody.collection_name))
+                .body('collections[0].collection_size', equalTo(postBody.collection_size))
+                .body('collections[0].collection_metadata', equalTo(postBody.collection_metadata))
+                .body('collections[0].geometry', equalTo(postBody.geometry))
+                .body('collections[0].type', equalTo(postBody.type))
+
+
         when: 'we update the postBody with the collection_id and new metadata'
 
         String updatedMetadata = "different metadata"
-        Map updatedPostBody = collectionMetdata.clone()
+        Map updatedPostBody = collectionMetadata.clone()
         updatedPostBody.collection_metadata = updatedMetadata
 
         then: 'we can update it (create a new version)'
@@ -76,7 +90,7 @@ class CollectionApiSpec extends Specification{
                 .body(updatedPostBody)
                 .contentType(ContentType.JSON)
             .when()
-                .put('/collections')
+                .put("/collections/${collectionMetadata.collection_id}")
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -88,10 +102,9 @@ class CollectionApiSpec extends Specification{
 
         and: 'we can get both versions'
         RestAssured.given()
-                .param('dataset', 'test')
                 .param('versions', true)
             .when()
-                .get('/collections')
+                .get("/collections/${collectionMetadata.collection_id}")
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
