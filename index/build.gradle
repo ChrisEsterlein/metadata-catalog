@@ -31,10 +31,11 @@ repositories {
 
 dependencies {
   compile 'org.codehaus.groovy:groovy-all:2.4.10'
-  compile "org.springframework.boot:spring-boot-starter-actuator"
-  compile "org.springframework.boot:spring-boot-starter-amqp"
-  compile "org.springframework.boot:spring-boot-starter-tomcat"
-  compile "org.springframework.boot:spring-boot-starter-web"
+  compile 'org.codehaus.groovy.modules.http-builder:http-builder:0.7.1'
+  compile 'org.springframework.boot:spring-boot-starter-actuator'
+  compile 'org.springframework.boot:spring-boot-starter-amqp'
+  compile 'org.springframework.boot:spring-boot-starter-tomcat'
+  compile 'org.springframework.boot:spring-boot-starter-web'
   compile 'org.springframework.data:spring-data-elasticsearch:2.1.1.RELEASE'
 
   testCompile 'org.springframework.boot:spring-boot-starter-test'
@@ -71,7 +72,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
     -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
-task cleanDockerComposeYml(type:Delete, description: 'Remove generated docker-compose.yml.', group: 'docker') {
+task cleanDockerComposeYml(type: Delete, description: 'Remove generated docker-compose.yml.', group: 'docker') {
   delete "${buildDir}/docker-compose.yml"
 }
 
@@ -110,13 +111,13 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
     ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
-task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
+task dockerRemove(type: Exec, description: 'Removes the application container.', group: 'docker') {
   finalizedBy removeDockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
 }
 
-task startElasticsearchContainer(type:Exec, description: 'Starts the Elasticsearch container.', group: 'docker') {
+task startElasticsearchContainer(type: Exec, description: 'Starts the Elasticsearch container.', group: 'docker') {
   dependsOn dockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && \
@@ -129,13 +130,13 @@ task startElasticsearchContainer(type:Exec, description: 'Starts the Elasticsear
     elasticsearch:2.4.0"
 }
 
-task removeElasticsearchContainer(type:Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
+task removeElasticsearchContainer(type: Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
   finalizedBy removeDockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true"
 }
 
-task startRabbitContainer(type:Exec, description: 'Starts the Rabbit container.', group: 'docker') {
+task startRabbitContainer(type: Exec, description: 'Starts the Rabbit container.', group: 'docker') {
   dependsOn dockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true  && \
@@ -148,7 +149,7 @@ task startRabbitContainer(type:Exec, description: 'Starts the Rabbit container.'
     rabbitmq:latest"
 }
 
-task waitForRabbit(type:Exec, description: 'Waits for Rabbit to be available.', group: 'docker') {
+task waitForRabbit(type: Exec, description: 'Waits for Rabbit to be available.', group: 'docker') {
   dependsOn startRabbitContainer
   executable "sh"
   args "-c", "docker run \
@@ -158,13 +159,13 @@ task waitForRabbit(type:Exec, description: 'Waits for Rabbit to be available.', 
     -p 5672 -t 30"
 }
 
-task bootstrapRabbit(type:Exec, description: 'Initializes Rabbit container.', group: 'docker') {
+task bootstrapRabbit(type: Exec, description: 'Initializes Rabbit container.', group: 'docker') {
   dependsOn waitForRabbit
   executable "sh"
   args "-c", "docker exec ${project.ext.rabbitContainerName} rabbitmq-plugins enable rabbitmq_management"
 }
 
-task removeRabbitContainer(type:Exec, description: 'Cleans up the Rabbit container.', group: 'docker') {
+task removeRabbitContainer(type: Exec, description: 'Cleans up the Rabbit container.', group: 'docker') {
   finalizedBy removeDockerNetwork
   executable "sh"
   args "-c", "docker rm -f ${project.ext.rabbitContainerName} || true"
