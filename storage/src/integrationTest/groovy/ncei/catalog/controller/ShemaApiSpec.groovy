@@ -37,7 +37,7 @@ class ShemaApiSpec extends Specification{
                 .body(postBody)
                 .contentType(ContentType.JSON)
             .when()
-                .post('/schemas/create')
+                .post('/schemas')
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -68,7 +68,7 @@ class ShemaApiSpec extends Specification{
                 .body(updatedPostBody)
                 .contentType(ContentType.JSON)
             .when()
-                .put('/schemas/update')
+                .put('/schemas')
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -99,7 +99,7 @@ class ShemaApiSpec extends Specification{
                 .body(deleteBody)
                 .contentType(ContentType.JSON)
             .when()
-                .delete('/schemas/delete')
+                .delete('/schemas')
             .then()
                 .assertThat()
                 .statusCode(200)

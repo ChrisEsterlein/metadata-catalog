@@ -83,7 +83,7 @@ class SchemaController {
       }
   }
 
-    @RequestMapping(method=RequestMethod.DELETE)
+    @RequestMapping(value='/purge', method=RequestMethod.DELETE)
     @ResponseBody
     Map  purge(@RequestBody Map params, HttpServletResponse response) {
 

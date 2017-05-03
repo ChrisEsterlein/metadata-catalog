@@ -18,16 +18,6 @@ class GranuleService {
   Map save(GranuleMetadata granuleMetadata, Boolean isLegacyEndpoint = false){
     Map saveDetails = [:]
 
-    //to update by the old primary key, tracking_id
-    if(isLegacyEndpoint){
-      Iterable<GranuleMetadata> latest = granuleMetadataRepository.findByTrackingId(granuleMetadata.tracking_id)
-      if(latest){
-        GranuleMetadata existingRecord = latest.first()
-        granuleMetadata.granule_id = existingRecord.granule_id
-        granuleMetadata.last_update = existingRecord.last_update
-      }
-    }
-
     //get existing row if there is one
     Iterable<GranuleMetadata> result = granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id)
 

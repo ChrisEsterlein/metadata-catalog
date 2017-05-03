@@ -39,7 +39,7 @@ class CollectionApiSpec extends Specification{
                 .body(postBody)
                 .contentType(ContentType.JSON)
             .when()
-                .post('/collections/create')
+                .post('/collections')
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -76,7 +76,7 @@ class CollectionApiSpec extends Specification{
                 .body(updatedPostBody)
                 .contentType(ContentType.JSON)
             .when()
-                .put('/collections/update')
+                .put('/collections')
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -116,7 +116,7 @@ class CollectionApiSpec extends Specification{
                 .body(deleteBody)
                 .contentType(ContentType.JSON)
             .when()
-                .delete('/collections/delete')
+                .delete('/collections')
             .then()
                 .assertThat()
                 .statusCode(200)

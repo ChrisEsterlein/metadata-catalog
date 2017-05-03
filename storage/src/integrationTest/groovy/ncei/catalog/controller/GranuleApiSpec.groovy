@@ -44,7 +44,7 @@ class GranuleApiSpec extends Specification{
             .body(postBody)
             .contentType(ContentType.JSON)
         .when()
-            .post('/granules/create')
+            .post('/granules')
         .then()
             .assertThat()
             .statusCode(200)  //should be a 201
@@ -81,7 +81,7 @@ class GranuleApiSpec extends Specification{
                 .body(updatedPostBody)
                 .contentType(ContentType.JSON)
             .when()
-                .put('/granules/update')
+                .put('/granules')
             .then()
                 .assertThat()
                 .statusCode(200)  //should be a 201
@@ -122,7 +122,7 @@ class GranuleApiSpec extends Specification{
                 .body(deleteBody)
                 .contentType(ContentType.JSON)
             .when()
-                .delete('/delete')
+                .delete('/granules')
             .then()
                 .assertThat()
                 .statusCode(200)
