@@ -61,7 +61,7 @@ static def getDateTime() {
 task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
   dependsOn dockerFile
   dependsOn bootRepackage
-  executable "sh"
+  executable "bash"
   args "-c", "docker build --no-cache \
     --label ncei.${rootProject.name}-version=${project.version} \
     --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
@@ -73,7 +73,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
 assemble.dependsOn dockerImage
 
 task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
-  executable "sh"
+  executable "bash"
   // sets the environment variable cassandra_contactPoints to override application.yml
   args "-c", "docker run -d \
     -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
@@ -82,12 +82,12 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
 }
 
 task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
-  executable "sh"
+  executable "bash"
   args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
 }
 
 task startCassandraContainer(type:Exec, description: 'Starts the Cassandra container.', group: 'docker') {
-  executable "sh"
+  executable "bash"
   args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true  && \
     docker run -d \
     --publish 9042:9042 \
@@ -97,7 +97,7 @@ task startCassandraContainer(type:Exec, description: 'Starts the Cassandra conta
 
 task waitForCassandra(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
   dependsOn startCassandraContainer
-  executable "sh"
+  executable "bash"
   args "-c", "docker run \
     --rm willwill/wait-for-it \
     -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
@@ -106,13 +106,13 @@ task waitForCassandra(type:Exec, description: 'Waits for Cassandra to be availab
 
 task bootstrapCassandra(type:Exec, description: 'Initializes the keyspace and tables in the Cassandra container.', group: 'docker') {
   dependsOn waitForCassandra
-  executable "sh"
+  executable "bash"
   args "-c", "docker exec -i \
     ${project.ext.cassandraContainerName} cqlsh <<< \"\$(cat cql/createKeyspaceAndTables.cql)\""
 }
 
 task removeCassandraContainer(type:Exec, description: 'Cleans up the Cassandra container.', group: 'docker') {
-  executable "sh"
+  executable "bash"
   args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true"
 }
 
