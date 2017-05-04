@@ -3,12 +3,12 @@ package ncei.catalog.controller
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
-import ncei.catalog.model.Metadata
-import ncei.catalog.repository.MetadataRepository
+import ncei.catalog.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -17,14 +17,14 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 class IndexControllerApiSpec extends Specification {
   final String SEARCH_ENDPOINT = '/search'
 
-  @Autowired
-  MetadataRepository repository
-
   @Value('${local.server.port}')
   private String port
 
   @Value('${server.context-path:/}')
   private String contextPath
+
+  @Autowired
+  Service service
 
   private ContentType contentType = ContentType.JSON
 
@@ -33,49 +33,76 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
 
-    repository.deleteAll()
+    service.INDEX = 'test_index'
+    service.deleteIndex()
   }
 
   def 'Search for metadata with no params'() {
     setup: 'Load data into elasticsearch for searching'
-    def metadata = new Metadata(id: '1', dataset: 'testDataset', fileName: 'testFileName')
-    repository.save(metadata)
+    Map metadata = [type:'junk',
+                    dataset: 'testDataset',
+                    fileName: "testFileName1"]
+    Map metadata2 = [type:'junk',
+                     dataset: 'testDataset',
+                     fileName: "testFileName2"]
+    service.save(metadata)
+    service.save(metadata2)
 
-    expect:
+    when:
+    def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
+    Map metadataSearch = generateElasticsearchQuery(metadata)
+    Map metadataSearch2 = generateElasticsearchQuery(metadata2)
+    conditions.eventually {
+      assert service.search(metadataSearch).items.size() == 1
+      assert service.search(metadataSearch2).items.size() == 1
+    }
+
+    then:
     RestAssured.given()
         .contentType(contentType)
-        .when()
+      .when()
         .get(SEARCH_ENDPOINT)
         .then()
         .assertThat()
-        .statusCode(200)
-        .body('items[0].id', equalTo(metadata.id))
+      .statusCode(200)
         .body('items[0].dataset', equalTo(metadata.dataset))
         .body('items[0].fileName', equalTo(metadata.fileName))
+        .body('items[1].dataset', equalTo(metadata2.dataset))
+        .body('items[1].fileName', equalTo(metadata2.fileName))
   }
 
   def 'Search for metadata with params'() {
     setup: 'Load data into elasticsearch for searching'
-    def metadata = new Metadata(id: '1', dataset: 'testDataset', fileName: 'testFileName')
-    repository.save(metadata)
-    def metadata2 = new Metadata(id: '2', dataset: 'testDataset', fileName: 'testFileName2')
-    repository.save(metadata2)
+    Map metadata = [type:'junk',
+                    dataset: 'testDataset',
+                    fileName: "testFileName"]
+    service.save(metadata)
+    service.save([type:'junk',
+                  dataset: 'testDataset',
+                  fileName: "testFileName2"])
 
-    Map query = [q: "dataset:${metadata.dataset} fileName:${metadata.fileName}"]
+    when:
+    def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
+    Map metadataSearch = generateElasticsearchQuery(metadata)
+    conditions.eventually {
+      assert service.search(metadataSearch).items.size() == 1
+    }
 
-    expect:
+    then:
     RestAssured.given()
         .contentType(contentType)
-        .params(query)
-        .when()
+        .params(metadataSearch)
+      .when()
         .get(SEARCH_ENDPOINT)
         .then()
-        .assertThat()
+      .assertThat()
         .statusCode(200)
         .body('items[0].dataset', equalTo(metadata.dataset))
-        .body('items[0].dataset', equalTo(metadata.dataset))
+        .body('items[0].fileName', equalTo(metadata.fileName))
+  }
+
+  Map generateElasticsearchQuery(Map params) {
+    String key = params.toMapString().replaceAll(",", " AND")
+    [q: "${key.substring(1, key.length()-1)}"]
   }
 }
-
-
-

@@ -1,7 +1,7 @@
 package ncei.catalog.amqp
 
 import groovy.util.logging.Slf4j
-import ncei.catalog.repository.MetadataRepository
+
 import ncei.catalog.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
