@@ -10,6 +10,8 @@ services:
         aliases: []
   index:
     image: ${image}
+    ports:
+     - "8088:8088"
     environment:
     - elasticsearch_host=es
     - rabbitmq_connectionfactory_host=rabbitmq

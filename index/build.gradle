@@ -106,6 +106,7 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
     --network ${project.name}_net \
     -e rabbitmq_connectionfactory_host=rabbitmq \
     -e elasticsearch_host=es_hostname \
+    --publish 8088:8088 \
     --name ${project.ext.applicationContainerName} \
     ncei/${rootProject.name}-${project.name}:${project.version}"
 }
