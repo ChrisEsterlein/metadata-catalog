@@ -77,7 +77,7 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
   // sets the environment variable cassandra_contactPoints to override application.yml
   args "-c", "docker run -d \
     -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
-    -name ${project.ext.applicationContainerName} \
+    --name ${project.ext.applicationContainerName} \
     ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
