@@ -1,0 +1,31 @@
+spring.main.show_banner: false
+
+server:
+  port: 8088
+  context-path: /api
+
+spring:
+  application:
+    name: api
+  cloud:
+    discovery:
+      enabled: false
+
+index:
+  host: localhost
+  port: 8081
+
+storage:
+  host: localhost
+  port: 8082
+
+zuul:
+  routes:
+    storage1:
+      path: /storage1/**
+      url: http://${index.host}:${index.port}
+      stripPrefix: true
+    storage2:
+      path: /storage2/**
+      url: http://${index.host}:${index.port}/metadata-catalog/collections
+      stripPrefix: true

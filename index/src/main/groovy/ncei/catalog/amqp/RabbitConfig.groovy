@@ -50,7 +50,7 @@ class RabbitConfig {
   @Bean
   DefaultClassMapper classMapper() {
     DefaultClassMapper typeMapper = new DefaultClassMapper()
-    typeMapper.setDefaultType(ConsumerMessage.class)
+    typeMapper.setDefaultType(Map.class)
     typeMapper
   }
 }

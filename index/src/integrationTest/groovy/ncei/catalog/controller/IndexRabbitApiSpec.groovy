@@ -2,9 +2,7 @@ package ncei.catalog.controller
 
 import ncei.catalog.Application
 import ncei.catalog.amqp.ConsumerConfig
-import ncei.catalog.amqp.ConsumerMessage
-import ncei.catalog.model.Metadata
-import ncei.catalog.repository.MetadataRepository
+import ncei.catalog.service.Service
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -19,31 +17,33 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 class IndexRabbitApiSpec extends Specification {
 
   @Autowired
-  MetadataRepository repository
-
-  @Autowired
   RabbitTemplate rabbitTemplate
 
-  void setup() {
-    repository.deleteAll()
+  @Autowired
+  Service service
+
+  def setup() {
+    service.INDEX = 'test_index'
+    service.deleteIndex()
   }
 
   def 'rabbit save to elastic search works'() {
     setup:
-    def metadata = new Metadata(id: '1', dataset: 'testDataset', fileName: 'testFileName')
-    ConsumerMessage message = new ConsumerMessage()
-    message.setTask('save')
-    message.setMetadata(metadata)
+    Map metadata = [type:'junk',
+                    id: '1',
+                    dataset: 'testDataset',
+                    fileName: "testFileName"]
 
-    def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
+    def conditions = new PollingConditions(timeout: 20, initialDelay: 1.5, factor: 1.25)
 
     when:
-    rabbitTemplate.convertAndSend(ConsumerConfig.queueName, message)
+    rabbitTemplate.convertAndSend(ConsumerConfig.queueName, metadata)
 
     then:
     conditions.eventually {
-      assert repository.findAll().size() == 1
-      assert repository.findAll()[0] == metadata
+      def searchResults = service.search(["dataset:${metadata.dataset} fileName:${metadata.fileName}":""])
+      assert searchResults.totalResults == 1
+      assert searchResults.items[0] == metadata
     }
   }
 }

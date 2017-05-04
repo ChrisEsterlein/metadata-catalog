@@ -16,10 +16,10 @@ The following is required if not using the docker containers to run Elasticsearc
 ##Saving via RABBITMQ
 Save metadata:
 Properties: content_type = application/json
-Payload: {"task":"save", "metadata":{"id":"1", "dataset":"csb"}}
+Payload: {"GRANULE_ID":"1asdf123s", "dataset":"csb", "fileName":"/blah/fileName1"}
 
 ##Searching via REST
-http://localhost:8088/index/search?q=dataset=csb
+http://localhost:8088/index/search?q=dataset:csb fileName:/blah/fileName1
 The parameter is a simple query string as a parameter as a URI search as defined by Elastcisearch.
 
 ##Elasticsearch commands

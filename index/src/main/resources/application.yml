@@ -23,10 +23,6 @@ logging:
   file: /data/agile_apps/logs/agiletc/catalog/${spring.application.name}.log
 
 elasticsearch:
-  host: localhost
-  port: 9300
-  cluster:
-    name: elasticsearch
   hostName: http://localhost:9200
 
 rabbitmq:
