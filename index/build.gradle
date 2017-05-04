@@ -65,7 +65,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
   executable "sh"
   args "-c", "docker build --no-cache \
     --label ncei.${rootProject.name}-version=${project.version} \
-    --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
+    --label ncei.${rootProject.name}-build-date=${getDateTime()} \
     --label ncei.${rootProject.name}-name=${project.ext.applicationContainerName} \
     --label ncei.${rootProject.name}-vendor=NCEI \
     -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
