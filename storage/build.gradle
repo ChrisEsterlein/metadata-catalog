@@ -143,12 +143,12 @@ sourceSets {
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
   executable "bash"
-  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} up -d"
+  args "-c", "docker-compose -f src/resources/docker/docker-compose.yml -p ${project.name} up -d"
 }
 
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
-  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} down || true"
+  args "-c", "docker-compose -f src/resources/docker/docker-compose.yml -p ${project.name} down || true"
 }
 
 task waitForCompose(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
