@@ -141,11 +141,30 @@ sourceSets {
   }
 }
 
+task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} up -d"
+}
+
+task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} down || true"
+}
+
+task waitForCompose(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
+  dependsOn dockerComposeUp
+  executable "bash"
+  args "-c", "docker run \
+    --network storage_net \
+    --rm willwill/wait-for-it \
+    -h storage \
+    -p 8080 -t 60"
+}
+
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
-  dependsOn bootstrapCassandra
-  finalizedBy removeCassandraContainer
-
+  dependsOn waitForCompose
+  finalizedBy dockerComposeDown
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
   reports.junitXml.destination = 'build/integration-test-results'

@@ -24,9 +24,13 @@ class OldCatalogMetadataApiSpec extends Specification {
   private String contextPath
 
   def setup() {
+//    RestAssured.baseURI = "http://localhost"
+//    RestAssured.port = port as Integer
+//    RestAssured.basePath = contextPath
+
     RestAssured.baseURI = "http://localhost"
-    RestAssured.port = port as Integer
-    RestAssured.basePath = contextPath
+    RestAssured.port = 8081 as Integer
+    RestAssured.basePath = '/metadata-catalog'
   }
 
   def 'test old interfaces for metadata-recorder and etl'() {
