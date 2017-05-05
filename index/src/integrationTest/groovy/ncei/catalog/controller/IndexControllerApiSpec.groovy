@@ -9,8 +9,8 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
-
 import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.hasItems
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
@@ -45,8 +45,14 @@ class IndexControllerApiSpec extends Specification {
     Map metadata2 = [type:'junk',
                      dataset: 'testDataset',
                      fileName: "testFileName2"]
-    service.save(metadata)
-    service.save(metadata2)
+    def saved = service.save(metadata)
+    def saved2 = service.save(metadata2)
+
+    def expResult = metadata.clone()
+    def expResult2 = metadata2.clone()
+    // Add the id to saved metadata since appears back when you search.
+    expResult.put("id", (String)saved._id)
+    expResult2.put("id", (String)saved2._id)
 
     when:
     def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
@@ -65,10 +71,8 @@ class IndexControllerApiSpec extends Specification {
         .then()
         .assertThat()
       .statusCode(200)
-        .body('items[0].dataset', equalTo(metadata.dataset))
-        .body('items[0].fileName', equalTo(metadata.fileName))
-        .body('items[1].dataset', equalTo(metadata2.dataset))
-        .body('items[1].fileName', equalTo(metadata2.fileName))
+        .body("items.size", equalTo(2))
+        .body("items.findAll{true}", hasItems(expResult, expResult2))
   }
 
   def 'Search for metadata with params'() {
@@ -97,6 +101,8 @@ class IndexControllerApiSpec extends Specification {
         .then()
       .assertThat()
         .statusCode(200)
+        .body("items.size", equalTo(1))
+        .body('items.size()', equalTo(1))
         .body('items[0].dataset', equalTo(metadata.dataset))
         .body('items[0].fileName', equalTo(metadata.fileName))
   }
