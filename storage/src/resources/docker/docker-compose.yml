@@ -17,7 +17,7 @@ services:
      - wait
     volumes:
      - ./scripts:/tmp/scripts:ro
-    command: /bin/bash /tmp/scripts/wait2.sh
+    command: /bin/bash /tmp/scripts/start_application.sh
     networks:
       net:
         aliases: []
@@ -28,7 +28,7 @@ services:
     volumes:
      - ../cql:/tmp/cql:ro
      - ./scripts:/tmp/scripts:ro
-    command: /bin/bash /tmp/scripts/wait.sh
+    command: /bin/bash /tmp/scripts/initialize_cassandra.sh
     networks:
       net:
         aliases: []
