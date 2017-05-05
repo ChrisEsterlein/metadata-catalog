@@ -105,7 +105,7 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
   args "-c", "docker run -d \
     --network ${project.name}_net \
     -e rabbitmq_connectionfactory_host=rabbitmq \
-    -e elasticsearch_host=es_hostname \
+    -e elasticsearch_host=index.elasticsearch \
     --publish 8088:8088 \
     --name ${project.ext.applicationContainerName} \
     ncei/${rootProject.name}-${project.name}:${project.version}"
@@ -123,7 +123,7 @@ task startElasticsearchContainer(type: Exec, description: 'Starts the Elasticsea
   args "-c", "docker rm -f ${project.ext.elasticsearchContainerName} || true  && \
     docker run -d \
     --network ${project.name}_net \
-    --net-alias es_hostname \
+    --net-alias index.elasticsearch \
     --publish 9300:9300 \
     --publish 9200:9200 \
     --name ${project.ext.elasticsearchContainerName} \
