@@ -10,11 +10,15 @@ import javax.annotation.PostConstruct
 import javax.servlet.http.HttpServletResponse
 
 @Slf4j
-@org.springframework.stereotype.Service
+@org.springframework.stereotype.Service/**/
 class Service {
 
-  @Value('${elasticsearch.hostName}')
-  private String ELASTICSEARCH_HOSTNAME
+  @Value('${elasticsearch.host}')
+  private String ELASTICSEARCH_HOST
+
+  @Value('${elasticsearch.port}')
+  private String ELASTICSEARCH_PORT
+
   protected HTTPBuilder elasticsearchClient
 
 //  @Value('${elasticsearch.index.prefix:}${elasticsearch.index.search.name}')
@@ -25,9 +29,9 @@ class Service {
 
   @PostConstruct
   protected buildClients() {
-    def url = ELASTICSEARCH_HOSTNAME
-    log.info("Elasticsearch client url: $url")
-    elasticsearchClient = new HTTPBuilder(url)
+    def url = "http://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT"
+    elasticsearchClient = new HTTPBuilder("$url")
+    log.info("Set Elasticsearch client url: ${elasticsearchClient.uri} from host=$ELASTICSEARCH_HOST port=$ELASTICSEARCH_PORT")
   }
 
   /**
