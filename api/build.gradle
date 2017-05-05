@@ -60,8 +60,28 @@ sourceSets {
   }
 }
 
-task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
+task waitForStorage(
+    type:Exec,
+    description: 'Waits for storage to be available.',
+    group: 'docker',
+    dependsOn: [":storage:bootstrapCassandra",":storage:dockerRun"]
+) {
+  executable "bash"
+  args "-c", "docker run \
+    --rm willwill/wait-for-it \
+    -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' storageApp) \
+    -p 8080 -t 30"
+}
+
+task integrationTest(
+    type: Test,
+    description: 'Runs the integration tests',
+    group: 'verification',
+    dependsOn: [":storage:bootstrapCassandra",":storage:dockerRun","waitForStorage"]
+) {
   mustRunAfter test
+  finalizedBy ":storage:dockerRemove"
+  finalizedBy ":storage:removeCassandraContainer"
 
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath

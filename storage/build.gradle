@@ -78,6 +78,7 @@ task dockerRun(type: Exec, description: 'Runs the application in a docker contai
   args "-c", "docker run -d \
     -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
     --name ${project.ext.applicationContainerName} \
+    --publish 8081:8080 \
     ncei/${rootProject.name}-${project.name}:${project.version}"
 }
 
