@@ -47,7 +47,7 @@ project.ext.set("cassandraContainerName", "${project.name}Cassandra")
 project.ext.set("applicationContainerName", "${project.name}App")
 
 task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'docker') {
-  from 'src/templates'
+  from 'src/resources/docker/templates'
   into "$buildDir"
   include 'Dockerfile.template'
   rename { file -> 'Dockerfile' }
