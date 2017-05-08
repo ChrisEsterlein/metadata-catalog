@@ -68,5 +68,9 @@ class RabbitConfig {
     template
   }
 
+  @Bean
+  Queue indexQueue() {
+    new Queue(queueName, true, false, true)
+  }
 
 }

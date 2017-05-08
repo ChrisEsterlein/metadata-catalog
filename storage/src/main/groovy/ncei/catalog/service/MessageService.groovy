@@ -11,7 +11,7 @@ class MessageService {
   @Autowired
   RabbitTemplate rabbitTemplate
 
-  void send(Map updatedRecord){
+  void notifyIndex(Map updatedRecord){
     rabbitTemplate.convertAndSend('index-consumer', updatedRecord)
   }
 

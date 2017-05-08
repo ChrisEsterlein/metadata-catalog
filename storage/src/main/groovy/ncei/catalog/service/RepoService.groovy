@@ -32,7 +32,7 @@ class RepoService {
       saveDetails."${getTableFromClass(metadataRecord)}" = saveResult
       saveDetails.recordsCreated = 1
       saveDetails.code = HttpServletResponse.SC_CREATED
-      messageService.send(metadataRecord.asMap())
+      messageService.notifyIndex(metadataRecord.asMap())
     }
 
     saveDetails
@@ -53,6 +53,7 @@ class RepoService {
         metadataRecord.last_update = new Date()
         updateDetails.totalResultsUpdated = 1
         updateDetails.code = HttpServletResponse.SC_OK
+        messageService.notifyIndex(metadataRecord.asMap())
       }
     } else {
       updateDetails.code = HttpServletResponse.SC_NOT_FOUND
@@ -128,7 +129,7 @@ class RepoService {
     Map purgeDetails = [:]
     purgeDetails.searchTerms = params
     int count = 0
-    Iterable items
+    Iterable<MetadataRecord> items
 
     if (metadataId) {
       items = repositoryObject.findByMetadataId(metadataId)
@@ -142,6 +143,7 @@ class RepoService {
     items.each {
       UUID id = findId(it.asMap())
       delete(repositoryObject, id, it.last_update)
+      messageService.notifyIndex(it.asMap())
       count++
     }
 
@@ -173,7 +175,8 @@ class RepoService {
       }
       record.last_update = new Date()
       record.deleted = true
-      def newRecord = repositoryObject.save(record)
+      MetadataRecord newRecord = repositoryObject.save(record)
+      messageService.notifyIndex(newRecord.asMap())
       [deleted: newRecord, success: true, message: 'Successfully deleted row with id: ' + id]
     } else {
       [success: false]
