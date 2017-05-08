@@ -10,12 +10,14 @@ class FileMetadata {
   Integer fileSize
   String fileMetadata
   String geometry
+  Boolean deleted
 
   Map asMap() {
     this.class.declaredFields.findAll {
-      !it.synthetic }.collectEntries {
-        [ (it.name):this."$it.name" ]
-      }
+      !it.synthetic
+    }.collectEntries {
+      [(it.name): this."$it.name"]
+    }
   }
 
 }

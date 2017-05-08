@@ -1,7 +1,6 @@
 package ncei.catalog.config
 
 import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.Session
 import com.datastax.driver.core.exceptions.NoHostAvailableException
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -48,7 +47,7 @@ class CassandraConfig {
 
   @Bean
   CassandraMappingContext mappingContext() {
-    def mappingContext =  new BasicCassandraMappingContext()
+    def mappingContext = new BasicCassandraMappingContext()
     mappingContext.setUserTypeResolver(new SimpleUserTypeResolver(cluster().getObject(), keyspace))
 
     return mappingContext
@@ -66,7 +65,7 @@ class CassandraConfig {
     session.setKeyspaceName(keyspace)
     session.setConverter(converter())
     session.setSchemaAction(SchemaAction.NONE)
-    
+
     return session
   }
 
@@ -88,14 +87,14 @@ class CassandraConfig {
         cluster.connect(keyspace)
         return
       }
-      catch(NoHostAvailableException e) {
+      catch (NoHostAvailableException e) {
         exception = e
         tries--
         sleep(1000)
       }
     }
     throw exception ?: new IllegalStateException(
-        "Failed to verify cassandra connection on port $port for contact points $contactPoints")
+            "Failed to verify cassandra connection on port $port for contact points $contactPoints")
   }
 
 }

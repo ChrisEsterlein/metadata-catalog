@@ -11,6 +11,9 @@ interface CollectionMetadataRepository extends CassandraRepository<CollectionMet
   @Query("Select * from CollectionMetadata where collection_id =?0")
   Iterable<CollectionMetadata> findByMetadataId(UUID id)
 
+  @Query("SELECT * FROM CollectionMetadata WHERE collection_id =?0 LIMIT 1")
+  Iterable<CollectionMetadata> findByMetadataIdLimitOne(UUID id)
+
   @Query("SELECT*FROM CollectionMetadata WHERE collection_name=?0")
   Iterable<CollectionMetadata> findByCollectionName(String collection_name)
 

@@ -6,11 +6,11 @@ import ncei.catalog.domain.GranuleMetadata
 
 class ClassConversionUtil {
 
-  static GranuleMetadata convertToGranuleMetadata(FileMetadata fileMetadata){
+  static GranuleMetadata convertToGranuleMetadata(FileMetadata fileMetadata) {
     GranuleMetadata granuleMetadata = new GranuleMetadata()
 
-    fileMetadata.properties.each{key, value ->
-      switch (key){
+    fileMetadata.properties.each { key, value ->
+      switch (key) {
         case 'class':
           break
         case 'trackingId':
@@ -26,7 +26,7 @@ class ClassConversionUtil {
           granuleMetadata.access_protocol = value
           break
         default:
-          if(granuleMetadata.hasProperty(key)){
+          if (granuleMetadata.hasProperty(key)) {
             granuleMetadata[key] = value
           }
           break
@@ -35,11 +35,11 @@ class ClassConversionUtil {
     granuleMetadata
   }
 
-  static FileMetadata convertToFileMetadata(GranuleMetadata granuleMetadata){
+  static FileMetadata convertToFileMetadata(GranuleMetadata granuleMetadata) {
     FileMetadata fileMetadata = new FileMetadata()
 
-    granuleMetadata.properties.each{key, value ->
-      switch (key){
+    granuleMetadata.properties.each { key, value ->
+      switch (key) {
         case 'class':
           break
         case 'granule_metadata':
@@ -55,7 +55,7 @@ class ClassConversionUtil {
           fileMetadata.accessProtocol = value
           break
         default:
-          if(fileMetadata.hasProperty(key)){
+          if (fileMetadata.hasProperty(key)) {
             fileMetadata[key] = value
           }
           break

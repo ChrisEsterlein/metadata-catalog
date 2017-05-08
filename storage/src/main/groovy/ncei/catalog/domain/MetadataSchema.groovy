@@ -7,23 +7,26 @@ import org.springframework.data.cassandra.mapping.Indexed
 import org.springframework.data.cassandra.mapping.PrimaryKeyColumn
 import org.springframework.data.cassandra.mapping.Table
 
-@Table(value='MetadataSchema')
-class MetadataSchema {
+@Table(value = 'MetadataSchema')
+class MetadataSchema extends MetadataRecord {
 
-    @PrimaryKeyColumn(name = "schema_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-    UUID schema_id
+  @PrimaryKeyColumn(name = "schema_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+  UUID schema_id
 
-    @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
-    Date last_update
+  @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
+  Date last_update
 
-    @Indexed
-    String schema_name
+  @Indexed
+  String schema_name
 
-    String json_schema
+  String json_schema
+  Boolean deleted
 
-    MetadataSchema() {
-        this.schema_id = UUIDs.timeBased()
-        this.last_update = new Date()
-    }
+  MetadataSchema() {
+    this.schema_id = UUIDs.timeBased()
+    this.last_update = new Date()
+    this.deleted = false
+  }
+
 
 }

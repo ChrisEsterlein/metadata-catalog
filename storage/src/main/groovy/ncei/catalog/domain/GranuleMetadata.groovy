@@ -3,12 +3,13 @@ package ncei.catalog.domain
 import com.datastax.driver.core.utils.UUIDs
 import org.springframework.cassandra.core.Ordering
 import org.springframework.cassandra.core.PrimaryKeyType
+import org.springframework.data.cassandra.mapping.Column
 import org.springframework.data.cassandra.mapping.Indexed
 import org.springframework.data.cassandra.mapping.PrimaryKeyColumn
 import org.springframework.data.cassandra.mapping.Table
 
-@Table(value= 'GranuleMetadata')
-class GranuleMetadata {
+@Table(value = 'GranuleMetadata')
+class GranuleMetadata extends MetadataRecord {
 
   @PrimaryKeyColumn(name = "granule_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
   UUID granule_id
@@ -30,9 +31,11 @@ class GranuleMetadata {
   String granule_metadata
   String geometry
   List collections
+  Boolean deleted
 
   GranuleMetadata() {
     this.granule_id = UUIDs.timeBased()
     this.last_update = new Date()
+    this.deleted = false
   }
 }

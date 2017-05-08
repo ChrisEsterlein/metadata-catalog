@@ -6,3 +6,11 @@ cassandra:
 
 server:
   context-path: /metadata-catalog
+
+rabbitmq:
+  queue: index-consumer
+  connectionfactory:
+    host: localhost
+    virtualHost: /
+    username: guest
+    password: guest
