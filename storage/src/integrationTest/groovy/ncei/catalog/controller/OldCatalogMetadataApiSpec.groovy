@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
 import spock.lang.Unroll
-import spock.lang.Ignore
 
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import static io.restassured.matcher.RestAssuredMatchers.*
@@ -24,13 +23,9 @@ class OldCatalogMetadataApiSpec extends Specification {
   private String contextPath
 
   def setup() {
-//    RestAssured.baseURI = "http://localhost"
-//    RestAssured.port = port as Integer
-//    RestAssured.basePath = contextPath
-
     RestAssured.baseURI = "http://localhost"
-    RestAssured.port = 8081 as Integer
-    RestAssured.basePath = '/metadata-catalog'
+    RestAssured.port = port as Integer
+    RestAssured.basePath = contextPath
   }
 
   def 'test old interfaces for metadata-recorder and etl'() {

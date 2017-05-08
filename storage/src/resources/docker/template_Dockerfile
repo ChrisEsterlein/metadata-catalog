@@ -1,5 +1,5 @@
 FROM openjdk:8
 WORKDIR /usr/src/app
-COPY libs/${jar} /usr/src/app
+COPY ${jar_dir}/${jar} /usr/src/app
 EXPOSE 8080
 CMD ["java", "-jar", "/usr/src/app/${jar}"]

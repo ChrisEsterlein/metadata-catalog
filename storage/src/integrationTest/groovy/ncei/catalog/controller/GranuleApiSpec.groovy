@@ -19,15 +19,16 @@ class GranuleApiSpec extends Specification{
     private String contextPath
 
     def setup() {
-        RestAssured.baseURI = "http://localhost"
-        RestAssured.port = port as Integer
-        RestAssured.basePath = contextPath
+      RestAssured.baseURI = "http://localhost"
+      RestAssured.port = port as Integer
+      RestAssured.basePath = contextPath
     }
 
     def 'create, read, update, delete granule metadata'(){
         setup: 'define a granule metadata record'
         def postBody = [
                 "dataset": "test",
+            'foo':'bar',
                 "granule_schema": "a granule schema",
                 "tracking_id": "ABCD",
                 "filename": "myfile",

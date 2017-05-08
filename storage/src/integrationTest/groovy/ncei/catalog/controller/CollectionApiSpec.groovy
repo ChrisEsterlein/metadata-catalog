@@ -10,7 +10,7 @@ import spock.lang.Specification
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-//@SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
+@SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class CollectionApiSpec extends Specification{
 
     @Value('${local.server.port}')
@@ -20,13 +20,9 @@ class CollectionApiSpec extends Specification{
     private String contextPath
 
     def setup() {
-//        RestAssured.baseURI = "http://localhost"
-//        RestAssured.port = port as Integer
-//        RestAssured.basePath = contextPath
-
         RestAssured.baseURI = "http://localhost"
-        RestAssured.port = 8081 as Integer
-        RestAssured.basePath = '/metadata-catalog'
+        RestAssured.port = port as Integer
+        RestAssured.basePath = contextPath
     }
 
     def 'create, read, update, delete collection metadata'(){

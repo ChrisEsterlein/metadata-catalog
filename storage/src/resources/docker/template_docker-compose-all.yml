@@ -1,0 +1,42 @@
+version: '3'
+services:
+  ${cassandra_service_name}:
+    image: cassandra
+    ports:
+      - "${cassandra_port}:9042"
+    networks:
+      ${network}:
+        aliases: []
+  ${application_service_name}:
+    image: ${image}
+    ports:
+     - "${application_port}:8080"
+    environment:
+     - cassandra_contactPoints=${cassandra_service_name}
+    depends_on:
+     - ${cassandra_initialization_service_name}
+    volumes:
+     - ./scripts:/tmp/scripts:ro
+    command: /bin/bash /tmp/scripts/start_application.sh
+    networks:
+      ${network}:
+        aliases: []
+  ${cassandra_initialization_service_name}:
+    image: cassandra
+    depends_on:
+     - ${cassandra_service_name}
+    volumes:
+     - ./cql:/tmp/cql:ro
+     - ./scripts:/tmp/scripts:ro
+    command: /bin/bash /tmp/scripts/initialize_cassandra.sh
+    networks:
+      ${network}:
+        aliases: []
+  debug:
+    image: cassandra
+    volumes:
+     - ./cql:/tmp/cql:ro
+     - ./scripts:/tmp/scripts:ro
+    command: /bin/bash -c 'find /tmp'
+networks:
+  ${network}: {}
