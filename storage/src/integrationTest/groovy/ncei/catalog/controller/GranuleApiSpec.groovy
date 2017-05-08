@@ -57,8 +57,7 @@ class GranuleApiSpec extends Specification {
             .body('granule.type', equalTo(postBody.type))
             .body('granule.granule_metadata', equalTo(postBody.granule_metadata))
             .body('granule.collections', equalTo(postBody.collections))
-
-            .extract()
+          .extract()
             .path('granule')
 
     then: 'we can get it by id'

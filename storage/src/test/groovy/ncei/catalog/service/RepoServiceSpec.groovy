@@ -8,13 +8,14 @@ class RepoServiceSpec extends Specification {
 
   def 'find id test'() {
     setup:
+    RepoService repoService = new RepoService()
     Map object = [
             tracking_id: 'wrong id',
             granule_id : UUID.fromString('95f5bea0-31c8-11e7-a2e3-bb6760fe9882')
     ]
 
     when:
-    UUID id = RepoService.findId(object)
+    UUID id = repoService.findId(object)
 
     then:
     assert id == object.granule_id
