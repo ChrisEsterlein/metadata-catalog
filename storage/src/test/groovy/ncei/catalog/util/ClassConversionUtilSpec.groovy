@@ -8,18 +8,18 @@ import spock.lang.Specification
 
 class ClassConversionUtilSpec extends Specification {
 
-  def 'test granuleMetadata to fileMetadata'(){ //todo fix names to match test
+  def 'test granuleMetadata to fileMetadata'() { //todo fix names to match test
     setup:
 
     def fileMetadata = [
-      "trackingId": "test-id-1",
-      "filename": "test.txt",
-      "dataset": "test-dataset-1",
-      "type": "file",
-      "fileSize": 1024,
-      "fileMetadata": "{blah: blah}",
-      "geometry": "point(1.1, 1.1)",
-      "accessProtocol":"FILE"
+            "trackingId"    : "test-id-1",
+            "filename"      : "test.txt",
+            "dataset"       : "test-dataset-1",
+            "type"          : "file",
+            "fileSize"      : 1024,
+            "fileMetadata"  : "{blah: blah}",
+            "geometry"      : "point(1.1, 1.1)",
+            "accessProtocol": "FILE"
     ]
 
     FileMetadata fm = new FileMetadata(fileMetadata)
@@ -36,19 +36,19 @@ class ClassConversionUtilSpec extends Specification {
 
   }
 
-  def 'test fileMetadata to granuleMetadata'(){
+  def 'test fileMetadata to granuleMetadata'() {
     setup:
     def granuleMetadata = [
-            "granule_id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
-            "tracking_id":"test-id-1",
-            "filename" : "test.txt",
-            "dataset": "test-dataset-1",
-            "type":"file",
-            "granule_size":1024,
+            "granule_id"      : UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
+            "tracking_id"     : "test-id-1",
+            "filename"        : "test.txt",
+            "dataset"         : "test-dataset-1",
+            "type"            : "file",
+            "granule_size"    : 1024,
             "granule_metadata": "{blah: blah}",
-            "granule_schema":"schema",
-            "geometry" : "point(1.1, 1.1)",
-            "collections":["FOS"]
+            "granule_schema"  : "schema",
+            "geometry"        : "point(1.1, 1.1)",
+            "collections"     : ["FOS"]
     ]
 
     GranuleMetadata gm = new GranuleMetadata(granuleMetadata)

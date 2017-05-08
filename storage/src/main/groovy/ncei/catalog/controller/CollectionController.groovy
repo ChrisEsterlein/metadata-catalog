@@ -2,8 +2,8 @@ package ncei.catalog.controller
 
 import groovy.util.logging.Slf4j
 import ncei.catalog.domain.CollectionMetadata
-import ncei.catalog.domain.GranuleMetadata
-import ncei.catalog.service.CollectionService
+import ncei.catalog.domain.CollectionMetadataRepository
+import ncei.catalog.service.RepoService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 
@@ -15,24 +15,27 @@ import javax.servlet.http.HttpServletResponse
 class CollectionController {
 
   @Autowired
-  CollectionService collectionService
+  RepoService repoService
+
+  @Autowired
+  CollectionMetadataRepository collectionMetadataRepository
 
   @RequestMapping(method = RequestMethod.POST)
   @ResponseBody
-  Map saveCollectionMetadata(@RequestBody CollectionMetadata  collectionMetadata, HttpServletResponse response) {
+  Map saveCollectionMetadata(@RequestBody CollectionMetadata collectionMetadata, HttpServletResponse response) {
     //need try/catch
-    collectionService.save(collectionMetadata)
+    repoService.save(collectionMetadataRepository, collectionMetadata)
   }
 
-  @RequestMapping(value= "/{collectionId}", method = RequestMethod.PUT)
+  @RequestMapping(value = "/{collectionId}", method = RequestMethod.PUT)
   @ResponseBody
-  Map updateCollectionMetadata(@RequestBody Map  collectionMetadata, HttpServletResponse response) {
+  Map updateCollectionMetadata(@RequestBody Map collectionMetadata, HttpServletResponse response) {
     //need try/catch
-    if(collectionMetadata?.collection_id && collectionMetadata?.last_update){
+    if (collectionMetadata?.collection_id && collectionMetadata?.last_update) {
       collectionMetadata.last_update = new Date(collectionMetadata.last_update as Long)
       collectionMetadata.collection_id = UUID.fromString(collectionMetadata.collection_id)
-      collectionService.save(new CollectionMetadata(collectionMetadata))
-    }else{
+      repoService.update(collectionMetadataRepository, new CollectionMetadata(collectionMetadata))
+    } else {
       return ['message': 'To update a record you must provide a collection_id and the last_update field from the previous version']
     }
   }
@@ -41,11 +44,11 @@ class CollectionController {
   @ResponseBody
   Map listCollectionMetadata(@RequestParam Map params, HttpServletResponse response) {
     try {
-      List results = collectionService.list(params)
+      List results = repoService.list(collectionMetadataRepository, params)
       [
               collections : results,
               searchTerms : params,
-              totalResults : results.size()
+              totalResults: results.size()
       ]
     }
     catch (e) {
@@ -59,16 +62,20 @@ class CollectionController {
 
   }
 
-  @RequestMapping(value= "/{collectionId}", method = RequestMethod.GET)
+  @RequestMapping(value = "/{collectionId}", method = RequestMethod.GET)
   @ResponseBody
   Map listCollectionMetadataById(@PathVariable collectionId, @RequestParam Map params, HttpServletResponse response) {
     try {
-      params.collection_ids = collectionId
-      List results = collectionService.list(params)
+      UUID collection_id = UUID.fromString(collectionId)
+      params.collection_id = collection_id
+      List results = repoService.list(collectionMetadataRepository, params)
+      response.status = results ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NOT_FOUND
+
       [
               collections : results,
               searchTerms : params,
-              totalResults : results.size()
+              totalResults: results.size(),
+              code: results ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NOT_FOUND
       ]
     }
     catch (e) {
@@ -81,18 +88,23 @@ class CollectionController {
     }
   }
 
-  @RequestMapping(method = RequestMethod.DELETE)
+  @RequestMapping(value = "/{collectionId}", method = RequestMethod.DELETE)
   @ResponseBody
-  Map deleteEntry(@RequestBody CollectionMetadata collectionMetadata, HttpServletResponse response ){
+  Map deleteEntry(@PathVariable collectionId, @RequestBody Map collectionMetadata, HttpServletResponse response) {
     try {
-      UUID collection_id = collectionMetadata.collection_id
-      def content = collectionService.delete(collection_id) ?: [:]
-
-      response.status = response.SC_OK
-      String msg = 'Successfully deleted row with collection_id: ' + collection_id
-      content.message = msg
-      content
-
+      log.info("delete collection metadata: $collectionMetadata")
+      Map content = [:]
+      collectionMetadata.collection_id = collectionId
+      if (collectionMetadata?.last_update) {
+        UUID collection_id = UUID.fromString(collectionMetadata.collection_id)
+        Date timestamp = new Date(collectionMetadata.last_update as Long)
+        content = repoService.softDelete(collectionMetadataRepository, collection_id, timestamp) ?: [:]
+        response.status = response.SC_OK
+        content
+      } else {
+        content.message = 'Please include the last_update field'
+        content
+      }
     } catch (e) {
       def msg = collectionMetadata.collection_id ?
               'failed to delete records for ' + collectionMetadata.collection_id + ' from the metadata catalog' :
@@ -102,15 +114,15 @@ class CollectionController {
       [message: msg]
     }
   }
-  
-  @RequestMapping(value='/purge', method=RequestMethod.DELETE)
+
+  @RequestMapping(value = '/purge', method = RequestMethod.DELETE)
   @ResponseBody
-  Map  purge(@RequestBody Map params, HttpServletResponse response) {
+  Map purge(@RequestBody Map params, HttpServletResponse response) {
 
     try {
-      Map content = collectionService.purge(params)
+      Map content = repoService.purge(collectionMetadataRepository, params)
 
-      log.info( "count deleted:${content.totalResultsDeleted} content.searchTerms:${content.searchTerms}" +
+      log.info("count deleted:${content.totalResultsDeleted} content.searchTerms:${content.searchTerms}" +
               " content.code:${content.code}")
       response.status = response.SC_OK
       String msg = 'Successfully purged ' + content.totalResultsDeleted + ' rows matching ' + content.searchTerms
@@ -127,5 +139,5 @@ class CollectionController {
     }
 
   }
-  
+
 }

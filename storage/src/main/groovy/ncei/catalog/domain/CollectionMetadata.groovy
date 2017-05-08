@@ -7,28 +7,37 @@ import org.springframework.data.cassandra.mapping.Indexed
 import org.springframework.data.cassandra.mapping.PrimaryKeyColumn
 import org.springframework.data.cassandra.mapping.Table
 
-@Table(value='CollectionMetadata')
-class CollectionMetadata {
+@Table(value = 'CollectionMetadata')
+class CollectionMetadata extends MetadataRecord {
 
-    @PrimaryKeyColumn(name = "collection_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-    UUID collection_id
+  @PrimaryKeyColumn(name = "collection_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+  UUID collection_id
 
-    @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
-    Date last_update
+  @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
+  Date last_update
 
-    @Indexed
-    String collection_name
+  @Indexed
+  String collection_name
 
-    @Indexed
-    String collection_schema
+  @Indexed
+  String collection_schema
 
-    String type
-    String collection_metadata
-    String geometry
-    Boolean deleted
+  String type
+  String collection_metadata
+  String geometry
+  Boolean deleted
 
-    CollectionMetadata() {
-        this.collection_id = UUIDs.timeBased()
-        this.last_update = new Date()
+  CollectionMetadata() {
+    this.collection_id = UUIDs.timeBased()
+    this.last_update = new Date()
+    this.deleted = false
+  }
+
+  Map asMap() {
+    this.class.declaredFields.findAll {
+      !it.synthetic
+    }.collectEntries {
+      [(it.name): this."$it.name"]
     }
+  }
 }
