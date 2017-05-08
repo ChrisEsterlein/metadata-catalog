@@ -2,3 +2,4 @@ rootProject.name = 'metadata-catalog'
 
 include 'index'
 include 'storage'
+include 'api'

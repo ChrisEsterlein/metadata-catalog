@@ -1,7 +1,8 @@
 package ncei.catalog.amqp
 
 import groovy.util.logging.Slf4j
-import ncei.catalog.repository.MetadataRepository
+
+import ncei.catalog.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
@@ -10,23 +11,20 @@ import org.springframework.stereotype.Component
 class ConsumerHandler {
 
   @Autowired
-  private MetadataRepository metadataRepository
+  private Service service
 
-  void handleMessage(ConsumerMessage consumerMessage) {
-    log.info "Received rabbit message: $consumerMessage"
+  void handleMessage(Map message) {
+    log.info "Received rabbit message: $message"
 
-    String task = consumerMessage.task?.toLowerCase()
-    switch (task) {
-      case 'save':
-        if (consumerMessage.metadata) {
-          metadataRepository.save(consumerMessage.metadata)
-          log.info "Save task: saved metadata='$consumerMessage.metadata'"
-        } else {
-          log.error("Save task: did not save metadata='$consumerMessage.metadata'")
-        }
-        break
-      default:
-        log.info "Unknown task '$consumerMessage.task' to execute"
+    if (message) {
+      Map response = service.save(message)
+      if (response.containsKey('_id') && response.containsKey('_index') && response.containsKey('_type')) {
+        log.info "Save succeeded: metadata='$message' with Elasticsearch response: $response"
+      } else {
+        log.info "Save failed: metadata='$message' with Elasticsearch response: $response"
+      }
+    } else {
+      log.error("Save task: did not save metadata='$message'")
     }
   }
 }

@@ -2,11 +2,16 @@ version: '3'
 services:
   es:
     image: elasticsearch:2.4.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
     networks:
       ${network}:
         aliases: []
   index:
     image: ${image}
+    ports:
+     - "8088:8088"
     environment:
     - elasticsearch_host=es
     - rabbitmq_connectionfactory_host=rabbitmq

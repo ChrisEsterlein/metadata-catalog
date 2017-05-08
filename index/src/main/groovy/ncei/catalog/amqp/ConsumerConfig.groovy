@@ -1,11 +1,11 @@
 package ncei.catalog.amqp
 
+import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
-import org.springframework.amqp.core.Queue
 import org.springframework.context.annotation.Configuration
 
 @Configuration

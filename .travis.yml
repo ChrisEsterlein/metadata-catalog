@@ -1,0 +1,37 @@
+sudo: required
+services:
+  - docker
+language: java
+jdk:
+  - oraclejdk8
+notifications:
+  email: false
+  slack:
+    on_success: change
+    on_failure: always
+    rooms:
+      - secure: qn++j/DOz2A8rz3ebvWIvf4pMm013XV3t0Iqa7jfQYT5aovA9Hc8vO+1g3seZPOpElivs5lMT9i+UIRXC0gPfB4R9RgT+L4+qvn6KHRDsYMEQv2+8rVqOH6B8+REAzhJj45AhszVkpCKxxYsxFjwfNma+2SFM/biYH5X+zb2yKNrsDHcXIC1/viGnZVtngjUm4ldlsKk/eCuRuISeuuQ5kGc4hafNBUxfiuN314fOTwSrFMWnpZK4uXV2K9/yE4YaxjvMs79DEWfHsvuqe8YsEJ16iN08G6++1zbVpBigSmveAapdM+4SqDNf5A9uhlN2loKU8+YjPN3wFmUOy3LbCb7nUJOyEpZ9On9wCo7gKO8sUmKT26crzqNh2t38U7a5mqYl/MUuwZRqMhlJg5ALZjclfxa+t5MlUpwW4Eu/Pc7Dj1tkjyIFtzftvCaFpw7i68e7MIWlDBqw5o131nT0gW+S3kJGEiMItG7SdyfN7sDwklvOgJ6Sf+Hm/5ASJkJdShHJJVSv7x9fixRGj66Wxhi64/YpdZ5/k4VX50YDgd2j66ORI+0zrmcA6oozIJYTKpashSJz9W/lprNRcLstmDBQQykbhrFk247jzTCkXyLFKG5cOhxxhzt6gg0JRM3Vn7r/nLM69H/jU0m0ZpOARtqdutfgBXb8nDWN7+RYtg=
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -rf $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+    - .gradle
+    - api/build
+    - index/build
+    - storage/build
+env:
+  global:
+    - secure: AuWZ1nkrl2ORtguiZ0VPToo3T+X+JpNqMAvC9mQePFGFeZNILW7S4TicgQL0T41ElFumJbNf/sAV+gbomeLjecii2lAKPlcSrRNVZiYnnEmRiDi4EvjLvWS1fqdau3Deb9jZc2WYZN2wBQfHlT9TvpgcGtqDjjD8TLSTGJLRYDLQP8QS7BsmQhcZv0jLjEO9vfi7puiq1XGmK3+dzydXnPx3SGG4k6KlSNIaw9AZqUlLvA8MHl533WxM2pN6ate86RV1WsuZ8YxZxsOApVTS4Kw+CMJq9Jdra2UdgjdPgxYj6S9TeUCA/lsNS6JlkEy+bimo9lXl2HriSItBVfw0TOz7u29ww8qDafKe5tAtGr/Q0Bxjy8lq49GMp1FhKzsdQXYHVWOmTDLrdq1agkT6iKJ2UZzoyLnWtvo4TiTlc7LfyMzIHmF95CcF1WXTDyKE7u7Co/vn4JP3i2GYLR5QlAvRTZDtufKrQQq01BKJfIpr5kYU+QDyyKj9JzDRGEcxdYYkPmmd2NWDYl2TDbXyxo1RrCdfScxLEYEMoc9KlxfLWaACkaKa6/YcV9QAImZhMZ6wPteGk2HW0kmN1eOUt6JSPLPLGEDzQWzvtaOmo/mEz9uhJyST1A/aAOSm9sTkkFFVbAxDUa73GcjjzcidwBREPbA6mqcXMJKoKIFhZ+4=
+    - secure: OR7u1Kws3r4cBlfF6TaDhRzKjlj9D23rJ4OzovPAz+CndYwUPdED6+AIpF6jPC0B4CPGyF+m0dmDuyqeof+nuQrCja5CsLgXXf0xcDvIz/WM/S5SXse0oT90krVUGk1Uxmx+wHE9KmM5xo0nhxwDZk6BYqqmCtB0S+WrEy0JMkhrizzELHO7W2TGwI28JykmBgfa0i42Dy1D5Z9WUMu4OO1EPyc/rEbLDWAxu7QEh4rYRDnhrkij78zEndxE8B33c1cStGpjcIPpoRa36z4kI39qq0FCYQW0g6cjPpQ8cwokggf6FWHQNN2edJMQJGC/DVXmGzGjuSc8M32Kkz1QSofCEnq2S9+nqXek0PAL/mx4wPWXujTa8QHCLZoYB9GAsjOr6glxsendlkHtNnVsTtJThiCgT2mjQdqFwslOjPbmO6Ys1gUJ3zTDxLVKX1VlpbwFoH7r5B8xTb+PcM+MMW+4ryPM2u5lSu/Q0khPE7shz110wk8bbjtvo+2K1q1fK/P3QAZAD5v3088C3YFZKUWGXPnfIFO+BNytABn3Q49F/oIy3ewJMIOdtc99zj/taZrsOpEgSuuON0vwPjSJINStQu6CcWBJApgLjVWobnqoB/MeeonddYCBoDfSh/L8W7BtnfPcZGFrUB1hxlr9s41I7oxykdQZrbYByiWGHb0=
+install: true
+script:
+  - ./gradlew build -Dscan
+#deploy:
+#  skip_cleanup: true
+#  provider: script
+#  script: ./gradlew artifactoryPublish
+#  on:
+#    repo: cires-ncei/onestop
