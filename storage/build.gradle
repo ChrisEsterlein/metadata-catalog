@@ -47,12 +47,26 @@ dependencies {
 project.ext.set("cassandraContainerName", "${project.name}Cassandra")
 project.ext.set("applicationContainerName", "${project.name}App")
 
-task dockerFile(type: Copy, description: 'Generates the Dockerfile.', group: 'docker') {
-  from 'src/templates'
+task copyCql(type:Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
+  from 'src/resources/cql'
+  into "$buildDir/cql"
+}
+
+task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
+  from 'src/resources/docker'
   into "$buildDir"
-  include 'Dockerfile.template'
-  rename { file -> 'Dockerfile' }
-  expand(jar: "${project.name}-${project.version}.jar")
+  rename { fileName ->
+    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
+  }
+  expand(network: "$network",
+      cassandra_port: "$cassandra_port",
+      cassandra_service_name: "$cassandra_service_name",
+      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
+      application_port: "$application_port",
+      application_service_name: "$application_service_name",
+      jar_dir: 'libs',
+      jar: "${project.name}-${project.version}.jar",
+      image: "ncei/${rootProject.name}-${project.name}:${project.version}")
 }
 
 static def getDateTime() {
@@ -60,7 +74,8 @@ static def getDateTime() {
 }
 
 task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
-  dependsOn dockerFile
+  dependsOn copyCql
+  dependsOn buildDockerTemplates
   dependsOn bootRepackage
   executable "bash"
   args "-c", "docker build --no-cache \
@@ -72,61 +87,6 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
 }
 
 assemble.dependsOn dockerImage
-
-task dockerRun(type: Exec, description: 'Runs the application in a docker container.', group: 'docker') {
-  executable "bash"
-  // sets the environment variable cassandra_contactPoints to override application.yml
-  args "-c", "docker run -d \
-    -e cassandra_contactPoints=\$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
-    --name ${project.ext.applicationContainerName} \
-    --publish 8081:8080 \
-    ncei/${rootProject.name}-${project.name}:${project.version}"
-}
-
-task dockerRemove(type:Exec, description: 'Removes the application container.', group: 'docker') {
-  executable "bash"
-  args "-c", "docker rm -f ${project.ext.applicationContainerName} || true"
-}
-
-task startCassandraContainer(type:Exec, description: 'Starts the Cassandra container.', group: 'docker') {
-  executable "bash"
-  args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true  && \
-    docker run -d \
-    --publish 9042:9042 \
-    --name ${project.ext.cassandraContainerName} \
-    cassandra"
-}
-
-task waitForCassandra(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
-  dependsOn startCassandraContainer
-  executable "bash"
-  args "-c", "docker run \
-    --rm willwill/wait-for-it \
-    -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' ${project.ext.cassandraContainerName}) \
-    -p 9042 -t 30"
-}
-
-task bootstrapCassandra(type:Exec, description: 'Initializes the keyspace and tables in the Cassandra container.', group: 'docker') {
-  dependsOn waitForCassandra
-  executable "bash"
-  args "-c", "docker exec -i \
-    ${project.ext.cassandraContainerName} cqlsh <<< \"\$(cat cql/createKeyspaceAndTables.cql)\""
-}
-
-task removeCassandraContainer(type:Exec, description: 'Cleans up the Cassandra container.', group: 'docker') {
-  executable "bash"
-  args "-c", "docker rm -f ${project.ext.cassandraContainerName} || true"
-}
-
-clean.dependsOn removeCassandraContainer
-clean.dependsOn dockerRemove
-
-task dockerBootrun(description: 'Rebuilds and runs the application in a docker container.', group: 'docker') {
-  dependsOn dockerRemove
-  dependsOn dockerImage
-  dependsOn bootstrapCassandra
-  dependsOn dockerRun
-}
 
 configurations.configure {
   integrationTestCompile.extendsFrom testCompile
@@ -142,11 +102,30 @@ sourceSets {
   }
 }
 
+task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
+}
+
+task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
+}
+
+task waitForCompose(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
+  dependsOn dockerComposeUp
+  executable "bash"
+  args "-c", "docker run \
+    --network ${project.name}_$network \
+    --rm willwill/wait-for-it \
+    -h $cassandra_service_name \
+    -p $cassandra_port -t 60"
+}
+
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
-  dependsOn bootstrapCassandra
-  finalizedBy removeCassandraContainer
-
+  dependsOn waitForCompose
+  finalizedBy dockerComposeDown
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
   reports.junitXml.destination = 'build/integration-test-results'

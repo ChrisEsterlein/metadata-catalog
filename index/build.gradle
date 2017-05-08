@@ -177,7 +177,7 @@ task dockerComposeUp(type: Exec, description: 'Starts the system using docker-co
   args "-c", "docker-compose -f ${buildDir}/docker-compose.yml -p ${project.name} up -d"
 }
 
-task dockerComposeDown(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
   args "-c", "docker-compose -f ${buildDir}/docker-compose.yml -p ${project.name} down || true"
 }

@@ -1,0 +1,30 @@
+version: '3'
+services:
+  ${cassandra_service_name}:
+    image: cassandra
+    ports:
+      - "${cassandra_port}:9042"
+    networks:
+      ${network}:
+        aliases: []
+  ${cassandra_initialization_service_name}:
+    image: cassandra
+    depends_on:
+     - ${cassandra_service_name}
+    volumes:
+     - ./cql:/tmp/cql:ro
+     - ./scripts:/tmp/scripts:ro
+    command: /bin/bash /tmp/scripts/initialize_cassandra.sh
+    networks:
+      ${network}:
+        aliases: []
+  rabbitmq:
+    image: rabbitmq:latest
+    ports:
+     - "5672:5672"
+     - "15672:15672"
+    networks:
+      ${network}:
+        aliases: []
+networks:
+  ${network}: {}
