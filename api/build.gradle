@@ -64,12 +64,13 @@ task waitForStorage(
     type:Exec,
     description: 'Waits for storage to be available.',
     group: 'docker',
-    dependsOn: [":storage:dockerImage",":storage:bootstrapCassandra",":storage:dockerRun"]
+    dependsOn: [":storage:dockerComposeBlackboxUp"]
 ) {
-  executable "bash"
+  executable "bash" // TODO network name hardcoded
   args "-c", "docker run \
+    --network storage_net \
     --rm willwill/wait-for-it \
-    -h \$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' storageApp) \
+    -h storage \
     -p 8080 -t 30"
 }
 
@@ -80,8 +81,7 @@ task integrationTest(
 ) {
   mustRunAfter test
   dependsOn waitForStorage
-  finalizedBy ":storage:dockerRemove"
-  finalizedBy ":storage:removeCassandraContainer"
+  finalizedBy ":storage:dockerComposeBlackboxDown"
 
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
