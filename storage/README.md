@@ -5,4 +5,10 @@ This is the Cassandra API for storing metadata.
 1. Install docker
 
 ## Developer setup
-1. Run ```./gradlew storage:bootrun``` or ```storage:dockerBootrun``` to start this module
+Run
+-  ```./gradlew storage:bootrun```
+
+OR
+-  ```storage:build storage:dockerComposeUp``` 
+
+to start this module.
