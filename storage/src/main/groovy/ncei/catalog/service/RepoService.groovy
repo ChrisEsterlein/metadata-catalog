@@ -4,6 +4,7 @@ import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.MetadataRecord
 import ncei.catalog.domain.MetadataSchema
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.stereotype.Component
 
@@ -12,7 +13,10 @@ import javax.servlet.http.HttpServletResponse
 @Component
 class RepoService {
 
-  static Map save(CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
+  @Autowired
+  MessageService messageService
+  
+   Map save(CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
     Map saveDetails = [:]
 
     UUID metadataId = findId(metadataRecord.asMap())
@@ -28,12 +32,13 @@ class RepoService {
       saveDetails."${getTableFromClass(metadataRecord)}" = saveResult
       saveDetails.recordsCreated = 1
       saveDetails.code = HttpServletResponse.SC_CREATED
+      messageService.send(metadataRecord.asMap())
     }
 
     saveDetails
   }
 
-  static Map update(CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
+   Map update(CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
     Map updateDetails = [:]
     UUID metadataId = findId(metadataRecord.asMap())
     //get existing row
@@ -61,7 +66,7 @@ class RepoService {
     updateDetails
   }
 
-  static List list(CassandraRepository repositoryObject, Map params = null) {
+   List list(CassandraRepository repositoryObject, Map params = null) {
 
     Boolean showVersions = params?.showVersions
     Boolean showDeleted = params?.showDeleted
@@ -96,7 +101,7 @@ class RepoService {
     }
   }
 
-  static List getMostRecent(Iterable allResults, Boolean showDeleted) {
+   List getMostRecent(Iterable allResults, Boolean showDeleted) {
     Map idMostRecentMap = [:]
     List mostRecent
     allResults.each { mR ->
@@ -117,7 +122,7 @@ class RepoService {
     mostRecent
   }
 
-  static Map purge(CassandraRepository repositoryObject, Map params) {
+   Map purge(CassandraRepository repositoryObject, Map params) {
     UUID metadataId = findId(params)
 
     Map purgeDetails = [:]
@@ -145,7 +150,7 @@ class RepoService {
     purgeDetails
   }
 
-  static def delete(CassandraRepository repositoryObject, UUID id, Date timestamp = null) {
+   def delete(CassandraRepository repositoryObject, UUID id, Date timestamp = null) {
     if (timestamp) {
       repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
     } else {
@@ -159,7 +164,7 @@ class RepoService {
     }
   }
 
-  static Map softDelete(CassandraRepository repositoryObject, UUID id, Date timestamp) {
+   Map softDelete(CassandraRepository repositoryObject, UUID id, Date timestamp) {
     Iterable rowToBeDeleted = repositoryObject.findByIdAndLastUpdate(id, timestamp)
     if (rowToBeDeleted) {
       def record = rowToBeDeleted.first()
@@ -175,7 +180,7 @@ class RepoService {
     }
   }
 
-  static getTableFromClass(def metadataRecord) {
+   def getTableFromClass(def metadataRecord) {
     switch (metadataRecord.class) {
       case CollectionMetadata:
         return 'collection'
@@ -189,7 +194,7 @@ class RepoService {
     }
   }
 
-  static UUID findId(Map metadataRecord) {
+   UUID findId(Map metadataRecord) {
     String id = metadataRecord.find { (it.key =~ /_id/ && it.key != 'tracking_id') }?.value
     if (!id) {
       return null
