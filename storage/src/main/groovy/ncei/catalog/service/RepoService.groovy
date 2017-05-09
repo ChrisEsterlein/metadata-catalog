@@ -32,7 +32,7 @@ class RepoService {
       saveDetails."${getTableFromClass(metadataRecord)}" = saveResult
       saveDetails.recordsCreated = 1
       saveDetails.code = HttpServletResponse.SC_CREATED
-      messageService.notifyIndex('insert', (getTableFromClass(metadataRecord)), metadataRecord.asMap())
+      messageService.notifyIndex('insert', (getTableFromClass(metadataRecord)), findId(saveResult.asMap()) as String, metadataRecord.asMap())
     }
 
     saveDetails
@@ -53,7 +53,7 @@ class RepoService {
         metadataRecord.last_update = new Date()
         updateDetails.totalResultsUpdated = 1
         updateDetails.code = HttpServletResponse.SC_OK
-        messageService.notifyIndex('update', getTableFromClass(metadataRecord), metadataRecord.asMap())
+        messageService.notifyIndex('update', getTableFromClass(metadataRecord), findId(metadataRecord.asMap()) as String, metadataRecord.asMap())
       }
     } else {
       updateDetails.code = HttpServletResponse.SC_NOT_FOUND
@@ -143,7 +143,7 @@ class RepoService {
     items.each {
       UUID id = findId(it.asMap())
       delete(repositoryObject, id, it.last_update)
-      messageService.notifyIndex('delete', getTableFromClass(it), it.asMap())
+      messageService.notifyIndex('delete', getTableFromClass(it), findId(it.asMap()) as String, it.asMap())
       count++
     }
 
@@ -176,7 +176,7 @@ class RepoService {
       record.last_update = new Date()
       record.deleted = true
       MetadataRecord newRecord = repositoryObject.save(record)
-      messageService.notifyIndex('delete', getTableFromClass(newRecord), newRecord.asMap())
+      messageService.notifyIndex('delete', getTableFromClass(newRecord), findId(newRecord.asMap()) as String, newRecord.asMap())
       [deleted: newRecord, success: true, message: 'Successfully deleted row with id: ' + id]
     } else {
       [success: false]
