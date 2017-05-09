@@ -130,6 +130,16 @@ task startElasticsearchContainer(type: Exec, description: 'Starts the Elasticsea
     elasticsearch:2.4.0"
 }
 
+task waitForElasticsearch(type: Exec, description: 'Waits for ElasticSearch to be available.', group: 'docker') {
+  dependsOn startElasticsearchContainer
+  executable "bash"
+  args "-c", "docker run \
+    --network ${project.name}_net \
+    --rm willwill/wait-for-it \
+    -h \$(docker inspect --format='{{ .NetworkSettings.Networks.${project.name}_net.IPAddress }}' ${project.ext.elasticsearchContainerName}) \
+    -p 9200 -t 30"
+}
+
 task removeElasticsearchContainer(type: Exec, description: 'Cleans up the Elasticsearch container.', group: 'docker') {
   finalizedBy removeDockerNetwork
   executable "bash"
@@ -192,7 +202,7 @@ task dockerBootrun(description: 'Rebuilds and runs the application in a docker c
   dependsOn removeDockerNetwork
   dependsOn dockerRemove
   dependsOn dockerImage
-  dependsOn startElasticsearchContainer
+  dependsOn waitForElasticsearch
   dependsOn bootstrapRabbit
   dependsOn dockerRun
 }
@@ -213,7 +223,7 @@ sourceSets {
 
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
-  dependsOn startElasticsearchContainer
+  dependsOn waitForElasticsearch
   dependsOn bootstrapRabbit
   finalizedBy removeRabbitContainer
   finalizedBy removeElasticsearchContainer
