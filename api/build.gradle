@@ -64,14 +64,14 @@ task waitForStorage(
     type:Exec,
     description: 'Waits for storage to be available.',
     group: 'docker',
-    dependsOn: [":storage:dockerComposeBlackboxUp"]
+    dependsOn: [":storage:assemble", ":storage:dockerComposeBlackboxUp"]
 ) {
   executable "bash" // TODO network name hardcoded
   args "-c", "docker run \
     --network storage_net \
     --rm willwill/wait-for-it \
     -h storage \
-    -p 8080 -t 30"
+    -p 8080 -t 60"
 }
 
 task integrationTest(
