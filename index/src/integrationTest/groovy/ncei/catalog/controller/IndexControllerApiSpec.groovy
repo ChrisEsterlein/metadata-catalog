@@ -34,7 +34,8 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.basePath = contextPath
 
     service.INDEX = 'test_index'
-    service.deleteIndex()
+    service.indexExists()? service.deleteIndex() : ''
+    service.createIndex()
   }
 
   def 'Search for metadata with no params'() {
@@ -45,8 +46,8 @@ class IndexControllerApiSpec extends Specification {
     Map metadata2 = [type:'junk',
                      dataset: 'testDataset',
                      fileName: "testFileName2"]
-    def saved = service.save(metadata)
-    def saved2 = service.save(metadata2)
+    def saved = service.insert(metadata)
+    def saved2 = service.insert(metadata2)
 
     def expResult = metadata.clone()
     def expResult2 = metadata2.clone()
@@ -80,10 +81,10 @@ class IndexControllerApiSpec extends Specification {
     Map metadata = [type:'junk',
                     dataset: 'testDataset',
                     fileName: "testFileName"]
-    service.save(metadata)
-    service.save([type:'junk',
-                  dataset: 'testDataset',
-                  fileName: "testFileName2"])
+    service.insert(metadata)
+    service.insert([type    :'junk',
+                    dataset : 'testDataset',
+                    fileName: "testFileName2"])
 
     when:
     def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
