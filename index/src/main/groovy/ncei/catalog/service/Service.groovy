@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Value
 import javax.annotation.PostConstruct
 
 @Slf4j
-@org.springframework.stereotype.Service/**/
+@org.springframework.stereotype.Service
 class Service {
 
   @Value('${elasticsearch.host}')
@@ -43,33 +43,31 @@ class Service {
    * @param searchQuery the query to execute against elasticsearch (Ex: [q:dataset:csb fileName:name1] )
    * @return Map of items
    */
-  def search(Map searchQuery) {
+  def search(Map<String, String> searchQuery) {
     String endpoint = "/$INDEX/_search"
 
     log.debug("Search: endpoint=$endpoint query=$searchQuery")
     def response = restClient.performRequest("GET", endpoint, searchQuery)
     log.debug("Search response: $response")
 
-    int statusCode = response.getStatusLine().getStatusCode()
-    String bodyStr = EntityUtils.toString(response.getEntity())
-    def result = new JsonSlurper().parseText(bodyStr)
+    def result = parseResponse(response)
 
     return [
-        data       : result.hits.hits.collect({
+        data        : result.hits.hits.collect({
           Map map = [type: it._type, id: it._id]
           map.putAll((Map) it._source)
           map
         }),
         totalResults: result.hits.total,
         searchTerms : searchQuery,
-        code        : statusCode
+        code        : result.statusCode
     ]
   }
 
   /**
    * Insert the metadata to Elasticsearch
    * @param metadata data to insert
-   * @return Json String of inserted entry or error
+   * @return The inserted item
    */
   def insert(Map metadata) {
     String endpoint = "/$INDEX/$GRANULE_TYPE"
@@ -85,7 +83,16 @@ class Service {
         entity)
     log.debug("Insert response: $response")
 
-    return response
+    def result = parseResponse(response)
+
+    return [
+        data: [
+            id: result._id,
+            type: result._type,
+            attributes: [
+              created: result.created
+            ]]
+        ]
   }
 
   /**
@@ -93,41 +100,53 @@ class Service {
    * @return Json String indicating success or error
    * @throws ResponseException If the index doesn't exist; I.E. Not found.
    */
-  def deleteIndex() throws ResponseException {
+  boolean deleteIndex() throws ResponseException {
     String endpoint = "/$INDEX"
 
     log.debug("Delete Index: endpoint=$endpoint")
     Response response = restClient.performRequest("DELETE", endpoint)
     log.debug("Delete response: $response")
-    int statusCode = response.getStatusLine().getStatusCode()
 
-    return [
-        message: "SUCCESS: Deleted index $INDEX",
-        code: statusCode]
+    def result = parseResponse(response)
+
+    return result
   }
 
   /**
    * Does the index exist?
-   * @return Boolean true if it exists; false otherwise
+   * @return Boolean true if it exists, false otherwise.
    */
-  boolean indexExists() {
+  protected boolean indexExists() {
     String endpoint = "/$INDEX?"
     log.debug("Index Exists: endpoint=$endpoint")
     Response response = restClient.performRequest("HEAD", endpoint)
-    int statusCode = response.getStatusLine().getStatusCode()
 
-    return statusCode == 200
+    return response
   }
 
   /**
-   * Create the index
-   * @return Response indicates if the index was created or not (which is usually due to it already existing).
+   * Create the index if it doesn't exist.  If it exists then it will fail to create the index.
+   * @return Boolean true if it was created, false if there was an error creating it.
    */
-  boolean createIndex() {
+  protected boolean createIndex() {
     String endpoint = "/$INDEX?"
     log.debug("Creating index: endpoint=$endpoint")
     Response response = restClient.performRequest("PUT", endpoint)
 
     return response
+  }
+
+  def parseResponse (Response response) {
+    String body = response?.getEntity()? EntityUtils.toString(response?.getEntity()) : null
+    Map result = [:]
+    try {
+      body? result = new JsonSlurper().parseText(body) : ''
+    } catch (e) {
+      log.info("Failed JsonSlurper() on body=$body", e)
+    }
+
+    result.put('statusCode', response.getStatusLine().getStatusCode())
+
+    return result
   }
 }
