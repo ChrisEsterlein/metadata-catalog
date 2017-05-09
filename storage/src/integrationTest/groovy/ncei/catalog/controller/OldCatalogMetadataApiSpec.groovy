@@ -12,7 +12,7 @@ import spock.lang.Unroll
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-@Ignore
+@Ignore //the storage module api will not support old endpoints anymore
 @Unroll
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class OldCatalogMetadataApiSpec extends Specification {
@@ -72,7 +72,7 @@ class OldCatalogMetadataApiSpec extends Specification {
             .body('items[0].dataset', equalTo(postBody.dataset))
             .body('items[0].geometry', equalTo(postBody.geometry))
 
-    //get it back out using new endpoint so we can get the granule_id we need to delete it
+    //get it back out using new endpoint so we can get the id we need to delete it
     String response = RestAssured.given()
             .when()
             .get('/granules')
@@ -84,9 +84,9 @@ class OldCatalogMetadataApiSpec extends Specification {
             .body('granules[0].granule_metadata', equalTo(postBody.fileMetadata))
             .body('granules[0].geometry', equalTo(postBody.geometry))
             .extract()
-            .path('granules[0].granule_id' as String)
+            .path('granules[0].id' as String)
 
-    def deleteBody = [granule_id: response as String]
+    def deleteBody = [id: response as String]
 
     //delete it
     RestAssured.given()
