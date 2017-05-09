@@ -11,8 +11,13 @@ class MessageService {
   @Autowired
   RabbitTemplate rabbitTemplate
 
-  void notifyIndex(Map updatedRecord){
-    rabbitTemplate.convertAndSend('index-consumer', updatedRecord)
+  void notifyIndex(String action, String type, Map updatedRecord){
+    Map jsonMessage = buildJsonApiSpec(action, type, updatedRecord)
+    rabbitTemplate.convertAndSend('index-consumer', jsonMessage)
+  }
+
+  Map buildJsonApiSpec(String action, String type, Map updatedRecord){
+    [data: [[type: type, attributes: updatedRecord]] , meta:[action: action]]
   }
 
 }

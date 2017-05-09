@@ -28,7 +28,7 @@ class GranuleController {
 
   @RequestMapping(value = "/{granuleId}", method = RequestMethod.PUT)
   @ResponseBody
-  //we dont want to cast to a GranuleMetadata object here because granule_id and last_update will be instantiated by default
+  //we dont want to cast to a GranuleMetadata object here because id and last_update will be instantiated by default
   Map updateGranuleMetadata(@PathVariable granuleId, @RequestBody Map granuleMetadata, HttpServletResponse response) {
     granuleMetadata?.granule_id = granuleId
     if (granuleMetadata?.last_update) {
@@ -36,7 +36,7 @@ class GranuleController {
       granuleMetadata.granule_id = UUID.fromString(granuleMetadata.granule_id)
       repoService.update(granuleMetadataRepository, new GranuleMetadata(granuleMetadata))
     } else {
-      return ['message': 'To update a record you must provide a granule_id and the last_update field from the previous version']
+      return ['message': 'To update a record you must provide a id and the last_update field from the previous version']
     }
   }
 
@@ -94,9 +94,9 @@ class GranuleController {
       Map content = [:]
       granuleMetadata.granule_id = granuleId
       if (granuleMetadata?.last_update) {
-        UUID granule_id = UUID.fromString(granuleMetadata.granule_id)
+        UUID id = UUID.fromString(granuleMetadata.granule_id)
         Date timestamp = new Date(granuleMetadata.last_update as Long)
-        content = repoService.softDelete(granuleMetadataRepository, granule_id, timestamp) ?: [:]
+        content = repoService.softDelete(granuleMetadataRepository, id, timestamp) ?: [:]
         response.status = response.SC_OK
         content
       } else {
@@ -106,7 +106,7 @@ class GranuleController {
     } catch (e) {
       def msg = granuleMetadata.granule_id ?
               'failed to delete records for ' + granuleMetadata.granule_id + ' from the metadata catalog' :
-              'please specify a granule_id'
+              'please specify a id'
       log.error(msg, e)
       response.status = response.SC_INTERNAL_SERVER_ERROR
       [message: msg]

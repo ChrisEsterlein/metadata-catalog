@@ -39,7 +39,7 @@ class GranuleApiSpec extends Specification {
             "collections"     : ["a", "list", "of", "collections"]
     ]
 
-    when: 'we post, a new record is create and returned in response'
+    when: 'we post, a new record is created and returned in response'
     Map granuleMetadata = RestAssured.given()
             .body(postBody)
             .contentType(ContentType.JSON)
@@ -78,7 +78,7 @@ class GranuleApiSpec extends Specification {
             .body('granules[0].granule_metadata', equalTo(postBody.granule_metadata))
             .body('granules[0].collections', equalTo(postBody.collections))
 
-    when: 'we update the postBody with the granule_id and new metadata'
+    when: 'we update the postBody with the id and new metadata'
 
     String updatedMetadata = "different metadata"
     Map updatedPostBody = granuleMetadata.clone()
@@ -211,7 +211,7 @@ class GranuleApiSpec extends Specification {
 
 
     then: 'clean up the db, purge all 3 records by id'
-    //delete all with that granule_id
+    //delete all with that id
     RestAssured.given()
             .body(updatedRecord) //id in here
             .contentType(ContentType.JSON)
