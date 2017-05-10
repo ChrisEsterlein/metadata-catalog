@@ -127,8 +127,11 @@ task startElasticsearchContainer(type: Exec, description: 'Starts the Elasticsea
     --net-alias index.elasticsearch \
     --publish 9300:9300 \
     --publish 9200:9200 \
+    -e http.host=0.0.0.0 \
+    -e transport.host=127.0.0.1 \
+    -e xpack.security.enabled=false \
     --name ${project.ext.elasticsearchContainerName} \
-    elasticsearch:2.4.0"
+    docker.elastic.co/elasticsearch/elasticsearch:5.4.0"
 }
 
 task waitForElasticsearch(type: Exec, description: 'Waits for ElasticSearch to be available.', group: 'docker') {
