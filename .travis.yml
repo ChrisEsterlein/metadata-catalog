@@ -29,6 +29,8 @@ env:
 install: true
 script:
   - ./gradlew build -Dscan
+after_failure:
+  - ./gradlew debugDockerLogs dockerComposeDown
 #deploy:
 #  skip_cleanup: true
 #  provider: script
