@@ -101,7 +101,13 @@ task dockerComposeUp(type: Exec, description: 'Starts the system using docker-co
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
 }
 
+task debugDockerLogs(type:Exec, description: 'Print the docker logs before removing the containers.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker ps -aq | xargs -n 1 docker logs"
+}
+
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
+  dependsOn debugDockerLogs
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
 }
