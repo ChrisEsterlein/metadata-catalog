@@ -1,0 +1,22 @@
+version: '2'
+services:
+  ${elasticsearch_service_name}:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.4.0
+    environment:
+     - xpack.security.enabled=false
+    ports:
+      - "${elasticsearch_rest_port}:9200"
+      - "${elasticsearch_node_port}:9300"
+    networks:
+      ${network}:
+        aliases: []
+  ${rabbit_service_name}:
+    image: rabbitmq:management
+    ports:
+     - "${rabbit_port}:5672"
+     - "${rabbit_admin_port}:15672"
+    networks:
+      ${network}:
+        aliases: []
+networks:
+  ${network}: {}

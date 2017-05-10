@@ -44,8 +44,6 @@ dependencies {
   testCompile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
   testCompile 'io.rest-assured:rest-assured:3.0.2'
 }
-project.ext.set("cassandraContainerName", "${project.name}Cassandra")
-project.ext.set("applicationContainerName", "${project.name}App")
 
 task copyCql(type:Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
   from 'src/resources/cql'
@@ -64,6 +62,9 @@ task buildDockerTemplates(type:Copy, description: 'Copies docker files and scrip
       cassandra_initialization_service_name: "$cassandra_initialization_service_name",
       application_port: "$application_port",
       application_service_name: "$application_service_name",
+      rabbit_service_name: "$rabbit_service_name",
+      rabbit_port: "$rabbit_port",
+      rabbit_admin_port: "$rabbit_admin_port",
       jar_dir: 'libs',
       jar: "${project.name}-${project.version}.jar",
       image: "ncei/${rootProject.name}-${project.name}:${project.version}")
@@ -81,7 +82,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
   args "-c", "docker build --no-cache \
     --label ncei.${rootProject.name}-version=${project.version} \
     --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
-    --label ncei.${rootProject.name}-name=${project.ext.applicationContainerName} \
+    --label ncei.${rootProject.name}-name=${project.name}Module \
     --label ncei.${rootProject.name}-vendor=NCEI \
     -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
