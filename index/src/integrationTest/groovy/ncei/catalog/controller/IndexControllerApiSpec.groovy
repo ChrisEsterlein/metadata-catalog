@@ -41,30 +41,22 @@ class IndexControllerApiSpec extends Specification {
 
   def 'Search for metadata with no search params'() {
     setup: 'Load data into elasticsearch for searching'
-    Map metadata = [type:"junk",
-                    dataset: "testDataset",
-                    fileName: "testFileName1"]
-    Map metadata2 = [type:"junk",
-                     dataset: "testDataset",
-                     fileName: "testFileName2"]
-    def saved = service.insert(metadata)
-    def saved2 = service.insert(metadata2)
+    Map metadata = [
+        id: '1',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName1"]
+    ]
+    Map metadata2 = [
+        id: '2',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName2"]
+    ]
 
-    def expResult = metadata.clone()
-    def expResult2 = metadata2.clone()
-    // Add the id to saved metadata since appears back when you search.
-    expResult.put("id", saved.data.id)
-    expResult2.put("id", saved2.data.id)
-
-    when: "Inserted data has appeared in the database"
-    Map metadataSearch = generateElasticsearchQuery(metadata)
-    Map metadataSearch2 = generateElasticsearchQuery(metadata2)
-
+    when: "Inserted data has appeared in elasticsearch"
+    service.insert(metadata)
+    service.insert(metadata2)
     poller.eventually {
-      def search = service.search(metadataSearch)
-      def search2 = service.search(metadataSearch2)
-      assert search.data.size() == 1
-      assert search2.data.size() == 1
+      assert service.search().data.size() == 2
     }
 
     then: "You can hit the application search endpoint WITHOUT search params and get back the saved data"
@@ -76,29 +68,34 @@ class IndexControllerApiSpec extends Specification {
         .assertThat()
       .statusCode(200)
         .body("data.size", equalTo(2))
-        .body("data.findAll{true}", hasItems(expResult, expResult2))
+        .body("data.id", hasItems(metadata.id, metadata2.id))
   }
 
   def 'Search for metadata with search params'() {
     setup: 'Load data into elasticsearch for searching'
-    Map metadata = [type: "junk",
-                    dataset: "testDataset",
-                    fileName: "testFileName"]
-    service.insert([type    : "junk",
-                    dataset : "testDataset",
-                    fileName: "testFileName2"])
+    Map metadata = [
+        id: '1',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName1"]
+    ]
+    Map metadata2 = [
+        id: '2',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName2"]
+    ]
     service.insert(metadata)
+    service.insert(metadata2)
 
     when: "Inserted data has appeared in the database"
-    Map metadataSearch = generateElasticsearchQuery(metadata)
+    def metadataSearch = generateQueryString(metadata.attributes)
     poller.eventually {
-      assert service.search(metadataSearch).data.size() == 1
+      assert service.search().data.size() == 2
     }
 
     then: "You can hit the application search endpoint WITH search params and get back the saved data"
     RestAssured.given()
         .contentType(contentType)
-        .params(metadataSearch)
+        .params([q: metadataSearch])
       .when()
         .get(SEARCH_ENDPOINT)
         .then()
@@ -109,19 +106,24 @@ class IndexControllerApiSpec extends Specification {
         .body('data[0].fileName', equalTo(metadata.fileName))
   }
 
+  def 'returns empty list when nothing has been indexed'() {
+    expect:
+    RestAssured.given()
+        .contentType(contentType)
+      .when()
+        .get(SEARCH_ENDPOINT)
+      .then()
+        .assertThat()
+        .statusCode(200)
+        .body("data.size", equalTo(0))
+  }
+
   /**
-   * Convert map of parameters into an AND separated String and put into map with key "q"
+   * Convert map of parameters into an AND separated String
    * @param params Map<String, String> params to search
-   * @return Map ["q": "key:value pairs separated with AND"]
+   * @return String with key:value pairs separated with AND
    */
-  Map generateElasticsearchQuery(Map params) {
-    String paramsConversion = ""
-    Iterator it = params.entrySet().iterator()
-    while (it.hasNext()) {
-      Map.Entry<String, String> entry = it.next()
-      paramsConversion += "${entry.getKey()}:${entry.getValue()}"
-      it.hasNext()? paramsConversion += " AND " : ""
-    }
-    ["q": paramsConversion]
+  String generateQueryString(Map params) {
+    params.collect({ k, v -> "$k:$v" }).join(' AND ')
   }
 }

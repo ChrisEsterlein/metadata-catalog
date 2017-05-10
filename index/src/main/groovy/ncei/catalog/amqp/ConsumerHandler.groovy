@@ -18,7 +18,7 @@ class ConsumerHandler {
 
     if (message) {
       Map response = service.insert(message)
-      if (response.containsKey('_id') && response.containsKey('_index') && response.containsKey('_type')) {
+      if (response.containsKey('data')) {
         log.info "Insert succeeded: metadata='$message' with Elasticsearch response: $response"
       } else {
         log.info "Insert failed: metadata='$message' with Elasticsearch response: $response"

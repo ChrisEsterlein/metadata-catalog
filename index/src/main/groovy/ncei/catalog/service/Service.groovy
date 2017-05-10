@@ -28,7 +28,6 @@ class Service {
   protected RestClient restClient
 
   private String INDEX = 'search_index'
-  private String GRANULE_TYPE = 'metadata'
 
   @PostConstruct
   protected buildClients() {
@@ -40,23 +39,24 @@ class Service {
 
   /**
    * Search elasticsearch with query that is passed in.
-   * @param searchQuery the query to execute against elasticsearch (Ex: [q:dataset:csb fileName:name1] )
+   * @param searchQuery the query to execute against elasticsearch (Ex: "dataset:csb fileName:name1" )
    * @return Map of items
    */
-  def search(Map<String, String> searchQuery) {
+  def search(String searchQuery = null) {
     String endpoint = "/$INDEX/_search"
 
     log.debug("Search: endpoint=$endpoint query=$searchQuery")
-    def response = restClient.performRequest("GET", endpoint, searchQuery)
+    def response = searchQuery ?
+        restClient.performRequest('GET', endpoint, [q: searchQuery] as Map<String,String>) :
+        restClient.performRequest('GET', endpoint)
+
     log.debug("Search response: $response")
 
     def result = parseResponse(response)
 
     return [
         data        : result.hits.hits.collect({
-          Map map = [type: it._type, id: it._id]
-          map.putAll((Map) it._source)
-          map
+          [id: it._id, type: it._type, attributes: it._source]
         }),
         totalResults: result.hits.total,
         searchTerms : searchQuery,
@@ -70,10 +70,16 @@ class Service {
    * @return The inserted item
    */
   def insert(Map metadata) {
-    String endpoint = "/$INDEX/$GRANULE_TYPE"
+    String endpoint = "/$INDEX"
+    if (metadata.type) {
+      endpoint += "/$metadata.type"
+    }
+    if (metadata.id) {
+      endpoint += "/$metadata.id"
+    }
 
     log.debug("Insert: endpoint=$endpoint metadata=$metadata")
-    String metadataStr = JsonOutput.toJson(metadata)
+    String metadataStr = JsonOutput.toJson(metadata.attributes)
     HttpEntity entity = new NStringEntity(metadataStr, ContentType.APPLICATION_JSON)
     log.debug("Insert entity=${entity.toString()}")
     Response response = restClient.performRequest(

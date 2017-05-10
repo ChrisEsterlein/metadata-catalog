@@ -32,19 +32,33 @@ class IndexRabbitApiSpec extends Specification {
 
   def 'rabbit save to elastic search works'() {
     setup:
-    Map metadata = [type:'junk',
-                    id: '1',
-                    dataset: 'testDataset',
-                    fileName: "testFileName"]
+    Map metadata = [
+        type      : 'junk',
+        id        : '1',
+        attributes: [
+            dataset : 'testDataset',
+            fileName: "testFileName"
+        ]
+    ]
 
     when:
     rabbitTemplate.convertAndSend(ConsumerConfig.queueName, metadata)
 
     then:
     poller.eventually {
-      def searchResults = service.search([q: "dataset:${metadata.dataset} fileName:${metadata.fileName}" as String])
+      def searchResults = service.search("fileName:${metadata.attributes.fileName}")
       assert searchResults.totalResults == 1
       assert searchResults.data[0] == metadata
     }
+  }
+
+  def 'malformed rabbit messages are handled gracefully'() {
+    when:
+    rabbitTemplate.convertAndSend(ConsumerConfig.queueName, 'totes not json')
+    sleep(5000)
+
+    then:
+    service.search().data.size() == 0
+    rabbitTemplate.receive(ConsumerConfig.queueName) == null
   }
 }
