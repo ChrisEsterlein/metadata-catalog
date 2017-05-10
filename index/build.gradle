@@ -125,7 +125,7 @@ task waitForCompose(type:Exec, description: 'Waits for elasticsearch to be avail
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
   dependsOn waitForCompose
-  finalizedBy dockerComposeDown
+//  finalizedBy dockerComposeDown
 
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
@@ -133,4 +133,5 @@ task integrationTest(type: Test, description: 'Runs the integration tests', grou
   reports.html.destination = 'build/reports/integrationTests'
 }
 
+integrationTest.finalizedBy dockerComposeDown
 check.dependsOn integrationTest
