@@ -39,27 +39,10 @@ class RepoServiceSpec extends Specification {
 
   }
 
-
-  def 'find id test'() {
-
-    setup:
-    Map object = [
-            tracking_id: 'wrong id',
-            id : UUID.fromString('95f5bea0-31c8-11e7-a2e3-bb6760fe9882')
-    ]
-
-    when:
-    UUID id = repoService.findId(object)
-
-    then:
-    assert id == object.id
-  }
-
-
   def 'test repoService save'(){
     setup: 'instantiate a new granuleMetadata pogo'
     def granuleMetadataMap = [
-            "granule_id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
+            "id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
             "tracking_id":"test-id-1",
             "filename" : "test.txt",
             "dataset": "test-dataset-1",
@@ -80,7 +63,7 @@ class RepoServiceSpec extends Specification {
 
     then:
     //the service will try to find the record, which does not exist
-    1 * granuleMetadataRepository.findByMetadataId(granuleMetadata.granule_id) >> null
+    1 * granuleMetadataRepository.findByMetadataId(granuleMetadata.id) >> null
 
     //so it will create a new one
     1 * granuleMetadataRepository.save(granuleMetadata) >> granuleMetadata

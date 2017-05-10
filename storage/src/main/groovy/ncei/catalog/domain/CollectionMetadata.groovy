@@ -10,8 +10,8 @@ import org.springframework.data.cassandra.mapping.Table
 @Table(value = 'CollectionMetadata')
 class CollectionMetadata extends MetadataRecord {
 
-  @PrimaryKeyColumn(name = "collection_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-  UUID collection_id
+  @PrimaryKeyColumn(name = "id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+  UUID id
 
   @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
   Date last_update
@@ -22,22 +22,16 @@ class CollectionMetadata extends MetadataRecord {
   @Indexed
   String collection_schema
 
+  String submission_id
   String type
   String collection_metadata
   String geometry
   Boolean deleted
 
   CollectionMetadata() {
-    this.collection_id = UUIDs.timeBased()
+    this.id = UUIDs.timeBased()
     this.last_update = new Date()
     this.deleted = false
   }
 
-  Map asMap() {
-    this.class.declaredFields.findAll {
-      !it.synthetic
-    }.collectEntries {
-      [(it.name): this."$it.name"]
-    }
-  }
 }

@@ -11,8 +11,8 @@ import org.springframework.data.cassandra.mapping.Table
 @Table(value = 'GranuleMetadata')
 class GranuleMetadata extends MetadataRecord {
 
-  @PrimaryKeyColumn(name = "granule_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-  UUID granule_id
+  @PrimaryKeyColumn(name = "id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+  UUID id
 
   @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
   Date last_update
@@ -22,7 +22,6 @@ class GranuleMetadata extends MetadataRecord {
 
   @Indexed
   String granule_schema
-
   String tracking_id
   String filename
   String type
@@ -34,7 +33,7 @@ class GranuleMetadata extends MetadataRecord {
   Boolean deleted
 
   GranuleMetadata() {
-    this.granule_id = UUIDs.timeBased()
+    this.id = UUIDs.timeBased()
     this.last_update = new Date()
     this.deleted = false
   }

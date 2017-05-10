@@ -10,8 +10,8 @@ import org.springframework.data.cassandra.mapping.Table
 @Table(value = 'MetadataSchema')
 class MetadataSchema extends MetadataRecord {
 
-  @PrimaryKeyColumn(name = "schema_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-  UUID schema_id
+  @PrimaryKeyColumn(name = "id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+  UUID id
 
   @PrimaryKeyColumn(name = "last_update", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
   Date last_update
@@ -23,10 +23,9 @@ class MetadataSchema extends MetadataRecord {
   Boolean deleted
 
   MetadataSchema() {
-    this.schema_id = UUIDs.timeBased()
+    this.id = UUIDs.timeBased()
     this.last_update = new Date()
     this.deleted = false
   }
-
 
 }
