@@ -35,7 +35,7 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.basePath = contextPath
 
     service.INDEX = 'test_index'
-    service.indexExists()? service.deleteIndex() : ''
+    if (service.indexExists()) { service.deleteIndex() }
     service.createIndex()
   }
 

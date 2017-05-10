@@ -24,7 +24,8 @@ class IndexRabbitApiSpec extends Specification {
 
   def setup() {
     service.INDEX = 'test_index'
-    service.deleteIndex()
+    if (service.indexExists()) { service.deleteIndex() }
+    service.createIndex()
   }
 
   def 'rabbit save to elastic search works'() {

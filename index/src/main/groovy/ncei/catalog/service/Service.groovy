@@ -35,7 +35,7 @@ class Service {
     log.info("Setting Elasticsearch connection: host=$ELASTICSEARCH_HOST port=$ELASTICSEARCH_PORT")
 
     restClient = RestClient.builder(new HttpHost(ELASTICSEARCH_HOST, ELASTICSEARCH_PORT)).build()
-    indexExists()?: createIndex()
+    if (!indexExists()) { createIndex() }
   }
 
   /**
@@ -121,7 +121,7 @@ class Service {
     log.debug("Index Exists: endpoint=$endpoint")
     Response response = restClient.performRequest("HEAD", endpoint)
 
-    return response
+    return response.statusLine.statusCode == 200
   }
 
   /**
