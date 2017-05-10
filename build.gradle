@@ -9,3 +9,8 @@ task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images
 task clean {
   dependsOn cleanDockerImages
 }
+
+task debugDockerLogs(type:Exec, description: 'Print the docker logs before removing the containers.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker ps -aq | xargs -n 1 docker logs"
+}

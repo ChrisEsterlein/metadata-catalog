@@ -104,6 +104,7 @@ sourceSets {
 }
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  dependsOn buildDockerTemplates
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
 }
