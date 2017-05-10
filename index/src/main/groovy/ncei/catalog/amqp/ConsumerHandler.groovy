@@ -17,14 +17,14 @@ class ConsumerHandler {
     log.info "Received rabbit message: $message"
 
     if (message) {
-      Map response = service.save(message)
-      if (response.containsKey('_id') && response.containsKey('_index') && response.containsKey('_type')) {
-        log.info "Save succeeded: metadata='$message' with Elasticsearch response: $response"
+      Map response = service.insert(message)
+      if (response.containsKey('data')) {
+        log.info "Insert succeeded: metadata='$message' with Elasticsearch response: $response"
       } else {
-        log.info "Save failed: metadata='$message' with Elasticsearch response: $response"
+        log.info "Insert failed: metadata='$message' with Elasticsearch response: $response"
       }
     } else {
-      log.error("Save task: did not save metadata='$message'")
+      log.error("Insert task: did not insert metadata='$message'")
     }
   }
 }

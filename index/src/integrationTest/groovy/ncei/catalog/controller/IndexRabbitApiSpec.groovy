@@ -22,28 +22,43 @@ class IndexRabbitApiSpec extends Specification {
   @Autowired
   Service service
 
+  def poller = new PollingConditions(timeout: 5)
+
   def setup() {
     service.INDEX = 'test_index'
-    service.deleteIndex()
+    if (service.indexExists()) { service.deleteIndex() }
+    service.createIndex()
   }
 
   def 'rabbit save to elastic search works'() {
     setup:
-    Map metadata = [type:'junk',
-                    id: '1',
-                    dataset: 'testDataset',
-                    fileName: "testFileName"]
-
-    def conditions = new PollingConditions(timeout: 20, initialDelay: 1.5, factor: 1.25)
+    Map metadata = [
+        type      : 'junk',
+        id        : '1',
+        attributes: [
+            dataset : 'testDataset',
+            fileName: "testFileName"
+        ]
+    ]
 
     when:
     rabbitTemplate.convertAndSend(ConsumerConfig.queueName, metadata)
 
     then:
-    conditions.eventually {
-      def searchResults = service.search(["dataset:${metadata.dataset} fileName:${metadata.fileName}":""])
+    poller.eventually {
+      def searchResults = service.search("fileName:${metadata.attributes.fileName}")
       assert searchResults.totalResults == 1
-      assert searchResults.items[0] == metadata
+      assert searchResults.data[0] == metadata
     }
+  }
+
+  def 'malformed rabbit messages are handled gracefully'() {
+    when:
+    rabbitTemplate.convertAndSend(ConsumerConfig.queueName, 'totes not json')
+    sleep(5000)
+
+    then:
+    service.search().data.size() == 0
+    rabbitTemplate.receive(ConsumerConfig.queueName) == null
   }
 }

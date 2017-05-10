@@ -10,8 +10,15 @@ The following is required if not using the docker containers to run Elasticsearc
 1. Create an application.yml at index module root using SAMPLE-application.yml
 
 ## Developer setup
-1. Run ./gradlew index:bootrun to start this module
-1. Run ./gradlew index:dockerBootrun to start this module in containers
+Run
+-  ```./gradlew index:bootrun```
+
+OR
+-  ```incex:build index:dockerComposeUp``` 
+
+to start this module.
+
+Note: if you are running integration tests and make a change to the docker template, be sure to rerun build or assemble, otherwise changes to the docker-compose.yml will not take effect.
 
 ##Saving via RABBITMQ
 Save metadata:

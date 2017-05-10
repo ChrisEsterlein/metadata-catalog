@@ -22,15 +22,16 @@ class Controller {
 
   @RequestMapping(value = "/search", method = [GET])
   @ResponseBody
-  Map search(@RequestParam Map params, HttpServletResponse response) {
+  Map search(@RequestParam(required = false) String q, HttpServletResponse response) {
     try {
-      log.info "Received search request parameter=$params"
-      service.search(params)
-    } catch (e) {
-      String message = "Failed to query with params=$params Exception=$e"
+      log.info "Received search request query=$q"
+      return service.search(q)
+    }
+    catch (e) {
+      String message = "Failed to query with query=$q Exception=$e"
       log.error (message, e)
       response.status = response.SC_INTERNAL_SERVER_ERROR
-      [message: message]
+      return [message: message]
     }
   }
 }

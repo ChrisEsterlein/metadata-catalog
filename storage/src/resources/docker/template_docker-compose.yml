@@ -18,11 +18,11 @@ services:
     networks:
       ${network}:
         aliases: []
-  rabbitmq:
-    image: rabbitmq:latest
+  ${rabbit_service_name}:
+    image: rabbitmq:management
     ports:
-     - "5672:5672"
-     - "15672:15672"
+     - "${rabbit_port}:5672"
+     - "${rabbit_admin_port}:15672"
     networks:
       ${network}:
         aliases: []

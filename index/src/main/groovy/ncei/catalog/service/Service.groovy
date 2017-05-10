@@ -1,103 +1,158 @@
 package ncei.catalog.service
 
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import groovyx.net.http.ContentType
-import groovyx.net.http.HTTPBuilder
-import groovyx.net.http.Method
+import org.apache.http.HttpEntity
+import org.apache.http.HttpHost
+import org.apache.http.entity.ContentType
+import org.apache.http.nio.entity.NStringEntity
+import org.apache.http.util.EntityUtils
+import org.elasticsearch.client.Response
+import org.elasticsearch.client.ResponseException
+import org.elasticsearch.client.RestClient
 import org.springframework.beans.factory.annotation.Value
 
 import javax.annotation.PostConstruct
-import javax.servlet.http.HttpServletResponse
 
 @Slf4j
-@org.springframework.stereotype.Service/**/
+@org.springframework.stereotype.Service
 class Service {
 
   @Value('${elasticsearch.host}')
   private String ELASTICSEARCH_HOST
 
   @Value('${elasticsearch.port}')
-  private String ELASTICSEARCH_PORT
+  private int ELASTICSEARCH_PORT
 
-  protected HTTPBuilder elasticsearchClient
+  protected RestClient restClient
 
-//  @Value('${elasticsearch.index.prefix:}${elasticsearch.index.search.name}')
   private String INDEX = 'search_index'
-
-//  @Value('${elasticsearch.index.search.granuleType}')
-  private String GRANULE_TYPE = 'metadata'
 
   @PostConstruct
   protected buildClients() {
-    def url = "http://$ELASTICSEARCH_HOST:$ELASTICSEARCH_PORT"
-    elasticsearchClient = new HTTPBuilder("$url")
-    log.info("Set Elasticsearch client url: ${elasticsearchClient.uri} from host=$ELASTICSEARCH_HOST port=$ELASTICSEARCH_PORT")
+    log.info("Setting Elasticsearch connection: host=$ELASTICSEARCH_HOST port=$ELASTICSEARCH_PORT")
+
+    restClient = RestClient.builder(new HttpHost(ELASTICSEARCH_HOST, ELASTICSEARCH_PORT)).build()
+    if (!indexExists()) { createIndex() }
   }
 
   /**
    * Search elasticsearch with query that is passed in.
-   * @param searchQuery the query to execute against elasticsearch (Ex: [q:dataset:csb fileName:name1] )
-   * @return
+   * @param searchQuery the query to execute against elasticsearch (Ex: "dataset:csb fileName:name1" )
+   * @return Map of items
    */
-  def search(Map searchQuery) {
-    String path = "/$INDEX/_search"
+  def search(String searchQuery = null) {
+    String endpoint = "/$INDEX/_search"
 
-    log.info("Performing search query: uri: ${elasticsearchClient.uri} path: $path query: $searchQuery")
-    def response = elasticsearchClient.get(path: path, query: searchQuery)
-    def result = [
-        items       : response.hits.hits.collect({
-          Map map = [type: it._type, id: it._id]
-          map.putAll((Map) it._source)
-          map
-        }),
-        totalResults: response.hits.total,
-        searchTerms : searchQuery,
-        code        : HttpServletResponse.SC_OK
-    ]
+    log.debug("Search: endpoint=$endpoint query=$searchQuery")
+    def response = searchQuery ?
+        restClient.performRequest('GET', endpoint, [q: searchQuery] as Map<String,String>) :
+        restClient.performRequest('GET', endpoint)
+
     log.debug("Search response: $response")
-    result
+
+    def result = parseResponse(response)
+
+    return [
+        data        : result.hits.hits.collect({
+          [id: it._id, type: it._type, attributes: it._source]
+        }),
+        totalResults: result.hits.total,
+        searchTerms : searchQuery,
+        code        : result.statusCode
+    ]
   }
 
   /**
-   * Save the metadata to Elasticsearch
-   * @param metadata data to save
-   * @return
+   * Insert the metadata to Elasticsearch
+   * @param metadata data to insert
+   * @return The inserted item
    */
-  def save(def metadata) {
-    String path = "/$INDEX/$GRANULE_TYPE"
-
-    log.info("Performing save: uri: ${elasticsearchClient.uri} path: $path metadata: $metadata")
-    def response = elasticsearchClient.post(path: path, body: metadata, requestContentType: ContentType.JSON)
-    log.debug("Save response: $response")
-    response
-  }
-
-  /**
-   * Delete the set index.
-   * @return map with message and code
-   */
-  def deleteIndex() {
-    String path = "/$INDEX"
-
-    log.info("Performing delete: path: $path")
-    def response = elasticsearchClient.request(Method.DELETE, ContentType.JSON) {
-      uri.path = path
-      requestContentType = ContentType.JSON
-
-      response.success = { resp, json ->
-        return [
-            message: "SUCCESS: Deleted index $INDEX",
-            code: resp.status
-        ]
-      }
-      response.failure = { resp ->
-        return [
-            message: "FAILURE: $resp.responseBase",
-            code: resp.status]
-      }
+  def insert(Map metadata) {
+    String endpoint = "/$INDEX"
+    if (metadata.type) {
+      endpoint += "/$metadata.type"
     }
+    if (metadata.id) {
+      endpoint += "/$metadata.id"
+    }
+
+    log.debug("Insert: endpoint=$endpoint metadata=$metadata")
+    String metadataStr = JsonOutput.toJson(metadata.attributes)
+    HttpEntity entity = new NStringEntity(metadataStr, ContentType.APPLICATION_JSON)
+    log.debug("Insert entity=${entity.toString()}")
+    Response response = restClient.performRequest(
+        "POST", // POST for _id optional
+        endpoint,
+        Collections.<String, String>emptyMap(),
+        entity)
+    log.debug("Insert response: $response")
+
+    def result = parseResponse(response)
+
+    return [
+        data: [
+            id: result._id,
+            type: result._type,
+            attributes: [
+              created: result.created
+            ]]
+        ]
+  }
+
+  /**
+   * Delete the specified index.
+   * @return Json String indicating success or error
+   * @throws ResponseException If the index doesn't exist; I.E. Not found.
+   */
+  boolean deleteIndex() throws ResponseException {
+    String endpoint = "/$INDEX"
+
+    log.debug("Delete Index: endpoint=$endpoint")
+    Response response = restClient.performRequest("DELETE", endpoint)
     log.debug("Delete response: $response")
 
-    response
+    def result = parseResponse(response)
+
+    return result
+  }
+
+  /**
+   * Does the index exist?
+   * @return Boolean true if it exists, false otherwise.
+   */
+  protected boolean indexExists() {
+    String endpoint = "/$INDEX?"
+    log.debug("Index Exists: endpoint=$endpoint")
+    Response response = restClient.performRequest("HEAD", endpoint)
+
+    return response.statusLine.statusCode == 200
+  }
+
+  /**
+   * Create the index if it doesn't exist.  If it exists then it will fail to create the index.
+   * @return Boolean true if it was created, false if there was an error creating it.
+   */
+  protected boolean createIndex() {
+    String endpoint = "/$INDEX?"
+    log.debug("Creating index: endpoint=$endpoint")
+    Response response = restClient.performRequest("PUT", endpoint)
+
+    return response
+  }
+
+  def parseResponse (Response response) {
+    String body = response?.getEntity()? EntityUtils.toString(response?.getEntity()) : null
+    Map result = [:]
+    try {
+      body? result = new JsonSlurper().parseText(body) : ''
+    } catch (e) {
+      log.info("Failed JsonSlurper() on body=$body", e)
+    }
+
+    result.put('statusCode', response.getStatusLine().getStatusCode())
+
+    return result
   }
 }

@@ -27,6 +27,7 @@ class IndexControllerApiSpec extends Specification {
   Service service
 
   private ContentType contentType = ContentType.JSON
+  def poller = new PollingConditions(timeout: 5)
 
   def setup() {
     RestAssured.baseURI = "http://localhost"
@@ -34,36 +35,31 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.basePath = contextPath
 
     service.INDEX = 'test_index'
-    service.deleteIndex()
+    if (service.indexExists()) { service.deleteIndex() }
+    service.createIndex()
   }
 
-  def 'Search for metadata with no params'() {
+  def 'Search for metadata with no search params'() {
     setup: 'Load data into elasticsearch for searching'
-    Map metadata = [type:'junk',
-                    dataset: 'testDataset',
-                    fileName: "testFileName1"]
-    Map metadata2 = [type:'junk',
-                     dataset: 'testDataset',
-                     fileName: "testFileName2"]
-    def saved = service.save(metadata)
-    def saved2 = service.save(metadata2)
+    Map metadata = [
+        id: '1',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName1"]
+    ]
+    Map metadata2 = [
+        id: '2',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName2"]
+    ]
 
-    def expResult = metadata.clone()
-    def expResult2 = metadata2.clone()
-    // Add the id to saved metadata since appears back when you search.
-    expResult.put("id", (String)saved._id)
-    expResult2.put("id", (String)saved2._id)
-
-    when:
-    def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
-    Map metadataSearch = generateElasticsearchQuery(metadata)
-    Map metadataSearch2 = generateElasticsearchQuery(metadata2)
-    conditions.eventually {
-      assert service.search(metadataSearch).items.size() == 1
-      assert service.search(metadataSearch2).items.size() == 1
+    when: "Inserted data has appeared in elasticsearch"
+    service.insert(metadata)
+    service.insert(metadata2)
+    poller.eventually {
+      assert service.search().data.size() == 2
     }
 
-    then:
+    then: "You can hit the application search endpoint WITHOUT search params and get back the saved data"
     RestAssured.given()
         .contentType(contentType)
       .when()
@@ -71,44 +67,63 @@ class IndexControllerApiSpec extends Specification {
         .then()
         .assertThat()
       .statusCode(200)
-        .body("items.size", equalTo(2))
-        .body("items.findAll{true}", hasItems(expResult, expResult2))
+        .body("data.size", equalTo(2))
+        .body("data.id", hasItems(metadata.id, metadata2.id))
   }
 
-  def 'Search for metadata with params'() {
+  def 'Search for metadata with search params'() {
     setup: 'Load data into elasticsearch for searching'
-    Map metadata = [type:'junk',
-                    dataset: 'testDataset',
-                    fileName: "testFileName"]
-    service.save(metadata)
-    service.save([type:'junk',
-                  dataset: 'testDataset',
-                  fileName: "testFileName2"])
+    Map metadata = [
+        id: '1',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName1"]
+    ]
+    Map metadata2 = [
+        id: '2',
+        type: "junk",
+        attributes: [dataset: "testDataset", fileName: "testFileName2"]
+    ]
+    service.insert(metadata)
+    service.insert(metadata2)
 
-    when:
-    def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
-    Map metadataSearch = generateElasticsearchQuery(metadata)
-    conditions.eventually {
-      assert service.search(metadataSearch).items.size() == 1
+    when: "Inserted data has appeared in the database"
+    def metadataSearch = generateQueryString(metadata.attributes)
+    poller.eventually {
+      assert service.search().data.size() == 2
     }
 
-    then:
+    then: "You can hit the application search endpoint WITH search params and get back the saved data"
     RestAssured.given()
         .contentType(contentType)
-        .params(metadataSearch)
+        .params([q: metadataSearch])
       .when()
         .get(SEARCH_ENDPOINT)
         .then()
       .assertThat()
         .statusCode(200)
-        .body("items.size", equalTo(1))
-        .body('items.size()', equalTo(1))
-        .body('items[0].dataset', equalTo(metadata.dataset))
-        .body('items[0].fileName', equalTo(metadata.fileName))
+        .body("data.size", equalTo(1))
+        .body('data[0].dataset', equalTo(metadata.dataset))
+        .body('data[0].fileName', equalTo(metadata.fileName))
   }
 
-  Map generateElasticsearchQuery(Map params) {
-    String key = params.toMapString().replaceAll(",", " AND")
-    [q: "${key.substring(1, key.length()-1)}"]
+  def 'returns empty list when nothing has been indexed'() {
+    expect:
+    RestAssured.given()
+        .contentType(contentType)
+      .when()
+        .get(SEARCH_ENDPOINT)
+      .then()
+        .assertThat()
+        .statusCode(200)
+        .body("data.size", equalTo(0))
+  }
+
+  /**
+   * Convert map of parameters into an AND separated String
+   * @param params Map<String, String> params to search
+   * @return String with key:value pairs separated with AND
+   */
+  String generateQueryString(Map params) {
+    params.collect({ k, v -> "$k:$v" }).join(' AND ')
   }
 }
