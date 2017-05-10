@@ -53,8 +53,8 @@ class IndexControllerApiSpec extends Specification {
     def expResult = metadata.clone()
     def expResult2 = metadata2.clone()
     // Add the id to saved metadata since appears back when you search.
-    expResult.put("id", saved.data._id)
-    expResult2.put("id", saved2.data._id)
+    expResult.put("id", saved.data.id)
+    expResult2.put("id", saved2.data.id)
 
     when: "Inserted data has appeared in the database"
     Map metadataSearch = generateElasticsearchQuery(metadata)

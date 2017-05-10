@@ -42,9 +42,9 @@ class IndexRabbitApiSpec extends Specification {
 
     then:
     conditions.eventually {
-      def searchResults = service.search(["dataset:${metadata.dataset} fileName:${metadata.fileName}":""])
+      def searchResults = service.search([q: "dataset:${metadata.dataset} fileName:${metadata.fileName}" as String])
       assert searchResults.totalResults == 1
-      assert searchResults.items[0] == metadata
+      assert searchResults.data[0] == metadata
     }
   }
 }
