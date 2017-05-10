@@ -22,6 +22,8 @@ class IndexRabbitApiSpec extends Specification {
   @Autowired
   Service service
 
+  def poller = new PollingConditions(timeout: 5)
+
   def setup() {
     service.INDEX = 'test_index'
     if (service.indexExists()) { service.deleteIndex() }
@@ -35,13 +37,11 @@ class IndexRabbitApiSpec extends Specification {
                     dataset: 'testDataset',
                     fileName: "testFileName"]
 
-    def conditions = new PollingConditions(timeout: 20, initialDelay: 1.5, factor: 1.25)
-
     when:
     rabbitTemplate.convertAndSend(ConsumerConfig.queueName, metadata)
 
     then:
-    conditions.eventually {
+    poller.eventually {
       def searchResults = service.search([q: "dataset:${metadata.dataset} fileName:${metadata.fileName}" as String])
       assert searchResults.totalResults == 1
       assert searchResults.data[0] == metadata

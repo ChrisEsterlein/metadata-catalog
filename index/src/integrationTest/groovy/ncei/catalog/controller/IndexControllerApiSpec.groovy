@@ -27,7 +27,7 @@ class IndexControllerApiSpec extends Specification {
   Service service
 
   private ContentType contentType = ContentType.JSON
-  def conditions = new PollingConditions(timeout: 10, initialDelay: 1.5, factor: 1.25)
+  def poller = new PollingConditions(timeout: 5)
 
   def setup() {
     RestAssured.baseURI = "http://localhost"
@@ -60,7 +60,7 @@ class IndexControllerApiSpec extends Specification {
     Map metadataSearch = generateElasticsearchQuery(metadata)
     Map metadataSearch2 = generateElasticsearchQuery(metadata2)
 
-    conditions.eventually {
+    poller.eventually {
       def search = service.search(metadataSearch)
       def search2 = service.search(metadataSearch2)
       assert search.data.size() == 1
@@ -91,7 +91,7 @@ class IndexControllerApiSpec extends Specification {
 
     when: "Inserted data has appeared in the database"
     Map metadataSearch = generateElasticsearchQuery(metadata)
-    conditions.eventually {
+    poller.eventually {
       assert service.search(metadataSearch).data.size() == 1
     }
 
