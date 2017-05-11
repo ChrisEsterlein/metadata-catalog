@@ -63,20 +63,21 @@ class Service {
    * @return The inserted item
    */
   def insert(Map metadata) {
-    String endpoint = "/$INDEX"
-    if (metadata.type) {
-      endpoint += "/$metadata.type"
-    }
-    if (metadata.id) {
-      endpoint += "/$metadata.id"
+    def id = metadata?.id
+    def type = metadata?.type
+    def attributes = metadata?.attributes
+    if (!(id instanceof String || id instanceof Number) || !(type instanceof String) || !(attributes instanceof Map)) {
+      log.warn("Indexed objects must have an id, type, and attributes. Ignoring: ${metadata}")
+      return null
     }
 
+    String endpoint = "/$INDEX/$type/$id"
     log.debug("Insert: endpoint=$endpoint metadata=$metadata")
     String metadataStr = JsonOutput.toJson(metadata.attributes)
     HttpEntity entity = new NStringEntity(metadataStr, ContentType.APPLICATION_JSON)
     log.debug("Insert entity=${entity.toString()}")
     Response response = restClient.performRequest(
-        "POST", // POST for _id optional
+        'PUT',
         endpoint,
         Collections.<String, String>emptyMap(),
         entity)
