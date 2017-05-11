@@ -51,11 +51,13 @@ task copyCql(type:Copy, description: 'Copies cql to build for use in docker-comp
 }
 
 task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
+  dependsOn copyCql
   from 'src/resources/docker'
   into "$buildDir"
   rename { fileName ->
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
+  exclude "template_docker-compose-storage.yml"
   expand(network: "$network",
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
@@ -127,11 +129,7 @@ task dockerComposeBlackboxDown(type: Exec, description: 'Stops the system using 
 task waitForCompose(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
   dependsOn dockerComposeUp
   executable "bash"
-  args "-c", "docker run \
-    --network ${project.name}_$network \
-    --rm willwill/wait-for-it \
-    -h $cassandra_service_name \
-    -p $cassandra_port -t 60"
+  args "-c", "docker wait ${project.name}_${cassandra_initialization_service_name}_1"
 }
 
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {

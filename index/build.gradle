@@ -47,6 +47,7 @@ dependencies {
 task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
   from 'src/resources/docker'
   into "$buildDir"
+  exclude "template_docker-compose-index.yml"
   rename { fileName ->
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
@@ -105,6 +106,16 @@ task dockerComposeUp(type: Exec, description: 'Starts the system using docker-co
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
+}
+
+task dockerComposeBlackboxUp(type: Exec, description: 'Starts the system using docker-compose-all.yml, for use in larger system tests.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f $buildDir/docker-compose-all.yml -p ${project.name} up -d"
+}
+
+task dockerComposeBlackboxDown(type: Exec, description: 'Stops the system using docker-compose-all.yml, for use in larger system tests', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f $buildDir/docker-compose-all.yml -p ${project.name} down || true"
 }
 
 task waitForCompose(type:Exec, description: 'Waits for elasticsearch to be available.', group: 'docker') {

@@ -41,6 +41,7 @@ class TutorialAPISpec extends Specification{
     route | path
     'storage2' | ''
     'storage1' | 'metadata-catalog/collections'
+    'index' | 'index/search'
 
   }
 
