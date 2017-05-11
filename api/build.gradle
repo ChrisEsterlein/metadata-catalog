@@ -71,7 +71,7 @@ task copyCqlScript(type:Copy, description: 'Copies cql init script to build for 
   rename { fileName ->
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
- 
+
   expand(
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",

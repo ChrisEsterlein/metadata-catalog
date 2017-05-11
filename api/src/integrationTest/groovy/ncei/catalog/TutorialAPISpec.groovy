@@ -35,13 +35,13 @@ class TutorialAPISpec extends Specification{
     Response response = RestAssured.get("${appUrl}/${route}/${path}")
 
     then:
-    response.getStatusCode() == 200
+    response.getStatusCode() == expectedStatus
 
     where:
-    route | path
-    'storage2' | ''
-    'storage1' | 'metadata-catalog/collections'
-    'index' | 'index/search'
+    route | path | expectedStatus
+    'storage2' | '' | 404 // because there is no data
+    'storage1' | 'metadata-catalog/collections' | 404
+    'index' | 'index/search' | 200
 
   }
 

@@ -19,9 +19,6 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
     - .gradle
-    - api/build
-    - index/build
-    - storage/build
 env:
   global:
     - secure: AuWZ1nkrl2ORtguiZ0VPToo3T+X+JpNqMAvC9mQePFGFeZNILW7S4TicgQL0T41ElFumJbNf/sAV+gbomeLjecii2lAKPlcSrRNVZiYnnEmRiDi4EvjLvWS1fqdau3Deb9jZc2WYZN2wBQfHlT9TvpgcGtqDjjD8TLSTGJLRYDLQP8QS7BsmQhcZv0jLjEO9vfi7puiq1XGmK3+dzydXnPx3SGG4k6KlSNIaw9AZqUlLvA8MHl533WxM2pN6ate86RV1WsuZ8YxZxsOApVTS4Kw+CMJq9Jdra2UdgjdPgxYj6S9TeUCA/lsNS6JlkEy+bimo9lXl2HriSItBVfw0TOz7u29ww8qDafKe5tAtGr/Q0Bxjy8lq49GMp1FhKzsdQXYHVWOmTDLrdq1agkT6iKJ2UZzoyLnWtvo4TiTlc7LfyMzIHmF95CcF1WXTDyKE7u7Co/vn4JP3i2GYLR5QlAvRTZDtufKrQQq01BKJfIpr5kYU+QDyyKj9JzDRGEcxdYYkPmmd2NWDYl2TDbXyxo1RrCdfScxLEYEMoc9KlxfLWaACkaKa6/YcV9QAImZhMZ6wPteGk2HW0kmN1eOUt6JSPLPLGEDzQWzvtaOmo/mEz9uhJyST1A/aAOSm9sTkkFFVbAxDUa73GcjjzcidwBREPbA6mqcXMJKoKIFhZ+4=
@@ -30,7 +27,7 @@ before_install:
   - sudo sysctl -w vm.max_map_count=262144
 install: true
 script:
-  - ./gradlew build -Dscan
+  - ./gradlew clean build -Dscan
 after_failure:
   - ./gradlew debugDockerLogs dockerComposeDown
 #deploy:
