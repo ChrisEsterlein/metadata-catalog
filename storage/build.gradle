@@ -57,13 +57,10 @@ task buildDockerTemplates(type:Copy, description: 'Copies docker files and scrip
   rename { fileName ->
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
-  exclude "template_docker-compose-storage.yml"
   expand(network: "$network",
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
       cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-      application_port: "$application_port",
-      application_service_name: "$application_service_name",
       rabbit_service_name: "$rabbit_service_name",
       rabbit_port: "$rabbit_port",
       rabbit_admin_port: "$rabbit_admin_port",
@@ -114,16 +111,6 @@ task dockerComposeUp(type: Exec, description: 'Starts the system using docker-co
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
-}
-
-task dockerComposeBlackboxUp(type: Exec, description: 'Starts the system using docker-compose-all.yml, for use in larger system tests.', group: 'docker') {
-  executable "bash"
-  args "-c", "docker-compose -f $buildDir/docker-compose-all.yml -p ${project.name} up -d"
-}
-
-task dockerComposeBlackboxDown(type: Exec, description: 'Stops the system using docker-compose-all.yml, for use in larger system tests', group: 'docker') {
-  executable "bash"
-  args "-c", "docker-compose -f $buildDir/docker-compose-all.yml -p ${project.name} down || true"
 }
 
 task waitForCompose(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
