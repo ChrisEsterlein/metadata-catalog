@@ -7,7 +7,7 @@ USE metacat
 ;
 DROP TABLE IF exists GranuleMetadata;
 CREATE TABLE IF NOT exists GranuleMetadata (
-granule_id timeuuid,
+id timeuuid,
 last_update timestamp,
 tracking_id text,
 filename text,
@@ -20,7 +20,7 @@ geometry text,
 granule_schema text,
 collections list < text >,
 deleted boolean,
-PRIMARY KEY ((granule_id), last_update)
+PRIMARY KEY ((id), last_update)
 )
 WITH CLUSTERING
   ORDER BY (last_update DESC)
@@ -32,7 +32,7 @@ CREATE INDEX IF NOT exists GranuleSchemaIndex ON GranuleMetadata (granule_schema
 
 DROP TABLE IF exists CollectionMetadata;
 CREATE TABLE IF NOT exists CollectionMetadata (
-collection_id timeuuid,
+id timeuuid,
 last_update timestamp,
 collection_name text,
 collection_schema text,
@@ -40,7 +40,7 @@ type text,
 collection_metadata text,
 geometry text,
 deleted boolean,
-PRIMARY KEY ((collection_id), last_update)
+PRIMARY KEY ((id), last_update)
 )
 WITH CLUSTERING
   ORDER BY (last_update DESC)
@@ -66,12 +66,12 @@ WITH CLUSTERING
 
 DROP TABLE IF exists MetadataSchema;
 CREATE TABLE IF NOT exists MetadataSchema (
-schema_id timeuuid,
+id timeuuid,
 last_update timestamp,
 schema_name text,
 json_schema text,
 deleted boolean,
-PRIMARY KEY (schema_id, last_update)
+PRIMARY KEY (id, last_update)
 )
 WITH CLUSTERING
   ORDER BY (last_update DESC)

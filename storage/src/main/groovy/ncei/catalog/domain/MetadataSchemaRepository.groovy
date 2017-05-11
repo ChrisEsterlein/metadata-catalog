@@ -5,13 +5,13 @@ import org.springframework.data.cassandra.repository.Query
 
 interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
 
-  @Query("Select * from MetadataSchema where schema_id =?0 and last_update=?1")
+  @Query("Select * from MetadataSchema where id =?0 and last_update=?1")
   Iterable<MetadataSchema> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 
-  @Query("Select * from MetadataSchema where schema_id =?0")
+  @Query("Select * from MetadataSchema where id =?0")
   Iterable<MetadataSchema> findByMetadataId(UUID id)
 
-  @Query("Select * from MetadataSchema where schema_id =?0 LIMIT 1")
+  @Query("Select * from MetadataSchema where id =?0 LIMIT 1")
   Iterable<MetadataSchema> findByMetadataIdLimitOne(UUID id)
 
   @Query("SELECT*FROM MetadataSchema WHERE schema_name=?0")
@@ -23,14 +23,14 @@ interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
   @Query("SELECT*FROM MetadataSchema WHERE schema_name =?0 AND granule_schema=?1")
   Iterable<MetadataSchema> findBySchemaNameAndSchema(String schema_name, String schema)
 
-  @Query("SELECT DISTINCT schema_id FROM MetadataSchema WHERE schema_name=?0")
+  @Query("SELECT DISTINCT id FROM MetadataSchema WHERE schema_name=?0")
   Iterable<MetadataSchema> findDistinctTrackingIdsBySchemaName(String schema_name)
 
 
-  @Query("SELECT schema_id FROM MetadataSchema WHERE schema_id=?0 LIMIT 1")
-  Iterable<MetadataSchema> findLatestByMetadataId(UUID schema_id)
+  @Query("SELECT id FROM MetadataSchema WHERE id=?0 LIMIT 1")
+  Iterable<MetadataSchema> findLatestByMetadataId(UUID id)
 
-  @Query("DELETE FROM MetadataSchema WHERE schema_id =?0 AND last_update=?1")
+  @Query("DELETE FROM MetadataSchema WHERE id =?0 AND last_update=?1")
   Iterable<MetadataSchema> deleteByMetadataIdAndLastUpdate(UUID id, Date lastUpdate)
 
 }
