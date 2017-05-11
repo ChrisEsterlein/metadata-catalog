@@ -3,6 +3,7 @@ package ncei.catalog.controller
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.service.IndexAdminService
 import ncei.catalog.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -23,8 +24,8 @@ class IndexControllerApiSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
-  @Autowired
-  Service service
+  @Autowired Service service
+  @Autowired IndexAdminService indexAdminService
 
   private ContentType contentType = ContentType.JSON
   def poller = new PollingConditions(timeout: 5)
@@ -35,8 +36,8 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.basePath = contextPath
 
     service.INDEX = 'test_index'
-    if (service.indexExists()) { service.deleteIndex() }
-    service.createIndex()
+    if (indexAdminService.indexExists('test_index')) { indexAdminService.deleteIndex('test_index') }
+    indexAdminService.createIndex('test_index')
   }
 
   def 'Search for metadata with no search params'() {
