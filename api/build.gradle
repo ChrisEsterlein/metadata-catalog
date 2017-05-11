@@ -71,7 +71,7 @@ task copyCqlScript(type:Copy, description: 'Copies cql init script to build for 
   rename { fileName ->
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
-
+ 
   expand(
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
@@ -79,16 +79,18 @@ task copyCqlScript(type:Copy, description: 'Copies cql init script to build for 
       )
 }
 
-task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
-  dependsOn copyCql
-  dependsOn copyCqlScript
+task buildDockerTemplates(
+    type:Copy,
+    description: 'Copies docker files and scripts, substituting properties for consistency.',
+    group: 'docker',
+    dependsOn: [':storage:dockerImage', ':index:dockerImage', 'copyCql', 'copyCqlScript']
+) {
   from 'src/resources/docker'
   into "$buildDir"
   rename { fileName ->
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
 
-// TODO test what happens when you don't have the images build already
   expand(network: "$network",
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
@@ -109,41 +111,12 @@ task buildDockerTemplates(type:Copy, description: 'Copies docker files and scrip
       index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar")
 }
 
-// TODO fix descriptions
-//task dockerComposeUpShared(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-//  dependsOn buildDockerTemplates
-//  executable "bash"
-//  args "-c", "docker-compose -f $buildDir/docker-compose-shared.yml -p ${project.name} up -d"
-//}
-//task dockerComposeUpIndex(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-//  dependsOn buildDockerTemplates
-//  executable "bash"
-//  args "-c", "docker-compose -f $buildDir/docker-compose-index.yml -p ${project.name} up -d"
-//}
-//task dockerComposeUpStorage(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-//  dependsOn buildDockerTemplates
-//  executable "bash"
-//  args "-c", "docker-compose -f $buildDir/docker-compose-storage.yml -p ${project.name} up -d"
-//}
-
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
   dependsOn buildDockerTemplates
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
 }
 
-//task dockerComposeDownShared(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
-//  executable "bash"
-//  args "-c", "docker-compose -f $buildDir/docker-compose-shared.yml -p ${project.name} down || true"
-//}
-//task dockerComposeDownIndex(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
-//  executable "bash"
-//  args "-c", "docker-compose -f $buildDir/docker-compose-index.yml -p ${project.name} down || true"
-//}
-//task dockerComposeDownStorage(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
-//  executable "bash"
-//  args "-c", "docker-compose -f $buildDir/docker-compose-storage.yml -p ${project.name} down || true"
-//}
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
