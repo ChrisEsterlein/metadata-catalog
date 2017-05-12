@@ -247,7 +247,7 @@ class RepoService {
       return deleteDetails
     } else {
       log.warn("Failing soft delete for non-existant record with id: $id")
-      deleteDetails.meta += [success: true, message: ('Successfully deleted row with id: ' + id) , code: HttpServletResponse.SC_NOT_FOUND]
+      deleteDetails.meta += [success: false, message: ('Failed to deleted row with id: ' + id) , code: HttpServletResponse.SC_NOT_FOUND]
       deleteDetails.errors = ['No record found with id: ' + id]
       response.status = HttpServletResponse.SC_NOT_FOUND
       return deleteDetails
