@@ -3,7 +3,7 @@ package ncei.catalog.controller
 import groovy.util.logging.Slf4j
 import ncei.catalog.service.ControllerService
 import ncei.catalog.service.RepoService
-import ncei.catalog.service.ResponseGenerationService
+
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.web.bind.annotation.*
@@ -21,15 +21,11 @@ class RepoController {
   @Autowired
   RepoService repoService
 
-  @Autowired
-  ResponseGenerationService responseGenerationService
-
   @RequestMapping(method = RequestMethod.POST)
   @ResponseBody
   Map save(@PathVariable table, @RequestBody Map metadataObject, HttpServletResponse response) {
     CassandraRepository repo = controllerService.getRepo(table)
-    Map saveDetails = repoService.save(controllerService.getRepo(table), controllerService.toMetadataRecord(table, metadataObject))
-    responseGenerationService.generateResponse(response, saveDetails,'insert', table)
+    repoService.save(response, controllerService.getRepo(table), controllerService.toMetadataRecord(table, metadataObject))
   }
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
@@ -40,14 +36,13 @@ class RepoController {
     if (metadataObject?.last_update) {
       metadataObject.last_update = new Date(metadataObject.last_update as Long)
       metadataObject.id = UUID.fromString(id)
-      updateDetails = repoService.update(controllerService.getRepo(table), controllerService.toMetadataRecord(table, metadataObject))
-      updateDetails.code
+      updateDetails = repoService.update(response, controllerService.getRepo(table), controllerService.toMetadataRecord(table, metadataObject))
     } else {
       updateDetails.error = 'To update a record you must provide the previous versions \'last_update\' field ' +
-              '(and any other fields you don\'t want to update to null'
+              '(and any other fields you don\'t want to update to null)'
       updateDetails.code = HttpServletResponse.SC_BAD_REQUEST
     }
-    responseGenerationService.generateResponse(response, updateDetails, 'update', table)
+    updateDetails
   }
 
   @RequestMapping(method = RequestMethod.GET)
@@ -55,10 +50,7 @@ class RepoController {
   Map list(@PathVariable table, @RequestParam Map params, HttpServletResponse response) {
     try {
       params.table = table
-      Map listDetails = repoService.list(controllerService.getRepo(table), params)
-      response.status = listDetails.records ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NOT_FOUND
-      responseGenerationService.generateResponse(response, listDetails, 'read', table)
-
+      repoService.list(response, controllerService.getRepo(table), params)
     }
     catch (e) {
       String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
@@ -77,9 +69,7 @@ class RepoController {
     try {
       params.id = id
       params.table = table
-      Map listDetails = repoService.list(controllerService.getRepo(table), params)
-      response.status = listDetails.records ? HttpServletResponse.SC_OK : HttpServletResponse.SC_NOT_FOUND
-      responseGenerationService.generateResponse(response, listDetails,'read', table)
+      repoService.list(response, controllerService.getRepo(table), params)
     }
     catch (e) {
       String exceptionMessage = e.hasProperty('undeclaredThrowable') ? e.undeclaredThrowable.message : e.message
@@ -97,9 +87,7 @@ class RepoController {
     try {
       UUID uuid = UUID.fromString(id)
       Date timestamp = new Date(metadataObject.last_update as Long)
-      Map deleteDetails = repoService.softDelete(controllerService.getRepo(table), uuid, timestamp) ?: [:]
-      response.status = deleteDetails?.success ? response.SC_OK : response.SC_BAD_REQUEST
-      responseGenerationService.generateResponse(response, deleteDetails,'delete', table)
+      repoService.softDelete(response, controllerService.getRepo(table), uuid, timestamp) ?: [:]
     } catch (e) {
       def msg = metadataObject.id ?
               'failed to delete records for ' + metadataObject.id + ' from the metadata catalog' :
@@ -115,14 +103,7 @@ class RepoController {
   Map purge(@PathVariable table, @RequestBody Map params, HttpServletResponse response) {
 
     try {
-      Map deleteDetails = repoService.purge(controllerService.getRepo(table), params)
-
-      log.info("count deleted:${deleteDetails.totalResultsDeleted} deleteDetails.code:${deleteDetails.code}")
-      response.status = response.SC_OK
-      String msg = 'Successfully purged ' + deleteDetails.totalResultsDeleted + ' rows matching ' + deleteDetails.searchTerms
-      deleteDetails.message = msg
-      responseGenerationService.generateResponse(response, deleteDetails,'delete', table)
-
+      repoService.purge(response, controllerService.getRepo(table), params)
     } catch (e) {
       def msg = params.id ?
               'failed to delete records for ' + params.id + ' from the metadata catalog'

@@ -40,6 +40,7 @@ type text,
 collection_metadata text,
 geometry text,
 deleted boolean,
+submission_id text,
 PRIMARY KEY ((id), last_update)
 )
 WITH CLUSTERING

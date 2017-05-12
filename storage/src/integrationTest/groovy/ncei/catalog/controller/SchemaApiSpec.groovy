@@ -11,7 +11,7 @@ import spock.lang.Specification
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-@Ignore
+
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class SchemaApiSpec extends Specification {
 
@@ -42,12 +42,11 @@ class SchemaApiSpec extends Specification {
             .post('/schemas')
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
-            .body('schema.schema_name', equalTo(postBody.schema_name))
-            .body('schema.json_schema', equalTo(postBody.json_schema))
-            .body('schema.geometry', equalTo(postBody.geometry))
-            .extract()
-            .path('schema')
+            .statusCode(201)
+            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
+          .extract()
+            .path('data[0].attributes')
 
     then: 'we can get it by id'
     RestAssured.given()
@@ -56,10 +55,9 @@ class SchemaApiSpec extends Specification {
             .get("/schemas/${schemaMetadata.id}")
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
-            .body('schemas[0].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[0].json_schema', equalTo(postBody.json_schema))
-            .body('schemas[0].geometry', equalTo(postBody.geometry))
+            .statusCode(200)
+            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
 
 
     when: 'we update the postBody with the id and new metadata'
@@ -77,9 +75,9 @@ class SchemaApiSpec extends Specification {
             .put("/schemas/${schemaMetadata.id}")
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
-            .body('schema.schema_name', equalTo(postBody.schema_name))
-            .body('schema.json_schema', equalTo(updatedSchema))
+            .statusCode(200)
+            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.json_schema', equalTo(updatedSchema))
 
     and: 'we can get both versions'
     Map updatedRecord = RestAssured.given()
@@ -89,15 +87,15 @@ class SchemaApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('totalResults', equalTo(2))
+            .body('meta.totalResults', equalTo(2))
     //first one is the newest
-            .body('schemas[0].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[0].json_schema', equalTo(updatedSchema))
+            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.json_schema', equalTo(updatedSchema))
     //second one is the original
-            .body('schemas[1].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[1].json_schema', equalTo(postBody.json_schema))
+            .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[1].attributes.json_schema', equalTo(postBody.json_schema))
           .extract()
-            .path('schemas[0]')
+            .path('data[0].attributes')
 
     then: 'submit the latest schema back with a delete method to delete it'
     //delete it
@@ -109,7 +107,7 @@ class SchemaApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
+            .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -119,7 +117,8 @@ class SchemaApiSpec extends Specification {
             .assertThat()
             .contentType(ContentType.JSON)
             .statusCode(404)  //should be a 404
-            .body('schemas', equalTo([]))
+            .body('data', equalTo(null))
+            .body('errors', equalTo(['No results found.']))
 
     RestAssured.given()
             .param('showDeleted', true)
@@ -128,10 +127,10 @@ class SchemaApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('totalResults', equalTo(1))
-            .body('schemas[0].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[0].json_schema', equalTo(updatedSchema))
-            .body('schemas[0].deleted', equalTo(true))
+            .body('meta.totalResults', equalTo(1))
+            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.json_schema', equalTo(updatedSchema))
+            .body('data[0].attributes.deleted', equalTo(true))
 
     and: 'we can get all 3 back with showDeleted AND showVersions'
     RestAssured.given()
@@ -142,16 +141,19 @@ class SchemaApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('totalResults', equalTo(3))
-            .body('schemas[0].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[0].json_schema', equalTo(updatedSchema))
-            .body('schemas[0].deleted', equalTo(true))
+            .body('meta.code', equalTo(200))
+            .body('meta.success', equalTo(true))
+            .body('meta.action', equalTo('read'))
+            .body('meta.totalResults', equalTo(3))
+            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.json_schema', equalTo(updatedSchema))
+            .body('data[0].attributes.deleted', equalTo(true))
 
-            .body('schemas[1].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[1].json_schema', equalTo(updatedSchema))
+            .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[1].attributes.json_schema', equalTo(updatedSchema))
 
-            .body('schemas[2].schema_name', equalTo(postBody.schema_name))
-            .body('schemas[2].json_schema', equalTo(postBody.json_schema))
+            .body('data[2].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[2].attributes.json_schema', equalTo(postBody.json_schema))
 
     then: 'clean up the db, purge all 3 records by id'
     //delete all with that id
@@ -163,6 +165,14 @@ class SchemaApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('message' as String, equalTo('Successfully purged 3 rows matching ' + updatedRecord))
+            .body('meta.id', equalTo(updatedRecord.id))
+            .body('meta.totalResultsDeleted', equalTo(3))
+            .body('meta.success', equalTo(true))
+
+            .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[1].attributes.json_schema', equalTo(updatedSchema))
+
+            .body('data[2].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[2].attributes.json_schema', equalTo(postBody.json_schema))
   }
 }

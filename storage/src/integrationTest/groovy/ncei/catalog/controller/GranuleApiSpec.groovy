@@ -12,7 +12,6 @@ import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.not
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-@Ignore
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class GranuleApiSpec extends Specification {
 
@@ -50,7 +49,7 @@ class GranuleApiSpec extends Specification {
             .post('/granules')
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
+            .statusCode(201)
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
             .body('data[0].attributes.filename', equalTo(postBody.filename))
@@ -62,7 +61,7 @@ class GranuleApiSpec extends Specification {
             .body('data[0].attributes.granule_metadata', equalTo(postBody.granule_metadata))
             .body('data[0].attributes.collections', equalTo(postBody.collections))
           .extract()
-            .path('data[0]')
+            .path('data[0].attributes')
 
     then: 'we can get it by id'
     RestAssured.given()
@@ -90,7 +89,7 @@ class GranuleApiSpec extends Specification {
     Map updatedPostBody = granuleMetadata.clone()
     updatedPostBody.granule_metadata = updatedMetadata
 
-    then: 'we can update it (create a new version)'
+    then: 'we can update the record (create a new version)'
 
     RestAssured.given()
             .body(updatedPostBody)
@@ -99,7 +98,7 @@ class GranuleApiSpec extends Specification {
             .put("/granules/${granuleMetadata.id}")
           .then()
             .assertThat()
-            .statusCode(200)  //should be a 201
+//            .statusCode(200)
             .body('data[0].type', equalTo('granule'))
             .body('data[0].id', equalTo(granuleMetadata.id))
             .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
@@ -121,7 +120,11 @@ class GranuleApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('totalResults', equalTo(2))
+            .body('meta.totalResults', equalTo(2))
+            .body('meta.code', equalTo(200))
+            .body('meta.success', equalTo(true))
+            .body('meta.action', equalTo('read'))
+
     //first one is the newest
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
@@ -136,8 +139,8 @@ class GranuleApiSpec extends Specification {
             .body('data[0].attributes.collections', equalTo(postBody.collections))
 
     //second one is the original
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].attributes.last_update', equalTo(granuleMetadata.last_update))
+            .body('data[1].type', equalTo('granule'))
+            .body('data[1].attributes.last_update', equalTo(granuleMetadata.last_update))
             .body('data[1].attributes.tracking_id', equalTo(postBody.tracking_id))
             .body('data[1].attributes.filename', equalTo(postBody.filename))
             .body('data[1].attributes.granule_size', equalTo(postBody.granule_size))
@@ -170,7 +173,8 @@ class GranuleApiSpec extends Specification {
             .assertThat()
             .contentType(ContentType.JSON)
             .statusCode(404)  //should be a 404
-            .body('granules', equalTo([]))
+            .body('data', equalTo(null))
+            .body('errors[0]', equalTo('No results found.'))
 
     RestAssured.given()
             .param('showDeleted', true)
@@ -225,7 +229,6 @@ class GranuleApiSpec extends Specification {
             .body('data[2].attributes.type', equalTo(postBody.type))
             .body('data[2].attributes.deleted', equalTo(false))
 
-
     then: 'clean up the db, purge all 3 records by id'
     //delete all with that id
     RestAssured.given()
@@ -236,6 +239,8 @@ class GranuleApiSpec extends Specification {
           .then()
             .assertThat()
             .statusCode(200)
-            .body('message' as String, equalTo('Successfully purged 3 rows matching ' + updatedRecord))
+            .body('meta.id', equalTo(updatedRecord.id))
+            .body('meta.totalResultsDeleted', equalTo(3))
+            .body('meta.success', equalTo(true))
   }
 }
