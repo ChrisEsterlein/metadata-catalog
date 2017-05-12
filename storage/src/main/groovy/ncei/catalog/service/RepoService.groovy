@@ -55,8 +55,7 @@ class RepoService {
     //get existing row
     Iterable result = repositoryObject.findByMetadataIdLimitOne(metadataId)
     if (result) {
-      //optimistic lock
-      if (result.first().last_update != metadataRecord.last_update) {
+      if (optimisticLockIsBlocking(result, metadataRecord.last_update)) {
         log.info("Failing update for out-of-date version: $metadataId")
         updateDetails.errors = ['You are not editing the most recent version.']
         updateDetails.meta += [code:HttpServletResponse.SC_CONFLICT, success: false]
@@ -226,7 +225,7 @@ class RepoService {
     Iterable rowToBeDeleted = repositoryObject.findByMetadataIdLimitOne(id)
     if (rowToBeDeleted) {
       def record = rowToBeDeleted.first()
-      if (record.last_update != timestamp) {
+      if (optimisticLockIsBlocking(rowToBeDeleted, timestamp)) {
         log.info("Failing soft delete on out-of-date record with id: $id, timestamp: $timestamp")
         deleteDetails.meta += [success: false, code: HttpServletResponse.SC_CONFLICT]
         deleteDetails.errors = ['You are not deleting the most recent version.']
@@ -253,6 +252,10 @@ class RepoService {
   
   private Map createDataItem(MetadataRecord metadataRecord){
     [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
+  }
+
+  private boolean optimisticLockIsBlocking(Iterable result, Date timestamp) {
+    return result && result.first().last_update != timestamp
   }
 
   private def getTableFromClass(MetadataRecord metadataRecord) {
