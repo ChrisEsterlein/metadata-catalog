@@ -53,7 +53,7 @@ class RepoService {
     updateDetails.meta = [action: 'update']
     UUID metadataId = metadataRecord.id
     //get existing row
-    Iterable result = repositoryObject.findByMetadataId(metadataId)
+    Iterable result = repositoryObject.findByMetadataIdLimitOne(metadataId)
     if (result) {
       //optimistic lock
       if (result.first().last_update != metadataRecord.last_update) {
@@ -76,7 +76,7 @@ class RepoService {
       log.debug("No record found for id: $metadataId")
       updateDetails.errors = ['Record does not exist.']
       updateDetails.meta += [success : false, code: HttpServletResponse.SC_NOT_FOUND]
-      response.status = HttpServletResponse.SC_OK
+      response.status = HttpServletResponse.SC_NOT_FOUND
       return updateDetails
     }
     updateDetails
@@ -142,7 +142,7 @@ class RepoService {
     listDetails
   }
 
-  List getMostRecent(Iterable<MetadataRecord> allResults, Boolean showDeleted) {
+  private List getMostRecent(Iterable<MetadataRecord> allResults, Boolean showDeleted) {
     Map<UUID, MetadataRecord> idMostRecentMap = [:]
     List mostRecent
     List deletedList = []
@@ -203,19 +203,20 @@ class RepoService {
     purgeDetails
   }
 
-  def delete(CassandraRepository repositoryObject, UUID id, Date timestamp = null) {
+  private def delete(CassandraRepository repositoryObject, UUID id, Date timestamp = null) {
     log.info("Deleting record with id: $id, timestamp: $timestamp")
-    if (timestamp) {
-      repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
-    } else {
+
+    if (!timestamp) {
+      log.debug("Looking for latest record to delete for id: $id")
       Iterable mR = repositoryObject.findByMetadataId(id as UUID)
       if (mR) {
         timestamp = mR.first().last_update as Date
       } else {
-        throw RuntimeException("No such id")
+        log.warn("Unable to find timestamp to delete id: $id")
       }
-      repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
     }
+
+    repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
   }
 
   Map softDelete(HttpServletResponse response, CassandraRepository repositoryObject, UUID id, Date timestamp) {
@@ -250,11 +251,11 @@ class RepoService {
     }
   }
   
-  Map createDataItem(MetadataRecord metadataRecord){
+  private Map createDataItem(MetadataRecord metadataRecord){
     [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
   }
 
-  def getTableFromClass(MetadataRecord metadataRecord) {
+  private def getTableFromClass(MetadataRecord metadataRecord) {
     switch (metadataRecord.class) {
       case CollectionMetadata:
         return 'collection'
