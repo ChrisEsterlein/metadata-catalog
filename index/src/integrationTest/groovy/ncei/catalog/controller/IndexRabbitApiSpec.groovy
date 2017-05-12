@@ -2,6 +2,7 @@ package ncei.catalog.controller
 
 import ncei.catalog.Application
 import ncei.catalog.amqp.ConsumerConfig
+import ncei.catalog.service.IndexAdminService
 import ncei.catalog.service.Service
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,21 +17,19 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class IndexRabbitApiSpec extends Specification {
 
-  @Autowired
-  RabbitTemplate rabbitTemplate
-
-  @Autowired
-  Service service
+  @Autowired RabbitTemplate rabbitTemplate
+  @Autowired Service service
+  @Autowired IndexAdminService indexAdminService
 
   def poller = new PollingConditions(timeout: 5)
 
   def setup() {
     service.INDEX = 'test_index'
-    if (service.indexExists()) { service.deleteIndex() }
-    service.createIndex()
+    if (indexAdminService.indexExists('test_index')) { indexAdminService.deleteIndex('test_index') }
+    indexAdminService.createIndex('test_index')
   }
 
-  def 'rabbit save to elastic search works'() {
+  def 'save to elastic search works'() {
     setup:
     Map metadata = [
         type      : 'junk',
@@ -52,10 +51,10 @@ class IndexRabbitApiSpec extends Specification {
     }
   }
 
-  def 'malformed rabbit messages are handled gracefully'() {
+  def 'malformed messages are handled gracefully'() {
     when:
     rabbitTemplate.convertAndSend(ConsumerConfig.queueName, 'totes not json')
-    sleep(5000)
+    sleep(1000)
 
     then:
     service.search().data.size() == 0

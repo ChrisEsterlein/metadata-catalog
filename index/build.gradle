@@ -42,6 +42,7 @@ dependencies {
   testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4-rc-4'
   testCompile 'org.spockframework:spock-core:1.1-groovy-2.4-rc-4'
   testCompile 'io.rest-assured:rest-assured:3.0.2'
+  testCompile 'net.bytebuddy:byte-buddy:1.6.14'
 }
 
 task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
@@ -54,8 +55,6 @@ task buildDockerTemplates(type:Copy, description: 'Copies docker files and scrip
       elasticsearch_service_name: "$elasticsearch_service_name",
       elasticsearch_rest_port: "$elasticsearch_rest_port",
       elasticsearch_node_port: "$elasticsearch_node_port",
-      application_port: "$application_port",
-      application_service_name: "$application_service_name",
       rabbit_service_name: "$rabbit_service_name",
       rabbit_port: "$rabbit_port",
       rabbit_admin_port: "$rabbit_admin_port",
@@ -97,13 +96,9 @@ sourceSets {
 }
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  dependsOn buildDockerTemplates
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
-}
-
-task debugDockerLogs(type:Exec, description: 'Print the docker logs before removing the containers.', group: 'docker') {
-  executable "bash"
-  args "-c", "docker ps -aq | xargs -n 1 docker logs"
 }
 
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {

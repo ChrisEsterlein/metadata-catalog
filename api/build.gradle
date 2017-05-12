@@ -60,18 +60,94 @@ sourceSets {
   }
 }
 
+task copyCql(type:Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
+  from '../storage/src/resources/cql'
+  into "$buildDir/cql"
+}
+
+task copyCqlScript(type:Copy, description: 'Copies cql init script to build for use in docker-compose wait.', group: 'docker') {
+  from '../storage/src/resources/docker/scripts'
+  into "$buildDir/scripts"
+  rename { fileName ->
+    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
+  }
+
+  expand(
+      cassandra_port: "$cassandra_port",
+      cassandra_service_name: "$cassandra_service_name",
+      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
+      )
+}
+
+task buildDockerTemplates(
+    type:Copy,
+    description: 'Copies docker files and scripts, substituting properties for consistency.',
+    group: 'docker',
+    dependsOn: [':storage:dockerImage', ':index:dockerImage', 'copyCql', 'copyCqlScript']
+) {
+  from 'src/resources/docker'
+  into "$buildDir"
+  rename { fileName ->
+    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
+  }
+
+  expand(network: "$network",
+      cassandra_port: "$cassandra_port",
+      cassandra_service_name: "$cassandra_service_name",
+      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
+      storage_service_name: "$storage_service_name",
+      storage_port: "$storage_port",
+      rabbit_service_name: "$rabbit_service_name",
+      rabbit_port: "$rabbit_port",
+      rabbit_admin_port: "$rabbit_admin_port",
+      elasticsearch_service_name: "$elasticsearch_service_name",
+      elasticsearch_rest_port: "$elasticsearch_rest_port",
+      elasticsearch_node_port: "$elasticsearch_node_port",
+      index_port: "$index_port",
+      index_service_name: "$index_service_name",
+      index_image: "ncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
+      storage_image: "ncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
+      storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
+      index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar")
+}
+
+task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  dependsOn buildDockerTemplates
+  executable "bash"
+  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
+}
+
+task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
+  executable "bash"
+  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
+}
+
 task waitForStorage(
     type:Exec,
     description: 'Waits for storage to be available.',
     group: 'docker',
-    dependsOn: [":storage:assemble", ":storage:dockerComposeBlackboxUp"]
 ) {
-  executable "bash" // TODO network name hardcoded
+  dependsOn dockerComposeUp
+  executable "bash"
   args "-c", "docker run \
-    --network storage_net \
+    --network ${project.name}_$network \
     --rm willwill/wait-for-it \
     -h storage \
-    -p 8080 -t 60"
+    -p 8080 -t 90"
+}
+
+task waitForIndex(
+    type:Exec,
+    description: 'Waits for index to be available.',
+    group: 'docker',
+) {
+  dependsOn dockerComposeUp
+  executable "bash"
+  args "-c", "docker run \
+    --network ${project.name}_$network \
+    --rm willwill/wait-for-it \
+    -h index \
+    -p 8080 -t 90"
 }
 
 task integrationTest(
@@ -81,7 +157,8 @@ task integrationTest(
 ) {
   mustRunAfter test
   dependsOn waitForStorage
-  finalizedBy ":storage:dockerComposeBlackboxDown"
+  dependsOn waitForIndex
+  finalizedBy dockerComposeDown
 
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath

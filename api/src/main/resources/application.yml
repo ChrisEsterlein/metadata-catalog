@@ -13,19 +13,22 @@ spring:
 
 index:
   host: localhost
-  port: 8081
+  port: 8082
 
 storage:
   host: localhost
-  port: 8082
+  port: 8081
 
 zuul:
   routes:
     storage1:
       path: /storage1/**
-      url: http://${index.host}:${index.port}
+      url: http://${storage.host}:${storage.port}
       stripPrefix: true
     storage2:
       path: /storage2/**
-      url: http://${index.host}:${index.port}/metadata-catalog/collections
+      url: http://${storage.host}:${storage.port}/metadata-catalog/collections
       stripPrefix: true
+    index:
+      path: /index/**
+      url: http://${index.host}:${index.port}

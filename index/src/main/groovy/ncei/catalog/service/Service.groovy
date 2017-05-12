@@ -4,38 +4,31 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.apache.http.HttpEntity
-import org.apache.http.HttpHost
 import org.apache.http.entity.ContentType
 import org.apache.http.nio.entity.NStringEntity
 import org.apache.http.util.EntityUtils
 import org.elasticsearch.client.Response
-import org.elasticsearch.client.ResponseException
 import org.elasticsearch.client.RestClient
-import org.springframework.beans.factory.annotation.Value
-
-import javax.annotation.PostConstruct
+import org.springframework.beans.factory.annotation.Autowired
 
 @Slf4j
 @org.springframework.stereotype.Service
 class Service {
 
-  @Value('${elasticsearch.host}')
-  private String ELASTICSEARCH_HOST
-
-  @Value('${elasticsearch.port}')
-  private int ELASTICSEARCH_PORT
-
+  static String INDEX = 'search_index'
   protected RestClient restClient
+  protected IndexAdminService indexAdminService
 
-  private String INDEX = 'search_index'
 
-  @PostConstruct
-  protected buildClients() {
-    log.info("Setting Elasticsearch connection: host=$ELASTICSEARCH_HOST port=$ELASTICSEARCH_PORT")
-
-    restClient = RestClient.builder(new HttpHost(ELASTICSEARCH_HOST, ELASTICSEARCH_PORT)).build()
-    if (!indexExists()) { createIndex() }
+  @Autowired
+  Service(RestClient restClient, IndexAdminService indexAdminService) {
+    this.restClient = restClient
+    this.indexAdminService = indexAdminService
+    if (!indexAdminService.indexExists(INDEX)) {
+      indexAdminService.createIndex(INDEX)
+    }
   }
+
 
   /**
    * Search elasticsearch with query that is passed in.
@@ -70,20 +63,21 @@ class Service {
    * @return The inserted item
    */
   def insert(Map metadata) {
-    String endpoint = "/$INDEX"
-    if (metadata.type) {
-      endpoint += "/$metadata.type"
-    }
-    if (metadata.id) {
-      endpoint += "/$metadata.id"
+    def id = metadata?.id
+    def type = metadata?.type
+    def attributes = metadata?.attributes
+    if (!(id instanceof String || id instanceof Number) || !(type instanceof String) || !(attributes instanceof Map)) {
+      log.warn("Indexed objects must have an id, type, and attributes. Ignoring: ${metadata}")
+      return null
     }
 
+    String endpoint = "/$INDEX/$type/$id"
     log.debug("Insert: endpoint=$endpoint metadata=$metadata")
     String metadataStr = JsonOutput.toJson(metadata.attributes)
     HttpEntity entity = new NStringEntity(metadataStr, ContentType.APPLICATION_JSON)
     log.debug("Insert entity=${entity.toString()}")
     Response response = restClient.performRequest(
-        "POST", // POST for _id optional
+        'PUT',
         endpoint,
         Collections.<String, String>emptyMap(),
         entity)
@@ -97,50 +91,11 @@ class Service {
             type: result._type,
             attributes: [
               created: result.created
-            ]]
+            ]
         ]
+    ]
   }
 
-  /**
-   * Delete the specified index.
-   * @return Json String indicating success or error
-   * @throws ResponseException If the index doesn't exist; I.E. Not found.
-   */
-  boolean deleteIndex() throws ResponseException {
-    String endpoint = "/$INDEX"
-
-    log.debug("Delete Index: endpoint=$endpoint")
-    Response response = restClient.performRequest("DELETE", endpoint)
-    log.debug("Delete response: $response")
-
-    def result = parseResponse(response)
-
-    return result
-  }
-
-  /**
-   * Does the index exist?
-   * @return Boolean true if it exists, false otherwise.
-   */
-  protected boolean indexExists() {
-    String endpoint = "/$INDEX?"
-    log.debug("Index Exists: endpoint=$endpoint")
-    Response response = restClient.performRequest("HEAD", endpoint)
-
-    return response.statusLine.statusCode == 200
-  }
-
-  /**
-   * Create the index if it doesn't exist.  If it exists then it will fail to create the index.
-   * @return Boolean true if it was created, false if there was an error creating it.
-   */
-  protected boolean createIndex() {
-    String endpoint = "/$INDEX?"
-    log.debug("Creating index: endpoint=$endpoint")
-    Response response = restClient.performRequest("PUT", endpoint)
-
-    return response
-  }
 
   def parseResponse (Response response) {
     String body = response?.getEntity()? EntityUtils.toString(response?.getEntity()) : null

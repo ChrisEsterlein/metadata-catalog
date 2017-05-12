@@ -1,7 +1,7 @@
 spring.main.show_banner: false
 
 server:
-  port: 8088
+  port: 8080
   context-path: /index
 
 spring:

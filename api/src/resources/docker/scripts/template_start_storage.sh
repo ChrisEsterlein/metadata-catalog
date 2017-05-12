@@ -25,4 +25,4 @@ while ! \$(check);
   done;
 
 # start the application by running the jar
-java -jar ${jar};
+java -jar ${storage_jar};
