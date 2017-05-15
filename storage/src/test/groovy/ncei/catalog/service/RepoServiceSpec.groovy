@@ -4,11 +4,13 @@ import ncei.catalog.domain.*
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import javax.servlet.http.HttpServletResponse
 
+@Ignore
 @Unroll
 class RepoServiceSpec extends Specification {
 
