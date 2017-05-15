@@ -30,7 +30,8 @@ class RabbitConfig {
   @Value('${rabbitmq.connectionfactory.password}')
   String password
 
-  final static String queueName = 'index-consumer'
+  @Value('${rabbitmq.queue}')
+  String queueName
 
   @Autowired
   private MessageService scrapingResultHandler

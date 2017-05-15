@@ -18,6 +18,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 class IndexRabbitApiSpec extends Specification {
 
   @Autowired
+  RabbitConfig rabbitConfig
+  @Autowired
   RabbitTemplate rabbitTemplate
   @Autowired
   Service service
@@ -46,7 +48,7 @@ class IndexRabbitApiSpec extends Specification {
     ]
 
     when:
-    rabbitTemplate.convertAndSend(RabbitConfig.queueName, metadata)
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, metadata)
 
     then:
     poller.eventually {
@@ -58,11 +60,11 @@ class IndexRabbitApiSpec extends Specification {
 
   def 'malformed messages are handled gracefully'() {
     when:
-    rabbitTemplate.convertAndSend(RabbitConfig.queueName, 'totes not json')
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, 'totes not json')
     sleep(1000)
 
     then:
     service.search().data.size() == 0
-    rabbitTemplate.receive(RabbitConfig.queueName) == null
+    rabbitTemplate.receive(rabbitConfig.queueName) == null
   }
 }
