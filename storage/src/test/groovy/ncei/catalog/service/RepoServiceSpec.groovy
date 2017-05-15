@@ -191,10 +191,10 @@ class RepoServiceSpec extends Specification {
     UUID uuid2 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6567")
     UUID uuid3 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6987")
 
-    when: 'list granules for id with showVersions'
+    when: 'list granules with showVersions'
     Map result = repoService.list(response, granuleMetadataRepository, [showVersions: true])
 
-    then: 'findByMetadataId returns all the rows'
+    then: 'findAll returns all the rows'
     1 * granuleMetadataRepository.findAll() >> [
         new GranuleMetadata([
             "id": uuid,
@@ -255,10 +255,10 @@ class RepoServiceSpec extends Specification {
     UUID uuid2 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6567")
     UUID uuid3 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6987")
 
-    when: 'list granules for id with showVersions'
+    when: 'list granules'
     Map result = repoService.list(response, granuleMetadataRepository)
 
-    then: 'findByMetadataId returns all the rows'
+    then: 'findAll returns all the rows'
     1 * granuleMetadataRepository.findAll() >> [
         new GranuleMetadata([
             "id": uuid,
@@ -305,10 +305,130 @@ class RepoServiceSpec extends Specification {
     1 * response.setStatus(HttpServletResponse.SC_OK)
 
     and: 'entries with the latest not deleted are returned'
-    println(result)
     result.data[0].attributes.id == uuid
     result.data[1].attributes.id == uuid3
     result.data[0].attributes.granule_metadata == "{fourth: true, reverted: true}"
     result.data[1].attributes.granule_metadata == "{first: true, not-deleted-at-all: true}"
   }
+
+  def 'list all, show deleted (soft delete)'() {
+    setup: 'multiple versions of the granule2 returned'
+    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
+    UUID uuid2 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6567")
+
+    when: 'list granules with showDeleted'
+    Map result = repoService.list(response, granuleMetadataRepository, [showDeleted: true])
+
+    then: 'findAll returns all the rows'
+    1 * granuleMetadataRepository.findAll() >> [
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now,
+            deleted: true
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(1),
+        ]),
+        new GranuleMetadata([
+            "id": uuid2,
+            "last_update": now.minus(3),
+        ]),
+    ]
+
+    and: 'no entries are excluded (limit 1 per id)'
+    result.meta.action == 'read'
+    result.meta.totalResults == 2
+    1 * response.setStatus(HttpServletResponse.SC_OK)
+
+    and: 'entries with the latest not deleted are returned'
+    result.data[0].attributes.id == uuid
+    result.data[1].attributes.id == uuid2
+  }
+
+  def 'list by id, show deleted (soft delete)'() {
+    setup: 'multiple versions of the granule2 returned'
+    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
+
+    when: 'list granules by id with showDeleted'
+    Map result = repoService.list(response, granuleMetadataRepository, [id: uuid.toString(), showDeleted: true])
+
+    then: 'findByMetadataIdLimitOne returns a deleted row'
+    1 * granuleMetadataRepository.findByMetadataIdLimitOne(_) >> [
+
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now,
+            "deleted": true,
+            "granule_metadata": "{second: true}"
+        ])
+    ]
+
+    and: 'one result is returned'
+    result.meta.action == 'read'
+    result.meta.totalResults == 1
+    1 * response.setStatus(HttpServletResponse.SC_OK)
+
+    and: 'entries with the latest not deleted are returned'
+    result.data[0].attributes.id == uuid
+    result.data[0].attributes.granule_metadata == "{second: true}"
+  }
+
+
+  def 'list all, show versions and show deleted (soft delete reverted)'() {
+    setup: 'multiple versions of the granule2 returned'
+    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
+    UUID uuid2 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6567")
+    UUID uuid3 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6987")
+
+    when: 'list granules with showVersions and showDeleted'
+    Map result = repoService.list(response, granuleMetadataRepository, [showDeleted: true, showVersions: true])
+
+    then: 'findAll returns all the rows'
+    1 * granuleMetadataRepository.findAll() >> [
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now,
+            "granule_metadata": "{fourth: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(1),
+            "granule_metadata": "{third: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(2),
+            "deleted": true,
+            "granule_metadata": "{second: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(3),
+            "granule_metadata": "{first: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid2,
+            "last_update": now.minus(2),
+            "deleted": true,
+            "granule_metadata": "{second: true, deleted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid2,
+            "last_update": now.minus(3),
+            "granule_metadata": "{first: true, deleted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid3,
+            "last_update": now.minus(1),
+            "granule_metadata": "{first: true, not-deleted-at-all: true}"
+        ]),
+    ]
+
+    and: 'everything is returned'
+    result.meta.action == 'read'
+    result.meta.totalResults == 7
+    1 * response.setStatus(HttpServletResponse.SC_OK)
+  }
+
 }

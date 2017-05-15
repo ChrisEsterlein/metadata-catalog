@@ -125,7 +125,7 @@ class RepoService {
       }
     } else {
       log.debug("Filtering old versions and deleted records")
-      listDetails.data =  getMostRecent(allResults, showDeleted)
+      listDetails.data = getMostRecent(allResults, showDeleted)
     }
 
     //build response
