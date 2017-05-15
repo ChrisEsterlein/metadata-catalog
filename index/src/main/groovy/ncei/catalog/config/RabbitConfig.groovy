@@ -6,7 +6,6 @@ import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitAdmin
-import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.amqp.support.converter.DefaultClassMapper
@@ -40,6 +39,7 @@ class RabbitConfig {
   Queue listenerQueue() {
     new Queue(queueName, true, false, true)
   }
+
   @Bean
   AmqpAdmin amqpAdmin() {
     new RabbitAdmin(connectionFactory())
