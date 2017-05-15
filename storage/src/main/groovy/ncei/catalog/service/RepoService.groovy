@@ -19,7 +19,7 @@ class RepoService {
   MessageService messageService
 
   Map save(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
-    log.info("Attempting to save ${metadataRecord.class} with id: ${metadataRecord.id}")
+    log.info("Attempting to save ${metadataRecord.recordTable()} with id: ${metadataRecord.id}")
     log.debug("Metadata record ${metadataRecord.id}- ${metadataRecord.asMap()}")
     Map saveDetails = [:]
     saveDetails.meta = [action: 'insert']
@@ -48,7 +48,7 @@ class RepoService {
   }
 
   Map update(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
-    log.info("Attempting to update ${metadataRecord.class} with id: ${metadataRecord.id}")
+    log.info("Attempting to update ${metadataRecord.recordTable()} with id: ${metadataRecord.id}")
     Map updateDetails = [:]
     updateDetails.meta = [action: 'update']
     UUID metadataId = metadataRecord.id
@@ -76,14 +76,14 @@ class RepoService {
       log.debug("No record found for id: $metadataId")
       updateDetails.errors = ['Record does not exist.']
       updateDetails.meta += [success : false, code: HttpServletResponse.SC_NOT_FOUND]
-      response.status = HttpServletResponse.SC_OK
+      response.status = HttpServletResponse.SC_NOT_FOUND
       return updateDetails
     }
     updateDetails
   }
 
   Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = null) {
-    log.info("Fulfilling ${params.table} list request with params: $params")
+    log.info("Fulfilling list request with params: $params")
     Map listDetails = [:]
     listDetails.meta = [action:'read']
     Boolean showVersions = params?.showVersions
@@ -103,7 +103,7 @@ class RepoService {
         allResults = repositoryObject.findByMetadataIdLimitOne(metadataId)
       }
     } else {
-      log.info("Querying for all $params.table records")
+      log.info("Querying for all records")
       allResults = repositoryObject.findAll()
     }
 
