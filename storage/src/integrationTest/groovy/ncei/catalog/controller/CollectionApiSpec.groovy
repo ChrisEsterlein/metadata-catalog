@@ -1,12 +1,15 @@
 package ncei.catalog.controller
 
+import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import org.springframework.amqp.rabbit.core.RabbitTemplate
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import spock.lang.Ignore
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -14,13 +17,18 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class CollectionApiSpec extends Specification {
 
+  @Autowired RabbitTemplate rabbitTemplate
+
   @Value('${local.server.port}')
   private String port
 
   @Value('${server.context-path:/}')
   private String contextPath
 
+  PollingConditions poller
+
   def setup() {
+    poller = new PollingConditions(timeout: 10)
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
@@ -66,6 +74,7 @@ class CollectionApiSpec extends Specification {
             .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
             .body('data[0].attributes.geometry', equalTo(postBody.geometry))
             .body('data[0].attributes.type', equalTo(postBody.type))
+          .extract().body()
 
 
     when: 'we update the postBody with the id and new metadata'
@@ -201,5 +210,20 @@ class CollectionApiSpec extends Specification {
             .body('meta.id', equalTo(updatedRecord.id))
             .body('meta.totalResultsDeleted', equalTo(3))
             .body('meta.success', equalTo(true))
+
+    and: 'finally, we should have sent 3 messages'
+
+    List<String> actions = []
+
+    poller.eventually {
+      String m
+      List<String> expectedActions = ['insert', 'update', 'delete']
+      while(m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()){
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        actions.add(object.meta.action)
+        assert actions == expectedActions
+      }
+    }
   }
 }

@@ -1,14 +1,17 @@
 package ncei.catalog.config
 
+import ncei.catalog.service.MessageService
 import org.springframework.amqp.core.AmqpAdmin
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitAdmin
 import org.springframework.amqp.rabbit.core.RabbitTemplate
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter
 import org.springframework.amqp.support.converter.DefaultClassMapper
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter
 import org.springframework.amqp.support.converter.MessageConverter
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -30,6 +33,8 @@ class RabbitConfig {
 
   @Value('${rabbitmq.queue}')
   String queueName
+
+  @Autowired MessageService messageService
 
   @Bean
   ConnectionFactory connectionFactory() {
@@ -71,6 +76,11 @@ class RabbitConfig {
   @Bean
   Queue indexQueue() {
     new Queue(queueName, true, false, true)
+  }
+
+  @Bean
+  MessageListenerAdapter messageListenerAdapter() {
+    new MessageListenerAdapter(messageService, jsonMessageConverter())
   }
 
 }
