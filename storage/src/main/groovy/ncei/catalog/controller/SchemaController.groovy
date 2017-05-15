@@ -33,7 +33,7 @@ class SchemaController {
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
   Map update(@PathVariable id, @RequestBody Map metadataObject, HttpServletResponse response) {
-    if(!metadataObject.id || !metadataObject.last_update){
+    if(!metadataObject.last_update){
       response.status = HttpServletResponse.SC_BAD_REQUEST
       return [errors:['To update a record, you must provide the record\'s id and last_update field, ' +
                        'as well as any other fields you do not want to update to null']]
