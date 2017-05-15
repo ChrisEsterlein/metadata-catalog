@@ -249,7 +249,7 @@ class RepoService {
       return deleteDetails
     }
   }
-  
+
   private Map createDataItem(MetadataRecord metadataRecord){
     [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
   }
