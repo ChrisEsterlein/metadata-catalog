@@ -47,10 +47,6 @@ class RepoService {
     saveDetails
   }
 
-  Map createDataItem(MetadataRecord metadataRecord){
-    [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
-  }
-
   Map update(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
     log.info("Attempting to update ${metadataRecord.class} with id: ${metadataRecord.id}")
     Map updateDetails = [:]
@@ -252,6 +248,10 @@ class RepoService {
       response.status = HttpServletResponse.SC_NOT_FOUND
       return deleteDetails
     }
+  }
+  
+  Map createDataItem(MetadataRecord metadataRecord){
+    [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
   }
 
   def getTableFromClass(MetadataRecord metadataRecord) {

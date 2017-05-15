@@ -15,4 +15,7 @@ class MessageService {
     rabbitTemplate.convertAndSend('index-consumer', details)
   }
 
+  def handleMessage(Map message){
+    return message
+  }
 }

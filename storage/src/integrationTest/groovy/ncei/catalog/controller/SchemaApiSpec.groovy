@@ -1,12 +1,15 @@
 package ncei.catalog.controller
 
+import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import org.springframework.amqp.rabbit.core.RabbitTemplate
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import spock.lang.Ignore
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -21,7 +24,12 @@ class SchemaApiSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
+  @Autowired RabbitTemplate rabbitTemplate
+
+  PollingConditions poller
+
   def setup() {
+    poller = new PollingConditions(timeout: 10)
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
@@ -174,5 +182,20 @@ class SchemaApiSpec extends Specification {
 
             .body('data[2].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[2].attributes.json_schema', equalTo(postBody.json_schema))
+
+    and: 'finally, we should have sent 3 messages'
+
+    List<String> actions = []
+
+    poller.eventually {
+      String m
+      List<String> expectedActions = ['insert', 'update', 'delete']
+      while(m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()){
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        actions.add(object.meta.action)
+        assert actions == expectedActions
+      }
+    }
   }
 }
