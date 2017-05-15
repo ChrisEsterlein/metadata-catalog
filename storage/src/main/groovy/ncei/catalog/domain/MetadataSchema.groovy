@@ -28,4 +28,8 @@ class MetadataSchema extends MetadataRecord {
     this.deleted = false
   }
 
+  String recordTable(){
+    return 'schema'
+  }
+
 }

@@ -249,23 +249,9 @@ class RepoService {
       return deleteDetails
     }
   }
-  
-  Map createDataItem(MetadataRecord metadataRecord){
-    [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
-  }
 
-  def getTableFromClass(MetadataRecord metadataRecord) {
-    switch (metadataRecord.class) {
-      case CollectionMetadata:
-        return 'collection'
-        break
-      case GranuleMetadata:
-        return 'granule'
-        break
-      case MetadataSchema:
-        return 'schema'
-        break
-    }
+  Map createDataItem(MetadataRecord metadataRecord){
+    [id: metadataRecord.id, type: metadataRecord.recordTable(), attributes: metadataRecord]
   }
 
 }

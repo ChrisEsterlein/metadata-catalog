@@ -37,4 +37,8 @@ class GranuleMetadata extends MetadataRecord {
     this.last_update = new Date()
     this.deleted = false
   }
+
+  String recordTable(){
+    return 'granule'
+  }
 }
