@@ -11,10 +11,10 @@ import javax.servlet.http.HttpServletResponse
 @Unroll
 class RepoServiceSpec extends Specification {
 
-
   RepoService repoService
-  MessageService messageService = Mock()
-
+  MessageService messageService
+  CassandraRepository granuleMetadataRepository
+  HttpServletResponse response
 
   final def granuleMetadataMap = [
       "id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
@@ -29,20 +29,24 @@ class RepoServiceSpec extends Specification {
       "collections":["FOS"]
   ]
 
-  def setup(){
+  GranuleMetadata granuleMetadata
+
+  def setup() {
+    messageService = Mock()
     repoService = new RepoService(messageService: messageService)
+
+    granuleMetadataRepository = Mock()
+    response = Mock()
+
+    granuleMetadata = new GranuleMetadata(granuleMetadataMap)
   }
 
   def 'test repoService save'(){
     setup: 'findByMetadataId returns something false'
 
-    CassandraRepository granuleMetadataRepository = Mock()
     granuleMetadataRepository.metaClass.findByMetadataId = {UUID id ->
       return null
     }
-    HttpServletResponse response = Mock()
-
-    GranuleMetadata granuleMetadata = new GranuleMetadata(granuleMetadataMap)
 
     when: 'calling service save'
     Map result = repoService.save(response, granuleMetadataRepository, granuleMetadata)
@@ -63,11 +67,6 @@ class RepoServiceSpec extends Specification {
 
   def 'test repoService save conflict'(){
     setup: 'findByMetadataId returns an object'
-    CassandraRepository granuleMetadataRepository = Mock()
-    HttpServletResponse response = Mock()
-
-
-    GranuleMetadata granuleMetadata = new GranuleMetadata(granuleMetadataMap)
 
     granuleMetadataRepository.metaClass.findByMetadataId = {UUID id ->
       [granuleMetadata]
