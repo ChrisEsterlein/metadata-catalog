@@ -2,7 +2,6 @@ package ncei.catalog.service
 
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
-import org.springframework.data.cassandra.repository.CassandraRepository
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -16,6 +15,7 @@ class RepoServiceSpec extends Specification {
   MessageService messageService
   GranuleMetadataRepository granuleMetadataRepository
   HttpServletResponse response
+  Date now = new Date()
 
   final def granuleMetadataMap = [
       "id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
@@ -89,24 +89,6 @@ class RepoServiceSpec extends Specification {
   def 'list by id, show versions (soft deleted)'() {
     setup: 'multiple versions of the granule returned'
     UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
-    Date now = new Date()
-//    granuleMetadataRepository.metaClass.findByMetadataId = {UUID id ->
-//      [
-//          new GranuleMetadata([
-//              "id": uuid,
-//              "last_update": now,
-//              "deleted": true
-//          ]),
-//           new GranuleMetadata([
-//               "id": uuid,
-//               "last_update": now.minus(1)
-//           ]),
-//           new GranuleMetadata([
-//               "id": uuid,
-//               "last_update": now.minus(2)
-//           ]),
-//      ]
-//    }
 
     when: 'list granules for id with showVersions'
     Map result = repoService.list(response, granuleMetadataRepository, [id: uuid.toString(), showVersions: true])
@@ -137,7 +119,6 @@ class RepoServiceSpec extends Specification {
   def 'list by id, show versions'() {
     setup: 'multiple versions of the granule returned'
     UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
-    Date now = new Date()
 
     when: 'list granules for id with showVersions'
     Map result = repoService.list(response, granuleMetadataRepository, [id: uuid.toString(), showVersions: true])
@@ -167,7 +148,6 @@ class RepoServiceSpec extends Specification {
   def 'list by id, show versions (soft delete reverted)'() {
     setup: 'multiple versions of the granule returned'
     UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
-    Date now = new Date()
 
     when: 'list granules for id with showVersions'
     Map result = repoService.list(response, granuleMetadataRepository, [id: uuid.toString(), showVersions: true])
@@ -210,7 +190,6 @@ class RepoServiceSpec extends Specification {
     UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
     UUID uuid2 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6567")
     UUID uuid3 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6987")
-    Date now = new Date()
 
     when: 'list granules for id with showVersions'
     Map result = repoService.list(response, granuleMetadataRepository, [showVersions: true])
@@ -261,12 +240,75 @@ class RepoServiceSpec extends Specification {
     result.meta.totalResults == 3
     1 * response.setStatus(HttpServletResponse.SC_OK)
 
-    and: 'the data expected was returned'
+    and: 'entries since it was deleted for granule returned'
     result.data[0].attributes.id == uuid
     result.data[1].attributes.id == uuid
     result.data[2].attributes.id == uuid3
     result.data[0].attributes.granule_metadata == "{fourth: true, reverted: true}"
     result.data[1].attributes.granule_metadata == "{third: true, reverted: true}"
     result.data[2].attributes.granule_metadata == "{first: true, not-deleted-at-all: true}"
+  }
+
+  def 'list all (soft delete reverted)'() {
+    setup: 'multiple versions of the granule2 returned'
+    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
+    UUID uuid2 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6567")
+    UUID uuid3 = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6987")
+
+    when: 'list granules for id with showVersions'
+    Map result = repoService.list(response, granuleMetadataRepository)
+
+    then: 'findByMetadataId returns all the rows'
+    1 * granuleMetadataRepository.findAll() >> [
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now,
+            "granule_metadata": "{fourth: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(1),
+            "granule_metadata": "{third: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(2),
+            "deleted": true,
+            "granule_metadata": "{second: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid,
+            "last_update": now.minus(3),
+            "granule_metadata": "{first: true, reverted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid2,
+            "last_update": now.minus(2),
+            "deleted": true,
+            "granule_metadata": "{second: true, deleted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid2,
+            "last_update": now.minus(3),
+            "granule_metadata": "{first: true, deleted: true}"
+        ]),
+        new GranuleMetadata([
+            "id": uuid3,
+            "last_update": now.minus(1),
+            "granule_metadata": "{first: true, not-deleted-at-all: true}"
+        ]),
+    ]
+
+    and: 'entries since it was deleted for granule returned'
+    result.meta.action == 'read'
+    result.meta.totalResults == 2
+    1 * response.setStatus(HttpServletResponse.SC_OK)
+
+    and: 'entries with the latest not deleted are returned'
+    println(result)
+    result.data[0].attributes.id == uuid
+    result.data[1].attributes.id == uuid3
+    result.data[0].attributes.granule_metadata == "{fourth: true, reverted: true}"
+    result.data[1].attributes.granule_metadata == "{first: true, not-deleted-at-all: true}"
   }
 }
