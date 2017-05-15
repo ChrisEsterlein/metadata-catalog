@@ -17,7 +17,6 @@ class IndexAdminService {
     this.restClient = restClient
   }
 
-
   /**
    * Delete the specified index.
    * @return Json String indicating success or error

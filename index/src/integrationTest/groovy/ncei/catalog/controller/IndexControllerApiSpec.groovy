@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
+
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.hasItems
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -24,8 +25,10 @@ class IndexControllerApiSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
-  @Autowired Service service
-  @Autowired IndexAdminService indexAdminService
+  @Autowired
+  Service service
+  @Autowired
+  IndexAdminService indexAdminService
 
   private ContentType contentType = ContentType.JSON
   def poller = new PollingConditions(timeout: 5)
@@ -36,20 +39,22 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.basePath = contextPath
 
     service.INDEX = 'test_index'
-    if (indexAdminService.indexExists('test_index')) { indexAdminService.deleteIndex('test_index') }
+    if (indexAdminService.indexExists('test_index')) {
+      indexAdminService.deleteIndex('test_index')
+    }
     indexAdminService.createIndex('test_index')
   }
 
   def 'Search for metadata with no search params'() {
     setup: 'Load data into elasticsearch for searching'
     Map metadata = [
-        id: '1',
-        type: "junk",
+        id        : '1',
+        type      : "junk",
         attributes: [dataset: "testDataset", fileName: "testFileName1"]
     ]
     Map metadata2 = [
-        id: '2',
-        type: "junk",
+        id        : '2',
+        type      : "junk",
         attributes: [dataset: "testDataset", fileName: "testFileName2"]
     ]
 
@@ -75,13 +80,13 @@ class IndexControllerApiSpec extends Specification {
   def 'Search for metadata with search params'() {
     setup: 'Load data into elasticsearch for searching'
     Map metadata = [
-        id: '1',
-        type: "junk",
+        id        : '1',
+        type      : "junk",
         attributes: [dataset: "testDataset", fileName: "testFileName1"]
     ]
     Map metadata2 = [
-        id: '2',
-        type: "junk",
+        id        : '2',
+        type      : "junk",
         attributes: [dataset: "testDataset", fileName: "testFileName2"]
     ]
     service.insert(metadata)
