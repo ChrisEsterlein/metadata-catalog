@@ -21,11 +21,12 @@ class ExceptionHelper extends ResponseEntityExceptionHandler {
 
   private Map<String,Object> buildErrorMap(HttpStatus status, String message, String path, Exception ex){
     Map<String,Object> responseBody = new HashMap<>()
-    responseBody.put('timestamp', new Date())
-    responseBody.put('path', path)
-    responseBody.put('status', status)
-    responseBody.put('error', ex as String)
-    responseBody.put('message',message)
+    responseBody.meta = [:]
+    responseBody.meta.put('timestamp', new Date())
+    responseBody.meta.put('path', path)
+    responseBody.meta.put('status', status)
+    responseBody.meta.put('message', message)
+    responseBody.put('errors', [ex as String])
     responseBody
   }
 
