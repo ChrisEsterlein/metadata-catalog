@@ -37,4 +37,8 @@ class GranuleMetadata extends MetadataRecord {
     this.last_update = new Date()
     this.deleted = false
   }
+
+  String toString() {
+    "id: $id, last_update: $last_update, metadata: $granule_metadata"
+  }
 }
