@@ -34,7 +34,7 @@ class CollectionMetadata extends MetadataRecord {
     this.deleted = false
   }
 
-  String recordTable(){
+  String recordTable() {
     return 'collection'
   }
 

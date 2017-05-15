@@ -24,7 +24,8 @@ class SchemaApiSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
-  @Autowired RabbitTemplate rabbitTemplate
+  @Autowired
+  RabbitTemplate rabbitTemplate
 
   PollingConditions poller
 
@@ -38,30 +39,30 @@ class SchemaApiSpec extends Specification {
   def 'create, read, update, delete schema metadata'() {
     setup: 'define a schema metadata record'
     def postBody = [
-            "schema_name"  : "schemaFace",
-            "json_schema"  : "{blah:blah}"
+            "schema_name": "schemaFace",
+            "json_schema": "{blah:blah}"
     ]
 
     when: 'we post, a new record is create and returned in response'
     Map schemaMetadata = RestAssured.given()
             .body(postBody)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .post('/schemas')
-          .then()
+            .then()
             .assertThat()
             .statusCode(201)
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
-          .extract()
+            .extract()
             .path('data[0].attributes')
 
     then: 'we can get it by id'
     RestAssured.given()
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .get("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
@@ -79,9 +80,9 @@ class SchemaApiSpec extends Specification {
     RestAssured.given()
             .body(updatedPostBody)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .put("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
@@ -90,9 +91,9 @@ class SchemaApiSpec extends Specification {
     and: 'we can get both versions'
     Map updatedRecord = RestAssured.given()
             .param('showVersions', true)
-          .when()
+            .when()
             .get("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.totalResults', equalTo(2))
@@ -102,7 +103,7 @@ class SchemaApiSpec extends Specification {
     //second one is the original
             .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[1].attributes.json_schema', equalTo(postBody.json_schema))
-          .extract()
+            .extract()
             .path('data[0].attributes')
 
     then: 'submit the latest schema back with a delete method to delete it'
@@ -110,18 +111,18 @@ class SchemaApiSpec extends Specification {
     RestAssured.given()
             .body(updatedRecord)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .delete("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
-          .when()
+            .when()
             .get("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .contentType(ContentType.JSON)
             .statusCode(404)  //should be a 404
@@ -130,9 +131,9 @@ class SchemaApiSpec extends Specification {
 
     RestAssured.given()
             .param('showDeleted', true)
-          .when()
+            .when()
             .get("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.totalResults', equalTo(1))
@@ -144,9 +145,9 @@ class SchemaApiSpec extends Specification {
     RestAssured.given()
             .param('showDeleted', true)
             .param('showVersions', true)
-          .when()
+            .when()
             .get("/schemas/${schemaMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.code', equalTo(200))
@@ -168,9 +169,9 @@ class SchemaApiSpec extends Specification {
     RestAssured.given()
             .body(updatedRecord) //id in here
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .delete('/schemas/purge')
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.id', equalTo(updatedRecord.id))
@@ -190,7 +191,7 @@ class SchemaApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['insert', 'update', 'delete']
-      while(m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()){
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.meta.action)

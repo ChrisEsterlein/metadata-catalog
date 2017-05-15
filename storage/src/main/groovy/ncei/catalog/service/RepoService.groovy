@@ -1,10 +1,7 @@
 package ncei.catalog.service
 
 import groovy.util.logging.Slf4j
-import ncei.catalog.domain.CollectionMetadata
-import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.MetadataRecord
-import ncei.catalog.domain.MetadataSchema
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.stereotype.Component
@@ -59,7 +56,7 @@ class RepoService {
       if (result.first().last_update != metadataRecord.last_update) {
         log.info("Failing update for out-of-date version: $metadataId")
         updateDetails.errors = ['You are not editing the most recent version.']
-        updateDetails.meta += [code:HttpServletResponse.SC_CONFLICT, success: false]
+        updateDetails.meta += [code: HttpServletResponse.SC_CONFLICT, success: false]
         response.status = HttpServletResponse.SC_CONFLICT
         return updateDetails
       } else {
@@ -68,14 +65,14 @@ class RepoService {
         metadataRecord.last_update = new Date()
         MetadataRecord record = repositoryObject.save(metadataRecord)
         updateDetails.data = [createDataItem(record)]
-        updateDetails.meta += [totalResultsUpdated : 1, code: HttpServletResponse.SC_OK, success: true]
+        updateDetails.meta += [totalResultsUpdated: 1, code: HttpServletResponse.SC_OK, success: true]
         response.status = HttpServletResponse.SC_OK
         messageService.notifyIndex(updateDetails)
       }
     } else {
       log.debug("No record found for id: $metadataId")
       updateDetails.errors = ['Record does not exist.']
-      updateDetails.meta += [success : false, code: HttpServletResponse.SC_NOT_FOUND]
+      updateDetails.meta += [success: false, code: HttpServletResponse.SC_NOT_FOUND]
       response.status = HttpServletResponse.SC_NOT_FOUND
       return updateDetails
     }
@@ -85,7 +82,7 @@ class RepoService {
   Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = null) {
     log.info("Fulfilling list request with params: $params")
     Map listDetails = [:]
-    listDetails.meta = [action:'read']
+    listDetails.meta = [action: 'read']
     Boolean showVersions = params?.showVersions
     Boolean showDeleted = params?.showDeleted
     UUID metadataId = params?.id ? UUID.fromString(params.id) : null
@@ -110,34 +107,33 @@ class RepoService {
     //filter deleted and versions - or don't
     if (showDeleted && showVersions) {
       log.debug("Returning all records, including old versions and deleted records")
-      listDetails.data = allResults.collect{createDataItem(it)}
+      listDetails.data = allResults.collect { createDataItem(it) }
     } else if (showVersions) {
       log.debug("Filtering deleted records")
       List deletedList = []
       listDetails.data = []
-      allResults.each{ mR ->
+      allResults.each { mR ->
         UUID id = mR.id
         if (mR.deleted) {
           deletedList.add(id)
-        }
-        else if(!(id in deletedList)){
+        } else if (!(id in deletedList)) {
           listDetails.data.add(createDataItem(mR))
         }
       }
     } else {
       log.debug("Filtering old versions and deleted records")
-      listDetails.data =  getMostRecent(allResults, showDeleted)
+      listDetails.data = getMostRecent(allResults, showDeleted)
     }
 
     //build response
-    if(listDetails.data){
+    if (listDetails.data) {
       response.status = HttpServletResponse.SC_OK
-      listDetails.meta += [totalResults : listDetails.data.size, code: HttpServletResponse.SC_OK, success: true]
-    }else{
+      listDetails.meta += [totalResults: listDetails.data.size, code: HttpServletResponse.SC_OK, success: true]
+    } else {
       listDetails.remove('data')
       listDetails.errors = ['No results found.']
       response.status = HttpServletResponse.SC_NOT_FOUND
-      listDetails.meta += [totalResults : 0, code: HttpServletResponse.SC_NOT_FOUND, success: false]
+      listDetails.meta += [totalResults: 0, code: HttpServletResponse.SC_NOT_FOUND, success: false]
     }
     listDetails
   }
@@ -180,12 +176,12 @@ class RepoService {
     } else {
       log.warn("Failing purge request")
       purgeDetails.errors = ['An ID parameter is required to purge']
-      purgeDetails.meta += [totalResultsDeleted : count, code: HttpServletResponse.SC_BAD_REQUEST, success: false]
+      purgeDetails.meta += [totalResultsDeleted: count, code: HttpServletResponse.SC_BAD_REQUEST, success: false]
       response.status = HttpServletResponse.SC_BAD_REQUEST
       return purgeDetails
     }
 
-    if(items){
+    if (items) {
       purgeDetails.data = []
       items.each {
         purgeDetails.data.add(createDataItem(it))
@@ -193,11 +189,11 @@ class RepoService {
         delete(repositoryObject, id, it.last_update)
         count++
       }
-      purgeDetails.meta += [id:metadataId, totalResultsDeleted: count, code: HttpServletResponse.SC_OK, success: true]
+      purgeDetails.meta += [id: metadataId, totalResultsDeleted: count, code: HttpServletResponse.SC_OK, success: true]
       response.status = HttpServletResponse.SC_OK
-    }else{
-      purgeDetails.errors =['No records exist with id: ' + metadataId]
-      purgeDetails.meta += [id:metadataId, totalResultsDeleted: count, code: HttpServletResponse.SC_NOT_FOUND, success: false]
+    } else {
+      purgeDetails.errors = ['No records exist with id: ' + metadataId]
+      purgeDetails.meta += [id: metadataId, totalResultsDeleted: count, code: HttpServletResponse.SC_NOT_FOUND, success: false]
       response.status = HttpServletResponse.SC_NOT_FOUND
     }
     purgeDetails
@@ -230,27 +226,27 @@ class RepoService {
         deleteDetails.meta += [success: false, code: HttpServletResponse.SC_CONFLICT]
         deleteDetails.errors = ['You are not deleting the most recent version.']
         response.status = HttpServletResponse.SC_CONFLICT
-      }else{
+      } else {
         record.last_update = new Date()
         record.deleted = true
         log.info("Soft delete successful for record with id: $id")
         MetadataRecord newRecord = repositoryObject.save(record)
         deleteDetails.data = [createDataItem(newRecord)]
-        deleteDetails.meta += [success: true, message: ('Successfully deleted row with id: ' + id) , code: HttpServletResponse.SC_OK]
+        deleteDetails.meta += [success: true, message: ('Successfully deleted row with id: ' + id), code: HttpServletResponse.SC_OK]
         response.status = HttpServletResponse.SC_OK
         messageService.notifyIndex(deleteDetails)
       }
       return deleteDetails
     } else {
       log.warn("Failing soft delete for non-existant record with id: $id")
-      deleteDetails.meta += [success: false, message: ('Failed to deleted row with id: ' + id) , code: HttpServletResponse.SC_NOT_FOUND]
+      deleteDetails.meta += [success: false, message: ('Failed to deleted row with id: ' + id), code: HttpServletResponse.SC_NOT_FOUND]
       deleteDetails.errors = ['No record found with id: ' + id]
       response.status = HttpServletResponse.SC_NOT_FOUND
       return deleteDetails
     }
   }
 
-  Map createDataItem(MetadataRecord metadataRecord){
+  Map createDataItem(MetadataRecord metadataRecord) {
     [id: metadataRecord.id, type: metadataRecord.recordTable(), attributes: metadataRecord]
   }
 

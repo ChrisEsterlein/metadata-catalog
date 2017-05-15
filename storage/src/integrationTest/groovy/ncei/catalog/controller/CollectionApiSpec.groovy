@@ -17,7 +17,8 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class CollectionApiSpec extends Specification {
 
-  @Autowired RabbitTemplate rabbitTemplate
+  @Autowired
+  RabbitTemplate rabbitTemplate
 
   @Value('${local.server.port}')
   private String port
@@ -41,16 +42,16 @@ class CollectionApiSpec extends Specification {
             "collection_schema"  : "a collection schema",
             "type"               : "fos",
             "collection_metadata": "{blah:blah}",
-            "geometry" : "point()"
+            "geometry"           : "point()"
     ]
 
     when: 'we post, a new record is create and returned in response'
     Map collectionMetadata = RestAssured.given()
             .body(postBody)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .post('/collections')
-          .then()
+            .then()
             .assertThat()
             .statusCode(201)  //should be a 201
             .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
@@ -58,15 +59,15 @@ class CollectionApiSpec extends Specification {
             .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
             .body('data[0].attributes.geometry', equalTo(postBody.geometry))
             .body('data[0].attributes.type', equalTo(postBody.type))
-          .extract()
+            .extract()
             .path('data[0].attributes')
 
     then: 'we can get it by id'
     RestAssured.given()
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .get("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
@@ -74,7 +75,7 @@ class CollectionApiSpec extends Specification {
             .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
             .body('data[0].attributes.geometry', equalTo(postBody.geometry))
             .body('data[0].attributes.type', equalTo(postBody.type))
-          .extract().body()
+            .extract().body()
 
 
     when: 'we update the postBody with the id and new metadata'
@@ -88,24 +89,24 @@ class CollectionApiSpec extends Specification {
     RestAssured.given()
             .body(updatedPostBody)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .put("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('data[0].attributes.id', equalTo(collectionMetadata.id))
             .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
             .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-            .body('data[0].attributes.collection_metadata', equalTo( updatedPostBody.collection_metadata))
+            .body('data[0].attributes.collection_metadata', equalTo(updatedPostBody.collection_metadata))
             .body('data[0].attributes.geometry', equalTo(postBody.geometry))
             .body('data[0].attributes.type', equalTo(postBody.type))
 
     and: 'we can get both versions'
     Map updatedRecord = RestAssured.given()
             .param('showVersions', true)
-          .when()
+            .when()
             .get("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.totalResults', equalTo(2))
@@ -121,7 +122,7 @@ class CollectionApiSpec extends Specification {
             .body('data[1].attributes.collection_metadata', equalTo(postBody.collection_metadata))
             .body('data[1].attributes.geometry', equalTo(postBody.geometry))
             .body('data[1].attributes.type', equalTo(postBody.type))
-          .extract()
+            .extract()
             .path('data[0].attributes')
 
     then: 'submit the latest collection back with a delete method to delete it'
@@ -129,9 +130,9 @@ class CollectionApiSpec extends Specification {
     RestAssured.given()
             .body(updatedRecord)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .delete("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
@@ -141,7 +142,7 @@ class CollectionApiSpec extends Specification {
             .param('showVersions', true)
             .when()
             .get("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .contentType(ContentType.JSON)
             .statusCode(404)
@@ -150,9 +151,9 @@ class CollectionApiSpec extends Specification {
 
     RestAssured.given()
             .param('showDeleted', true)
-          .when()
+            .when()
             .get("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.totalResults', equalTo(1))
@@ -167,9 +168,9 @@ class CollectionApiSpec extends Specification {
     RestAssured.given()
             .param('showDeleted', true)
             .param('showVersions', true)
-          .when()
+            .when()
             .get("/collections/${collectionMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.code', equalTo(200))
@@ -202,9 +203,9 @@ class CollectionApiSpec extends Specification {
     RestAssured.given()
             .body(updatedRecord) //id in here
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .delete('/collections/purge')
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.id', equalTo(updatedRecord.id))
@@ -218,7 +219,7 @@ class CollectionApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['insert', 'update', 'delete']
-      while(m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()){
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.meta.action)

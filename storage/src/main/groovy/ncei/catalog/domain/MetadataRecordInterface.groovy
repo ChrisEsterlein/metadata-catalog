@@ -4,6 +4,7 @@ package ncei.catalog.domain
 interface MetadataRecordInterface {
 
   Map asMap()
+
   String recordTable()
 
 }

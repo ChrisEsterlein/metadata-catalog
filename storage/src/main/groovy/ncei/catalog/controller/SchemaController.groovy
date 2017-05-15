@@ -1,14 +1,10 @@
 package ncei.catalog.controller
 
 import groovy.util.logging.Slf4j
-import ncei.catalog.domain.MetadataRecord
 import ncei.catalog.domain.MetadataSchema
 import ncei.catalog.domain.MetadataSchemaRepository
-import ncei.catalog.service.ControllerService
 import ncei.catalog.service.RepoService
-
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.web.bind.annotation.*
 
 import javax.servlet.http.HttpServletResponse
@@ -33,13 +29,13 @@ class SchemaController {
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
   Map update(@PathVariable id, @RequestBody Map metadataObject, HttpServletResponse response) {
-    if(!metadataObject.last_update){
+    if (!metadataObject.last_update) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
-      return [errors:['To update a record, you must provide the record\'s id and last_update field, ' +
-                       'as well as any other fields you do not want to update to null']]
+      return [errors: ['To update a record, you must provide the record\'s id and last_update field, ' +
+                               'as well as any other fields you do not want to update to null']]
     }
     metadataObject.id = UUID.fromString(metadataObject.id)
-    metadataObject.last_update = new Date (metadataObject.last_update as Long)
+    metadataObject.last_update = new Date(metadataObject.last_update as Long)
     repoService.update(response, schemaRepository, new MetadataSchema(metadataObject))
   }
 

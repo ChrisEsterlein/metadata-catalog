@@ -12,7 +12,8 @@ import spock.lang.Unroll
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-@Ignore //the storage module api will not support old endpoints anymore
+@Ignore
+//the storage module api will not support old endpoints anymore
 @Unroll
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class OldCatalogMetadataApiSpec extends Specification {

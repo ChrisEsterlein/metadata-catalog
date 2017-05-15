@@ -34,7 +34,8 @@ class RabbitConfig {
   @Value('${rabbitmq.queue}')
   String queueName
 
-  @Autowired MessageService messageService
+  @Autowired
+  MessageService messageService
 
   @Bean
   ConnectionFactory connectionFactory() {
@@ -69,7 +70,7 @@ class RabbitConfig {
     RabbitTemplate template = new RabbitTemplate(connectionFactory())
     template.setRoutingKey(queueName)
     template.setQueue(queueName)
-    template.setMessageConverter(jsonMessageConverter() )
+    template.setMessageConverter(jsonMessageConverter())
     template
   }
 

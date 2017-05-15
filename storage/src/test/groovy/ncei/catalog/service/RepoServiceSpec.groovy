@@ -1,21 +1,13 @@
 package ncei.catalog.service
 
-import ncei.catalog.domain.CollectionMetadata
-import ncei.catalog.domain.CollectionMetadataRepository
-import ncei.catalog.domain.GranuleMetadata
-import ncei.catalog.domain.GranuleMetadataRepository
-import ncei.catalog.domain.MetadataRecord
-import ncei.catalog.domain.MetadataSchema
-import ncei.catalog.domain.MetadataSchemaRepository
+import ncei.catalog.domain.*
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import javax.servlet.http.HttpServletResponse
-
 
 @Unroll
 class RepoServiceSpec extends Specification {
@@ -33,8 +25,7 @@ class RepoServiceSpec extends Specification {
   HttpServletResponse response
 
 
-
-  def setup(){
+  def setup() {
     repoService = new RepoService()
     messageService = new MessageService()
     response = Mock(HttpServletResponse)
@@ -49,9 +40,10 @@ class RepoServiceSpec extends Specification {
 
   }
 
-  Map createDataItem(MetadataRecord metadataRecord){
+  Map createDataItem(MetadataRecord metadataRecord) {
     [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord.asMap()]
   }
+
   def getTableFromClass(MetadataRecord metadataRecord) {
     switch (metadataRecord.class) {
       case CollectionMetadata:
@@ -66,24 +58,24 @@ class RepoServiceSpec extends Specification {
     }
   }
 
-  def 'test repoService save'(){
+  def 'test repoService save'() {
     setup: 'instantiate a new granuleMetadata pogo'
     def granuleMetadataMap = [
-            "id": UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
-            "tracking_id":"test-id-1",
-            "filename" : "test.txt",
-            "dataset": "test-dataset-1",
-            "type":"file",
-            "granule_size":1024,
+            "id"              : UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
+            "tracking_id"     : "test-id-1",
+            "filename"        : "test.txt",
+            "dataset"         : "test-dataset-1",
+            "type"            : "file",
+            "granule_size"    : 1024,
             "granule_metadata": "{blah: blah}",
-            "granule_schema":"schema",
-            "geometry" : "point(1.1, 1.1)",
-            "collections":["FOS"]
+            "granule_schema"  : "schema",
+            "geometry"        : "point(1.1, 1.1)",
+            "collections"     : ["FOS"]
     ]
 
     GranuleMetadata granuleMetadata = new GranuleMetadata(granuleMetadataMap)
 
-    Map serviceResponse =  [data: createDataItem(granuleMetadata), meta: [action:'insert']]
+    Map serviceResponse = [data: createDataItem(granuleMetadata), meta: [action: 'insert']]
 
     when:
     Map result = repoService.save(response, granuleMetadataRepository, granuleMetadata)

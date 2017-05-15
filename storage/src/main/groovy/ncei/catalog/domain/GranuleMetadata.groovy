@@ -3,7 +3,6 @@ package ncei.catalog.domain
 import com.datastax.driver.core.utils.UUIDs
 import org.springframework.cassandra.core.Ordering
 import org.springframework.cassandra.core.PrimaryKeyType
-import org.springframework.data.cassandra.mapping.Column
 import org.springframework.data.cassandra.mapping.Indexed
 import org.springframework.data.cassandra.mapping.PrimaryKeyColumn
 import org.springframework.data.cassandra.mapping.Table
@@ -38,7 +37,7 @@ class GranuleMetadata extends MetadataRecord {
     this.deleted = false
   }
 
-  String recordTable(){
+  String recordTable() {
     return 'granule'
   }
 }

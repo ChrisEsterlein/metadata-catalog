@@ -5,13 +5,7 @@ import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.CollectionMetadataRepository
 import ncei.catalog.service.RepoService
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseBody
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 import javax.servlet.http.HttpServletResponse
 
@@ -41,13 +35,13 @@ class CollectionController {
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
   Map update(@PathVariable id, @RequestBody Map metadataObject, HttpServletResponse response) {
-    if(!metadataObject.last_update){
+    if (!metadataObject.last_update) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
-      return [errors:['To update a record, you must provide the previous record\'s last_update field, ' +
-                       'as well as any other fields you do not want to update to null']]
+      return [errors: ['To update a record, you must provide the previous record\'s last_update field, ' +
+                               'as well as any other fields you do not want to update to null']]
     }
     metadataObject.id = UUID.fromString(metadataObject.id)
-    metadataObject.last_update = new Date (metadataObject.last_update as Long)
+    metadataObject.last_update = new Date(metadataObject.last_update as Long)
     repoService.update(response, collectionMetadataRepository, new CollectionMetadata(metadataObject))
   }
 
