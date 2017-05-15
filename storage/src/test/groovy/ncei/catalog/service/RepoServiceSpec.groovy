@@ -16,7 +16,7 @@ import spock.lang.Unroll
 
 import javax.servlet.http.HttpServletResponse
 
-
+@Ignore
 @Unroll
 class RepoServiceSpec extends Specification {
 
