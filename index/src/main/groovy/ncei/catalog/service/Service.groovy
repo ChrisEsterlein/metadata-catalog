@@ -29,7 +29,6 @@ class Service {
     }
   }
 
-
   /**
    * Search elasticsearch with query that is passed in.
    * @param searchQuery the query to execute against elasticsearch (Ex: "dataset:csb fileName:name1" )
@@ -40,7 +39,7 @@ class Service {
 
     log.debug("Search: endpoint=$endpoint query=$searchQuery")
     def response = searchQuery ?
-        restClient.performRequest('GET', endpoint, [q: searchQuery] as Map<String,String>) :
+        restClient.performRequest('GET', endpoint, [q: searchQuery] as Map<String, String>) :
         restClient.performRequest('GET', endpoint)
 
     log.debug("Search response: $response")
@@ -79,7 +78,7 @@ class Service {
     Response response = restClient.performRequest(
         'PUT',
         endpoint,
-        Collections.<String, String>emptyMap(),
+        Collections.<String, String> emptyMap(),
         entity)
     log.debug("Insert response: $response")
 
@@ -87,21 +86,21 @@ class Service {
 
     return [
         data: [
-            id: result._id,
-            type: result._type,
+            id        : result._id,
+            type      : result._type,
             attributes: [
-              created: result.created
+                created: result.created
             ]
         ]
     ]
   }
 
 
-  def parseResponse (Response response) {
-    String body = response?.getEntity()? EntityUtils.toString(response?.getEntity()) : null
+  def parseResponse(Response response) {
+    String body = response?.getEntity() ? EntityUtils.toString(response?.getEntity()) : null
     Map result = [:]
     try {
-      body? result = new JsonSlurper().parseText(body) : ''
+      body ? result = new JsonSlurper().parseText(body) : ''
     } catch (e) {
       log.info("Failed JsonSlurper() on body=$body", e)
     }

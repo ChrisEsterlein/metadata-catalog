@@ -29,7 +29,7 @@ class Controller {
     }
     catch (e) {
       String message = "Failed to query with query=$q Exception=$e"
-      log.error (message, e)
+      log.error(message, e)
       response.status = response.SC_INTERNAL_SERVER_ERROR
       return [message: message]
     }
