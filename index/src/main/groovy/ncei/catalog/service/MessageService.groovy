@@ -26,7 +26,7 @@ class MessageService {
         log.info "Insert failed: metadata='$message' with Elasticsearch response: $response"
       }
     } else {
-      log.error("Insert task: did not insert metadata='$message'")
+      log.warn("Insert task - received bad message: '$message'")
     }
   }
 }
