@@ -66,4 +66,11 @@ class GranuleController {
     repoService.purge(response, granuleMetadataRepository, params)
   }
 
+  @RequestMapping(value = '/recover', method = RequestMethod.PUT)
+  @ResponseBody
+  Map recover(HttpServletResponse response) {
+    log.info 'Attempting to recover all granule metadata records'
+    repoService.recover(response, granuleMetadataRepository)
+  }
+
 }

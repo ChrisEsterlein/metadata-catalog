@@ -66,4 +66,6 @@ class CollectionController {
     repoService.purge(response, collectionMetadataRepository, params)
   }
 
+
+
 }

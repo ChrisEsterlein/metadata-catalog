@@ -15,6 +15,14 @@ class RepoService {
   @Autowired
   MessageService messageService
 
+  void recover(HttpServletResponse response, CassandraRepository repositoryObject){
+    repositoryObject.findAll().each{
+      log.debug("Resending to rabbit, record : $it")
+      messageService.notifyIndex([data:[createDataItem(it)]])
+    }
+    response.status = HttpServletResponse.SC_OK
+  }
+
   Map save(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
     log.info("Attempting to save ${metadataRecord.class} with id: ${metadataRecord.id}")
     log.debug("Metadata record ${metadataRecord.id}- ${metadataRecord.asMap()}")
