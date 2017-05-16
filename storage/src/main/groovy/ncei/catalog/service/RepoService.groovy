@@ -78,7 +78,7 @@ class RepoService {
     updateDetails
   }
 
-  Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params) {
+  Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = null) {
     log.info("Fulfilling list request with params: $params")
     Map listDetails = [:]
     listDetails.meta = [action:'read']
