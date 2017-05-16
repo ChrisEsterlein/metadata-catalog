@@ -1,10 +1,7 @@
 package ncei.catalog.service
 
 import groovy.util.logging.Slf4j
-import ncei.catalog.domain.CollectionMetadata
-import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.MetadataRecord
-import ncei.catalog.domain.MetadataSchema
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.stereotype.Component
@@ -251,25 +248,11 @@ class RepoService {
   }
 
   private Map createDataItem(MetadataRecord metadataRecord){
-    [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
+    [id: metadataRecord.id, type: metadataRecord.recordTable(), attributes: metadataRecord]
   }
 
   private boolean optimisticLockIsBlocking(Iterable result, Date timestamp) {
     return result && result.first().last_update != timestamp
-  }
-
-  private def getTableFromClass(MetadataRecord metadataRecord) {
-    switch (metadataRecord.class) {
-      case CollectionMetadata:
-        return 'collection'
-        break
-      case GranuleMetadata:
-        return 'granule'
-        break
-      case MetadataSchema:
-        return 'schema'
-        break
-    }
   }
 
 }

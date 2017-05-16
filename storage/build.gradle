@@ -1,5 +1,5 @@
-buildscript{
-  ext{
+buildscript {
+  ext {
     springBootVersion = '1.5.2.RELEASE'
   }
   repositories {
@@ -9,7 +9,7 @@ buildscript{
     maven { url "http://repo.spring.io/milestone" }
     maven { url "http://repo.spring.io/snapshot" }
   }
-  dependencies{
+  dependencies {
     classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
   }
 }
@@ -47,12 +47,12 @@ dependencies {
 //  testCompile 'org.objenesis:objenesis:1.2' // For mocking final classes
 }
 
-task copyCql(type:Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
+task copyCql(type: Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
   from 'src/resources/cql'
   into "$buildDir/cql"
 }
 
-task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
+task buildDockerTemplates(type: Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
   dependsOn copyCql
   from 'src/resources/docker'
   into "$buildDir"
@@ -60,15 +60,15 @@ task buildDockerTemplates(type:Copy, description: 'Copies docker files and scrip
     "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
   }
   expand(network: "$network",
-      cassandra_port: "$cassandra_port",
-      cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-      rabbit_service_name: "$rabbit_service_name",
-      rabbit_port: "$rabbit_port",
-      rabbit_admin_port: "$rabbit_admin_port",
-      jar_dir: 'libs',
-      jar: "${project.name}-${project.version}.jar",
-      image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+          cassandra_port: "$cassandra_port",
+          cassandra_service_name: "$cassandra_service_name",
+          cassandra_initialization_service_name: "$cassandra_initialization_service_name",
+          rabbit_service_name: "$rabbit_service_name",
+          rabbit_port: "$rabbit_port",
+          rabbit_admin_port: "$rabbit_admin_port",
+          jar_dir: 'libs',
+          jar: "${project.name}-${project.version}.jar",
+          image: "ncei/${rootProject.name}-${project.name}:${project.version}")
 }
 
 static def getDateTime() {
@@ -115,7 +115,7 @@ task dockerComposeDown(type: Exec, description: 'Stops the system using docker-c
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
 }
 
-task waitForCompose(type:Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
+task waitForCompose(type: Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
   dependsOn dockerComposeUp
   executable "bash"
   args "-c", "docker wait ${project.name}_${cassandra_initialization_service_name}_1"

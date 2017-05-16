@@ -24,7 +24,8 @@ class GranuleApiSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
-  @Autowired RabbitTemplate rabbitTemplate
+  @Autowired
+  RabbitTemplate rabbitTemplate
 
   PollingConditions poller
 
@@ -45,7 +46,7 @@ class GranuleApiSpec extends Specification {
             "geometry"        : "POLYGON()",
             "access_protocol" : "FILE",
             "type"            : "fos",
-            "granule_metadata": "{blah:blah}", 
+            "granule_metadata": "{blah:blah}",
             "collections"     : ["a", "list", "of", "collections"]
     ]
 
@@ -53,9 +54,9 @@ class GranuleApiSpec extends Specification {
     Map granuleMetadata = RestAssured.given()
             .body(postBody)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .post('/granules')
-          .then()
+            .then()
             .assertThat()
             .statusCode(201)
             .body('data[0].type', equalTo('granule'))
@@ -68,15 +69,15 @@ class GranuleApiSpec extends Specification {
             .body('data[0].attributes.type', equalTo(postBody.type))
             .body('data[0].attributes.granule_metadata', equalTo(postBody.granule_metadata))
             .body('data[0].attributes.collections', equalTo(postBody.collections))
-          .extract()
+            .extract()
             .path('data[0].attributes')
 
     then: 'we can get it by id'
     RestAssured.given()
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .get("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('data[0].type', equalTo('granule'))
@@ -102,9 +103,9 @@ class GranuleApiSpec extends Specification {
     RestAssured.given()
             .body(updatedPostBody)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .put("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
 //            .statusCode(200)
             .body('data[0].type', equalTo('granule'))
@@ -123,9 +124,9 @@ class GranuleApiSpec extends Specification {
     and: 'we can get both versions'
     Map updatedRecord = RestAssured.given()
             .param('showVersions', true)
-          .when()
+            .when()
             .get("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.totalResults', equalTo(2))
@@ -158,7 +159,7 @@ class GranuleApiSpec extends Specification {
             .body('data[1].attributes.type', equalTo(postBody.type))
             .body('data[1].attributes.granule_metadata', equalTo(postBody.granule_metadata))
             .body('data[1].attributes.collections', equalTo(postBody.collections))
-          .extract()
+            .extract()
             .path('data[0].attributes')
 
     then: ' we can delete the granule by submitting it back with a delete method'
@@ -166,18 +167,18 @@ class GranuleApiSpec extends Specification {
     RestAssured.given()
             .body(updatedRecord)
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .delete("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
-          .when()
+            .when()
             .get("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .contentType(ContentType.JSON)
             .statusCode(404)  //should be a 404
@@ -186,9 +187,9 @@ class GranuleApiSpec extends Specification {
 
     RestAssured.given()
             .param('showDeleted', true)
-          .when()
+            .when()
             .get("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('data[0].type', equalTo('granule'))
@@ -207,9 +208,9 @@ class GranuleApiSpec extends Specification {
     RestAssured.given()
             .param('showDeleted', true)
             .param('showVersions', true)
-          .when()
+            .when()
             .get("/granules/${granuleMetadata.id}")
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.totalResults', equalTo(3))
@@ -242,9 +243,9 @@ class GranuleApiSpec extends Specification {
     RestAssured.given()
             .body(updatedRecord) //id in here
             .contentType(ContentType.JSON)
-          .when()
+            .when()
             .delete('/granules/purge')
-          .then()
+            .then()
             .assertThat()
             .statusCode(200)
             .body('meta.id', equalTo(updatedRecord.id))
@@ -258,7 +259,7 @@ class GranuleApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['insert', 'update', 'delete']
-      while(m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()){
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.meta.action)

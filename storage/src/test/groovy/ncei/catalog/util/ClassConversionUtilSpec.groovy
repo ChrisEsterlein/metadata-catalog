@@ -40,7 +40,7 @@ class ClassConversionUtilSpec extends Specification {
   def 'test fileMetadata to granuleMetadata'() {
     setup:
     def granuleMetadata = [
-            "id"      : UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
+            "id"              : UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6188"),
             "tracking_id"     : "test-id-1",
             "filename"        : "test.txt",
             "dataset"         : "test-dataset-1",
