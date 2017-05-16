@@ -10,13 +10,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.cassandra.core.cql.CqlIdentifier
-import org.springframework.data.cassandra.core.CassandraAdminOperations
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
-
-import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.Session
 
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
@@ -38,36 +33,11 @@ class CollectionApiSpec extends Specification {
 
   PollingConditions poller
 
-  @Autowired
-  private CassandraAdminOperations adminTemplate
-
-  final static String DATA_TABLE_NAME = 'CollectionMetadata'
-
   def setup() {
     poller = new PollingConditions(timeout: 10)
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
-
-    adminTemplate.createTable(
-        true, CqlIdentifier.cqlId(DATA_TABLE_NAME),
-        CollectionMetadata.class, new HashMap<String, Object>())
-  }
-
-  public static final String KEYSPACE_CREATION_QUERY = "CREATE KEYSPACE IF NOT EXISTS metacat WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '3' };"
-
-  public static final String KEYSPACE_ACTIVATE_QUERY = "USE metacat;"
-
-  def setupSpec() {
-    final Cluster cluster = Cluster.builder().addContactPoints("127.0.0.1").withPort(9042).build()
-    final Session session = cluster.connect()
-    session.execute(KEYSPACE_CREATION_QUERY)
-    session.execute(KEYSPACE_ACTIVATE_QUERY)
-    Thread.sleep(5000)
-  }
-
-  def cleanup() {
-    adminTemplate.dropTable(CqlIdentifier.cqlId(DATA_TABLE_NAME))
   }
 
   def postBody = [
