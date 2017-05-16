@@ -11,8 +11,6 @@ import org.springframework.data.cassandra.config.CassandraSessionFactoryBean
 import org.springframework.data.cassandra.config.SchemaAction
 import org.springframework.data.cassandra.convert.CassandraConverter
 import org.springframework.data.cassandra.convert.MappingCassandraConverter
-import org.springframework.data.cassandra.core.CassandraAdminOperations
-import org.springframework.data.cassandra.core.CassandraAdminTemplate
 import org.springframework.data.cassandra.core.CassandraOperations
 import org.springframework.data.cassandra.core.CassandraTemplate
 import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext
@@ -32,7 +30,6 @@ class CassandraConfig {
   String contactPoints
   Integer port
   //---
-
 
   @Bean
   @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
@@ -74,11 +71,6 @@ class CassandraConfig {
   @Bean
   CassandraOperations cassandraTemplate() throws Exception {
     return new CassandraTemplate(session().getObject())
-  }
-
-  @Bean
-  CassandraAdminOperations cassandraAdminTemplate() throws Exception {
-    return new CassandraAdminTemplate(session().getObject(), new MappingCassandraConverter())
   }
 
   private void verifyConnection() {

@@ -1,19 +1,23 @@
 package ncei.catalog.controller
 
+import com.datastax.driver.core.Cluster
+import com.datastax.driver.core.Session
 import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.domain.MetadataSchema
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.cassandra.core.cql.CqlIdentifier
+import org.springframework.data.cassandra.core.CassandraAdminOperations
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
-
 
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class SchemaApiSpec extends Specification {
@@ -29,11 +33,36 @@ class SchemaApiSpec extends Specification {
 
   PollingConditions poller
 
+  @Autowired
+  private CassandraAdminOperations adminTemplate
+
+  final static String DATA_TABLE_NAME = 'MetadataSchema'
+
   def setup() {
     poller = new PollingConditions(timeout: 10)
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
+
+    adminTemplate.createTable(
+        true, CqlIdentifier.cqlId(DATA_TABLE_NAME),
+         MetadataSchema.class, new HashMap<String, Object>())
+  }
+
+  public static final String KEYSPACE_CREATION_QUERY = "CREATE KEYSPACE IF NOT EXISTS metacat WITH replication = { 'class': 'SimpleStrategy', 'replication_factor': '3' };"
+
+  public static final String KEYSPACE_ACTIVATE_QUERY = "USE metacat;"
+
+  def setupSpec() {
+    final Cluster cluster = Cluster.builder().addContactPoints("127.0.0.1").withPort(9042).build()
+    final Session session = cluster.connect()
+    session.execute(KEYSPACE_CREATION_QUERY)
+    session.execute(KEYSPACE_ACTIVATE_QUERY)
+    Thread.sleep(5000)
+  }
+
+  def cleanup() {
+    adminTemplate.truncate(DATA_TABLE_NAME)//dropTable(CqlIdentifier.cqlId(DATA_TABLE_NAME))
   }
 
   def 'create, read, update, delete schema metadata'() {
