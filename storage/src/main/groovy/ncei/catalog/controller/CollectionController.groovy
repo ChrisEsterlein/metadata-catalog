@@ -66,6 +66,11 @@ class CollectionController {
     repoService.purge(response, collectionMetadataRepository, params)
   }
 
-
+  @RequestMapping(value = '/recover', method = RequestMethod.PUT)
+  @ResponseBody
+  Map recover(HttpServletResponse response) {
+    log.info 'Attempting to recover all collection metadata records'
+    repoService.recover(response, collectionMetadataRepository)
+  }
 
 }
