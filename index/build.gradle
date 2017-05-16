@@ -45,7 +45,7 @@ dependencies {
   testCompile 'net.bytebuddy:byte-buddy:1.6.14'
 }
 
-task buildDockerTemplates(type:Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
+task buildDockerTemplates(type: Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
   from 'src/resources/docker'
   into "$buildDir"
   rename { fileName ->
@@ -106,7 +106,7 @@ task dockerComposeDown(type: Exec, description: 'Stops the system using docker-c
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
 }
 
-task waitForCompose(type:Exec, description: 'Waits for elasticsearch to be available.', group: 'docker') {
+task waitForCompose(type: Exec, description: 'Waits for elasticsearch to be available.', group: 'docker') {
   dependsOn dockerComposeUp
   executable "bash"
   args "-c", "docker run \

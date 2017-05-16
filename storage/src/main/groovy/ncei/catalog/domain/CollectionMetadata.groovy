@@ -38,4 +38,8 @@ class CollectionMetadata extends MetadataRecord {
     return 'collection'
   }
 
+  String toString() {
+    "id: $id, last_update: $last_update, metadata: $collection_metadata"
+  }
+
 }

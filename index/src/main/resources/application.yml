@@ -27,6 +27,7 @@ elasticsearch:
   port: 9200
 
 rabbitmq:
+  queue: index-consumer
   connectionfactory:
     host: localhost
     virtualHost: /

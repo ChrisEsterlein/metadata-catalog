@@ -1,18 +1,20 @@
-package ncei.catalog.amqp
+package ncei.catalog.service
 
 import groovy.util.logging.Slf4j
-
-import ncei.catalog.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 @Slf4j
 @Component
-class ConsumerHandler {
+class MessageService {
 
   @Autowired
   private Service service
 
+  /**
+   * Via Spring magic this handleMessage is recognized by the spring rabbit plugin.
+   * @param message
+   */
   void handleMessage(Map message) {
     log.info "Received rabbit message: $message"
 

@@ -1,7 +1,7 @@
 package ncei.catalog.controller
 
 import ncei.catalog.Application
-import ncei.catalog.amqp.ConsumerConfig
+import ncei.catalog.config.RabbitConfig
 import ncei.catalog.service.IndexAdminService
 import ncei.catalog.service.Service
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -17,15 +17,22 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class IndexRabbitApiSpec extends Specification {
 
-  @Autowired RabbitTemplate rabbitTemplate
-  @Autowired Service service
-  @Autowired IndexAdminService indexAdminService
+  @Autowired
+  RabbitConfig rabbitConfig
+  @Autowired
+  RabbitTemplate rabbitTemplate
+  @Autowired
+  Service service
+  @Autowired
+  IndexAdminService indexAdminService
 
   def poller = new PollingConditions(timeout: 5)
 
   def setup() {
     service.INDEX = 'test_index'
-    if (indexAdminService.indexExists('test_index')) { indexAdminService.deleteIndex('test_index') }
+    if (indexAdminService.indexExists('test_index')) {
+      indexAdminService.deleteIndex('test_index')
+    }
     indexAdminService.createIndex('test_index')
   }
 
@@ -41,7 +48,7 @@ class IndexRabbitApiSpec extends Specification {
     ]
 
     when:
-    rabbitTemplate.convertAndSend(ConsumerConfig.queueName, metadata)
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, metadata)
 
     then:
     poller.eventually {
@@ -53,11 +60,11 @@ class IndexRabbitApiSpec extends Specification {
 
   def 'malformed messages are handled gracefully'() {
     when:
-    rabbitTemplate.convertAndSend(ConsumerConfig.queueName, 'totes not json')
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, 'totes not json')
     sleep(1000)
 
     then:
     service.search().data.size() == 0
-    rabbitTemplate.receive(ConsumerConfig.queueName) == null
+    rabbitTemplate.receive(rabbitConfig.queueName) == null
   }
 }
