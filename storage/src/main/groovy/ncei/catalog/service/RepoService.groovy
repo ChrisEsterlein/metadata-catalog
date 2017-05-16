@@ -53,10 +53,9 @@ class RepoService {
     updateDetails.meta = [action: 'update']
     UUID metadataId = metadataRecord.id
     //get existing row
-    Iterable result = repositoryObject.findByMetadataId(metadataId)
+    Iterable result = repositoryObject.findByMetadataIdLimitOne(metadataId)
     if (result) {
-      //optimistic lock
-      if (result.first().last_update != metadataRecord.last_update) {
+      if (optimisticLockIsBlocking(result, metadataRecord.last_update)) {
         log.info("Failing update for out-of-date version: $metadataId")
         updateDetails.errors = ['You are not editing the most recent version.']
         updateDetails.meta += [code:HttpServletResponse.SC_CONFLICT, success: false]
@@ -76,13 +75,13 @@ class RepoService {
       log.debug("No record found for id: $metadataId")
       updateDetails.errors = ['Record does not exist.']
       updateDetails.meta += [success : false, code: HttpServletResponse.SC_NOT_FOUND]
-      response.status = HttpServletResponse.SC_OK
+      response.status = HttpServletResponse.SC_NOT_FOUND
       return updateDetails
     }
     updateDetails
   }
 
-  Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = null) {
+  Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = [table: 'unknown']) {
     log.info("Fulfilling ${params.table} list request with params: $params")
     Map listDetails = [:]
     listDetails.meta = [action:'read']
@@ -126,7 +125,7 @@ class RepoService {
       }
     } else {
       log.debug("Filtering old versions and deleted records")
-      listDetails.data =  getMostRecent(allResults, showDeleted)
+      listDetails.data = getMostRecent(allResults, showDeleted)
     }
 
     //build response
@@ -142,7 +141,7 @@ class RepoService {
     listDetails
   }
 
-  List getMostRecent(Iterable<MetadataRecord> allResults, Boolean showDeleted) {
+  private List getMostRecent(Iterable<MetadataRecord> allResults, Boolean showDeleted) {
     Map<UUID, MetadataRecord> idMostRecentMap = [:]
     List mostRecent
     List deletedList = []
@@ -203,19 +202,20 @@ class RepoService {
     purgeDetails
   }
 
-  def delete(CassandraRepository repositoryObject, UUID id, Date timestamp = null) {
+  private def delete(CassandraRepository repositoryObject, UUID id, Date timestamp = null) {
     log.info("Deleting record with id: $id, timestamp: $timestamp")
-    if (timestamp) {
-      repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
-    } else {
+
+    if (!timestamp) {
+      log.debug("Looking for latest record to delete for id: $id")
       Iterable mR = repositoryObject.findByMetadataId(id as UUID)
       if (mR) {
         timestamp = mR.first().last_update as Date
       } else {
-        throw RuntimeException("No such id")
+        log.warn("Unable to find timestamp to delete id: $id")
       }
-      repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
     }
+
+    repositoryObject.deleteByMetadataIdAndLastUpdate(id, timestamp)
   }
 
   Map softDelete(HttpServletResponse response, CassandraRepository repositoryObject, UUID id, Date timestamp) {
@@ -225,7 +225,7 @@ class RepoService {
     Iterable rowToBeDeleted = repositoryObject.findByMetadataIdLimitOne(id)
     if (rowToBeDeleted) {
       def record = rowToBeDeleted.first()
-      if (record.last_update != timestamp) {
+      if (optimisticLockIsBlocking(rowToBeDeleted, timestamp)) {
         log.info("Failing soft delete on out-of-date record with id: $id, timestamp: $timestamp")
         deleteDetails.meta += [success: false, code: HttpServletResponse.SC_CONFLICT]
         deleteDetails.errors = ['You are not deleting the most recent version.']
@@ -249,12 +249,16 @@ class RepoService {
       return deleteDetails
     }
   }
-  
-  Map createDataItem(MetadataRecord metadataRecord){
+
+  private Map createDataItem(MetadataRecord metadataRecord){
     [id: metadataRecord.id, type: getTableFromClass(metadataRecord), attributes: metadataRecord]
   }
 
-  def getTableFromClass(MetadataRecord metadataRecord) {
+  private boolean optimisticLockIsBlocking(Iterable result, Date timestamp) {
+    return result && result.first().last_update != timestamp
+  }
+
+  private def getTableFromClass(MetadataRecord metadataRecord) {
     switch (metadataRecord.class) {
       case CollectionMetadata:
         return 'collection'
