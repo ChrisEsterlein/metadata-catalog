@@ -78,8 +78,8 @@ class RepoService {
     updateDetails
   }
 
-  Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = [table: 'unknown']) {
-    log.info("Fulfilling ${params.table} list request with params: $params")
+  Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params) {
+    log.info("Fulfilling list request with params: $params")
     Map listDetails = [:]
     listDetails.meta = [action:'read']
     Boolean showVersions = params?.showVersions
@@ -99,7 +99,7 @@ class RepoService {
         allResults = repositoryObject.findByMetadataIdLimitOne(metadataId)
       }
     } else {
-      log.info("Querying for all $params.table records")
+      log.info("Querying for all records")
       allResults = repositoryObject.findAll()
     }
 
