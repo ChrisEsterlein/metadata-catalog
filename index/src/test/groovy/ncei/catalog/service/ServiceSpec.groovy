@@ -36,7 +36,7 @@ class ServiceSpec extends Specification {
     ]
 
     when:
-    def result = service.insert(metadata)
+    def result = service.upsert(metadata)
 
     then:
     1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, created ? 201 : 200)
@@ -53,7 +53,7 @@ class ServiceSpec extends Specification {
 
   def 'Insert: messages with [#missingCombination] missing are ignored'() {
     when:
-    def result = service.insert(metadata)
+    def result = service.upsert(metadata)
 
     then:
     result == null
@@ -72,7 +72,7 @@ class ServiceSpec extends Specification {
 
   def 'Insert: messages with invalid values for [#invalidCombination] are ignored'() {
     when:
-    def result = service.insert(metadata)
+    def result = service.upsert(metadata)
 
     then:
     result == null

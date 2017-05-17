@@ -57,10 +57,10 @@ class Service {
 
   /**
    * Insert a resource to Elasticsearch
-   * @param resource data to insert
+   * @param resource data to upsert
    * @return The inserted item
    */
-  Map insert(Map resource) {
+  Map upsert(Map resource) {
     def id = resource?.id
     def type = resource?.type
     def attributes = resource?.attributes
