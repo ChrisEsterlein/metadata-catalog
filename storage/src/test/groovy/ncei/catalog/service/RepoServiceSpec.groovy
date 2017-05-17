@@ -394,4 +394,54 @@ class RepoServiceSpec extends Specification {
     1 * response.setStatus(HttpServletResponse.SC_OK)
   }
 
+  @Unroll
+  def 'recover index - limit #limit, #uniqueRows unique rows, #duplicates duplicates, and #messagesSent expected messages'(){
+    setup:
+    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
+
+    Random random = new Random()
+    List results = []
+    (1..uniqueRows).each{
+      results.add(
+              new GranuleMetadata([
+                      "id": UUID.randomUUID(),
+                      "last_update": now.minus(random.nextInt(10)),
+                      "granule_metadata": "{fourth: true, reverted: true}"
+              ])
+      )
+    }
+
+    if(duplicates){ //todo see if you really need this
+      (1..duplicates).each{
+        results.add(
+                new GranuleMetadata([
+                        "id": uuid,
+                        "last_update": now,
+                        "granule_metadata": "{fourth: true, reverted: true}"
+                ])
+        )
+      }
+    }
+
+    when:
+    repoService.recover(response, granuleMetadataRepository, limit)
+
+    then:
+    if(limit){
+      1 * granuleMetadataRepository.findAllWithLimit(limit) >> results
+    }else{
+      1 * granuleMetadataRepository.findAll() >> results
+    }
+
+    messagesSent * messageService.notifyIndex(_ as Map)
+
+    where:
+    messagesSent | duplicates | uniqueRows  | limit
+        1        |    0       |     1       |  0 //no limit
+        2        |    2       |     1       |  0
+        3        |    1       |     2       |  0
+        4        |    5       |     3       |  uniqueRows + duplicates //limit does not determine # of messages, just which find we use
+
+
+  }
 }
