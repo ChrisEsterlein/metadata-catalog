@@ -92,4 +92,59 @@ class ServiceSpec extends Specification {
     'type'             | [id: 'abc', attributes: [name: 'test']]
     'attributes'       | [id: 'abc', type: 'granule']
   }
+
+  def 'Search: returns JSON API formatted information with query [#query] and matching results [#hits]'() {
+    setup:
+    def searchHit = [
+        "_index" : "search_index",
+        "_type"  : "granule",
+        "_id"    : "42",
+        "_score" : 0.6931472,
+        "_source": [
+            "name": "test"
+        ]
+    ]
+    def elasticsearchResponse = [
+        "took"     : 2,
+        "timed_out": false,
+        "_shards"  : [
+            "total"     : 5,
+            "successful": 5,
+            "failed"    : 0
+        ],
+        "hits"     : [
+            "total"    : hits ? 1 : 0,
+            "max_score": hits ? searchHit._score : 0.0,
+            "hits"     : hits ? [searchHit] : []
+        ]
+    ]
+    def contentStream = new ByteArrayInputStream(JsonOutput.toJson(elasticsearchResponse).bytes)
+    def mockEntity = Mock(HttpEntity)
+    mockEntity.getContent() >> contentStream
+    def mockStatusLine = Mock(StatusLine)
+    mockStatusLine.getStatusCode() >> 200
+    def mockResponse = Mock(Response)
+    mockResponse.getEntity() >> mockEntity
+    mockResponse.getStatusLine() >> mockStatusLine
+
+    when:
+    def result = service.search(query)
+
+    then:
+    1 * mockRestClient.performRequest(*_) >> mockResponse
+
+    and:
+    result.data == (hits ? [[id: searchHit._id, type: searchHit._type, attributes: searchHit._source]] : [])
+    result.meta.totalResults == (hits ? 1 : 0)
+    result.meta.searchTerms == query
+    result.meta.code == 200
+
+    where:
+    query       | hits
+    'something' | true
+    'something' | false
+    null        | true
+    null        | false
+
+  }
 }

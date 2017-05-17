@@ -95,7 +95,7 @@ class Service {
     Map result = [statusCode: response?.getStatusLine()?.getStatusCode() ?: 500]
     try {
       if (response?.getEntity()) {
-        result = new JsonSlurper().parse(response?.getEntity()?.getContent()) as Map
+        result += new JsonSlurper().parse(response?.getEntity()?.getContent()) as Map
       }
     }
     catch (e) {
