@@ -31,7 +31,6 @@ class CassandraConfig {
   Integer port
   //---
 
-
   @Bean
   @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
   CassandraClusterFactoryBean cluster() {
