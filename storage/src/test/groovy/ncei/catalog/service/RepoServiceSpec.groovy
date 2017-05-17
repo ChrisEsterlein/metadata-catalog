@@ -393,4 +393,8 @@ class RepoServiceSpec extends Specification {
     result.meta.totalResults == 7
     1 * response.setStatus(HttpServletResponse.SC_OK)
   }
+
+  def 'recover index'(){
+
+  }
 }

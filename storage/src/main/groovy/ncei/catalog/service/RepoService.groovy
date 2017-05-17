@@ -15,10 +15,12 @@ class RepoService {
   @Autowired
   MessageService messageService
 
-  void recover(HttpServletResponse response, CassandraRepository repositoryObject){
-    repositoryObject.findAll().each{
+  void recover(HttpServletResponse response, CassandraRepository repositoryObject, Integer limit){
+    Iterable results = limit ? repositoryObject.findAllWithLimit(limit) : repositoryObject.findAll()
+
+    results.each{
       log.debug("Resending to rabbit, record : $it")
-      messageService.notifyIndex([data:[createDataItem(it)]])
+      messageService.notifyIndex([meta: [action: it.deleted ? 'deleted' : 'update'], data:[createDataItem(it)]])
     }
     response.status = HttpServletResponse.SC_OK
   }

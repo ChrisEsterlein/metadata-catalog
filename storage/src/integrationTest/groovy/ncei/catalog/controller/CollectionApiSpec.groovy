@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
@@ -276,4 +277,43 @@ class CollectionApiSpec extends Specification {
     }
 
   }
+
+  @Unroll
+  def 're-populate the index with #records records'(){
+    setup:
+
+    collectionMetadataRepository.deleteAll()
+
+    (1..records).each{
+      collectionMetadataRepository.save(new CollectionMetadata(postBody))
+    }
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .body([limit : limit])
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/collections/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+    int count = 0
+    poller.eventually {
+      while ((rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        count ++
+      }
+      assert count == messagesSent
+    }
+
+    where:
+    records | limit | messagesSent
+    1       |   0   |     1         //send everything
+    2       |   1   |     1
+    3       |   2   |     2
+
+
+  }
+
 }
