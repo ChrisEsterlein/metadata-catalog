@@ -394,7 +394,4 @@ class RepoServiceSpec extends Specification {
     1 * response.setStatus(HttpServletResponse.SC_OK)
   }
 
-  def 'recover index'(){
-
-  }
 }
