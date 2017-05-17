@@ -197,6 +197,8 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
+        .body('data[0].meta.action', equalTo('delete'))
+        .body('data[0].id', equalTo(collectionMetadata.id as String))
 
     then: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
