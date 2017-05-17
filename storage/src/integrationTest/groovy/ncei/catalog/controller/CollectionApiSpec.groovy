@@ -82,7 +82,6 @@ class CollectionApiSpec extends Specification {
         .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
-        .extract().body()
 
     then: 'finally, we should have sent a rabbit message'
 
@@ -106,9 +105,6 @@ class CollectionApiSpec extends Specification {
     CollectionMetadata collectionMetadata = collectionMetadataRepository.save(new CollectionMetadata(postBody))
 
     when: 'we update the postBody with the id and new metadata'
-
-    println("~~~ $collectionMetadata")
-    println("~~~~ ${collectionMetadata.asMap()}")
 
     String updatedMetadata = "different metadata"
     Map updatedPostBody = collectionMetadata.asMap().clone() as Map
@@ -169,8 +165,6 @@ class CollectionApiSpec extends Specification {
         .body('data[1].attributes.collection_metadata', equalTo(postBody.collection_metadata))
         .body('data[1].attributes.geometry', equalTo(postBody.geometry))
         .body('data[1].attributes.type', equalTo(postBody.type))
-        .extract()
-        .path('data[0].attributes')
 
     then: 'finally, we should have sent a rabbit message'
 

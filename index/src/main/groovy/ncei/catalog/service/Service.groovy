@@ -18,7 +18,6 @@ class Service {
   protected RestClient restClient
   protected IndexAdminService indexAdminService
 
-
   @Autowired
   Service(RestClient restClient, IndexAdminService indexAdminService) {
     this.restClient = restClient
@@ -86,12 +85,11 @@ class Service {
         data: [
             id        : result._id,
             type      : result._type,
-            attributes: result._source,
-            meta      : [created: result.statusCode == 201]
+            attributes: attributes,
+            meta      : [created: result.created]
         ]
     ]
   }
-
 
   private static Map parseResponse(Response response) {
     Map result = [statusCode: response?.getStatusLine()?.getStatusCode() ?: 500]

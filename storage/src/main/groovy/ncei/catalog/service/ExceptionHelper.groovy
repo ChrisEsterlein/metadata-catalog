@@ -39,8 +39,7 @@ class ExceptionHelper extends ResponseEntityExceptionHandler {
   @ExceptionHandler(Exception.class)
   @ResponseBody
   def handleError(HttpServletRequest request, Exception ex) {
-    log.error("Unexpected error", ex)
-    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occured.", request.getContextPath(), ex), HttpStatus.FORBIDDEN)
+    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occured.", request.getContextPath(), ex), HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
 //  @ExceptionHandler(AccessDeniedException.class )
