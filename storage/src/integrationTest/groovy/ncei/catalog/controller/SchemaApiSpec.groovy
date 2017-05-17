@@ -4,7 +4,6 @@ import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
-import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.MetadataSchema
 import ncei.catalog.domain.MetadataSchemaRepository
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -103,7 +102,6 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(2))
     //first one is the newest
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
@@ -123,7 +121,6 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -143,7 +140,6 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(1))
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
@@ -157,10 +153,6 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.code', equalTo(200))
-            .body('meta.success', equalTo(true))
-            .body('meta.action', equalTo('read'))
-            .body('meta.totalResults', equalTo(3))
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
@@ -181,9 +173,6 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.id', equalTo(updatedRecord.id))
-            .body('meta.totalResultsDeleted', equalTo(3))
-            .body('meta.success', equalTo(true))
 
             .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[1].attributes.json_schema', equalTo(updatedSchema))
@@ -201,7 +190,7 @@ class SchemaApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -228,7 +217,7 @@ class SchemaApiSpec extends Specification {
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body([limit : limit as Integer])
+            .body([limit : limit])
             .contentType(ContentType.JSON)
             .when()
             .put('/schemas/recover')

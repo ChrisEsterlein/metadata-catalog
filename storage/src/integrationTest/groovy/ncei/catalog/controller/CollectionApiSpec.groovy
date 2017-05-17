@@ -93,7 +93,7 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -137,7 +137,6 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.totalResults', equalTo(1))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(updatedMetadata))
@@ -152,7 +151,6 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.totalResults', equalTo(2))
     //first one is the newest
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
@@ -176,7 +174,7 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -199,7 +197,6 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + collectionMetadata.id))
 
     then: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -220,7 +217,6 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.totalResults', equalTo(1))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
@@ -237,10 +233,6 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.code', equalTo(200))
-        .body('meta.success', equalTo(true))
-        .body('meta.action', equalTo('read'))
-        .body('meta.totalResults', equalTo(2))
 
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
@@ -265,7 +257,7 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -293,7 +285,7 @@ class CollectionApiSpec extends Specification {
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body([limit : limit as Integer])
+            .body([limit : limit])
             .contentType(ContentType.JSON)
             .when()
             .put('/collections/recover')

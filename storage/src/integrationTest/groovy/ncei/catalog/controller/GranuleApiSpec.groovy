@@ -136,10 +136,6 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(2))
-            .body('meta.code', equalTo(200))
-            .body('meta.success', equalTo(true))
-            .body('meta.action', equalTo('read'))
 
     //first one is the newest
             .body('data[0].type', equalTo('granule'))
@@ -179,7 +175,6 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -220,7 +215,6 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(3))
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
             .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
@@ -255,9 +249,6 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.id', equalTo(updatedRecord.id))
-            .body('meta.totalResultsDeleted', equalTo(3))
-            .body('meta.success', equalTo(true))
 
     and: 'finally, we should have sent 3 messages'
 
@@ -269,7 +260,7 @@ class GranuleApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -296,7 +287,7 @@ class GranuleApiSpec extends Specification {
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body([limit : limit as Integer])
+            .body([limit : limit])
             .contentType(ContentType.JSON)
             .when()
             .put('/granules/recover')
