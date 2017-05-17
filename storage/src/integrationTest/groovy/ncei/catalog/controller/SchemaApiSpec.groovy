@@ -14,7 +14,6 @@ import spock.util.concurrent.PollingConditions
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class SchemaApiSpec extends Specification {
 

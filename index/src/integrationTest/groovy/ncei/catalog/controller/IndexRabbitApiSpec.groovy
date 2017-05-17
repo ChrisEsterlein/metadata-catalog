@@ -53,7 +53,7 @@ class IndexRabbitApiSpec extends Specification {
     then:
     poller.eventually {
       def searchResults = service.search("fileName:${metadata.attributes.fileName}")
-      assert searchResults.totalResults == 1
+      assert searchResults.meta.totalResults == 1
       assert searchResults.data[0] == metadata
     }
   }
