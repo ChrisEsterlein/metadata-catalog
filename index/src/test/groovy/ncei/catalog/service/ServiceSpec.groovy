@@ -1,14 +1,12 @@
 package ncei.catalog.service
 
 import groovy.json.JsonOutput
+import org.apache.http.HttpEntity
 import org.apache.http.StatusLine
-import org.elasticsearch.action.index.IndexResponse
+import org.elasticsearch.client.Response
 import org.elasticsearch.client.RestClient
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import javax.servlet.http.HttpServletResponse
 
 @Unroll
 class ServiceSpec extends Specification {
@@ -16,44 +14,49 @@ class ServiceSpec extends Specification {
   RestClient mockRestClient = Mock(RestClient)
   IndexAdminService mockIndexAdminService = Mock(IndexAdminService)
   Service service = Spy(Service, constructorArgs: [mockRestClient, mockIndexAdminService])
-//Spy(new Service(mockRestClient, mockIndexAdminService))
 
-  @Ignore
-  def 'JSON API response is expected JSON API format'() {
+  def 'Insert: returns JSON API formatted information when created is #created'() {
     setup:
-    Map metadata = [id: 'abc', type: 'granule', attributes: [name: 'test']]
-    IndexResponse response = new IndexResponse()//Mock(Response.class)
-    StatusLine statusLine = Mock()
-    String elasticsearchResponseStr = JsonOutput.toJson([
+    def metadata = [id: 'abc', type: 'granule', attributes: [name: 'test']]
+    def elasticsearchResponse = [
         "_index"  : "search_index",
-        "_type"   : "granule",
-        "_id"     : "abc",
+        "_type"   : metadata.type,
+        "_id"     : metadata.id,
         "_version": 1,
-        "result"  : "created",
+        "result"  : created ? 'created' : 'updated',
         "_shards" : [
             "total"     : 2,
             "successful": 1,
             "failed"    : 0
         ],
-        "created" : true
-    ])
+        "created" : created
+    ]
+    def contentStream = new ByteArrayInputStream(JsonOutput.toJson(elasticsearchResponse).bytes)
+    def mockEntity = Mock(HttpEntity)
+    mockEntity.getContent() >> contentStream
+    def mockStatusLine = Mock(StatusLine)
+    mockStatusLine.getStatusCode() >> (created ? 201 : 200)
+    def mockResponse = Mock(Response)
+    mockResponse.getEntity() >> mockEntity
+    mockResponse.getStatusLine() >> mockStatusLine
 
     when:
     def result = service.insert(metadata)
 
-    then: 'mock client and the responses provide the needed mocks'
-    1 * mockRestClient.performRequest(*_) >> response
-    1 * response.getStatusLine() >> statusLine
-    1 * statusLine.getStatusCode() >> HttpServletResponse.SC_OK
+    then:
+    1 * mockRestClient.performRequest(*_) >> mockResponse
 
-    and: 'spy shows parseResponse is called'
-    1 * service.parseResponse(_)
-
-    and: 'result is expected format'
+    and:
     result.data.id == metadata.id
+    result.data.type == metadata.type
+    result.data.attributes == metadata.attributes
+    result.data.meta.created == created
+
+    where:
+    created << [true, false]
   }
 
-  def 'messages with [#missingCombination] missing are consumed and ignored'() {
+  def 'Insert: messages with [#missingCombination] missing are ignored'() {
     when:
     def result = service.insert(metadata)
 
@@ -72,7 +75,7 @@ class ServiceSpec extends Specification {
     'attributes'           | [id: 'abc', type: 'granule']
   }
 
-  def 'Insert: messages with [#missingCombination] as the wrong Object type are consumed and ignored'() {
+  def 'Insert: messages with invalid values for [#invalidCombination] are ignored'() {
     when:
     def result = service.insert(metadata)
 
@@ -81,7 +84,7 @@ class ServiceSpec extends Specification {
     0 * mockRestClient.performRequest(*_)
 
     where:
-    missingCombination | metadata
+    invalidCombination | metadata
     'type'             | [type: 12]
     'id, type'         | [attributes: [name: 'test']]
     'type, attributes' | [id: 'abc']

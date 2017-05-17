@@ -85,8 +85,8 @@ class Service {
         data: [
             id        : result._id,
             type      : result._type,
-            attributes: result._source,
-            meta      : [created: result.statusCode == 201]
+            attributes: attributes,
+            meta      : [created: result.created]
         ]
     ]
   }
