@@ -4,11 +4,14 @@ import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.domain.GranuleMetadata
+import ncei.catalog.domain.GranuleMetadataRepository
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
@@ -25,6 +28,9 @@ class GranuleApiSpec extends Specification {
   private String contextPath
 
   @Autowired
+  GranuleMetadataRepository granuleMetadataRepository
+
+  @Autowired
   RabbitTemplate rabbitTemplate
 
   PollingConditions poller
@@ -36,19 +42,20 @@ class GranuleApiSpec extends Specification {
     RestAssured.basePath = contextPath
   }
 
+  def postBody = [
+          "tracking_id"     : "abc123",
+          "filename"        : "granuleFace",
+          "granule_schema"  : "a granule schema",
+          "granule_size"    : 1024,
+          "geometry"        : "POLYGON()",
+          "access_protocol" : "FILE",
+          "type"            : "fos",
+          "granule_metadata": "{blah:blah}",
+          "collections"     : ["a", "list", "of", "collections"]
+  ]
+
   def 'create, read, update, delete granule metadata'() {
     setup: 'define a granule metadata record'
-    def postBody = [
-            "tracking_id"     : "abc123",
-            "filename"        : "granuleFace",
-            "granule_schema"  : "a granule schema",
-            "granule_size"    : 1024,
-            "geometry"        : "POLYGON()",
-            "access_protocol" : "FILE",
-            "type"            : "fos",
-            "granule_metadata": "{blah:blah}",
-            "collections"     : ["a", "list", "of", "collections"]
-    ]
 
     when: 'we post, a new record is created and returned in response'
     Map granuleMetadata = RestAssured.given()
@@ -266,5 +273,59 @@ class GranuleApiSpec extends Specification {
         assert actions == expectedActions
       }
     }
+  }
+
+  @Unroll
+  def 're-populate the index with #records records in storage and limit #limit'(){
+    setup:
+
+    granuleMetadataRepository.deleteAll()
+
+    (1..records).each{
+      granuleMetadataRepository.save(new GranuleMetadata(postBody))
+    }
+
+    if(duplicates){
+      Map updatedPostBody = postBody.clone()
+      updatedPostBody.id = UUID.fromString('52b72220-3ab3-11e7-a671-7137e3cfed7e')
+      GranuleMetadata newVersion = new GranuleMetadata(updatedPostBody)
+      (1..duplicates).each{
+        granuleMetadataRepository.save(newVersion)
+      }
+    }
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .body([limit : limit as Integer])
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/granules/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+    int count = 0
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        count ++
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        object.data.each{assert it.meta != null}
+      }
+      assert count == messagesSent
+    }
+
+    where:
+    records | limit | duplicates | messagesSent
+    1     |   0   |     0      |    1 //send everything - set to 0 same as not specifying a limit
+    2     |   1   |     0      |    1
+    3     |   2   |     0      |    2
+    4     |   10  |     0      |    4
+    4     |   10  |     3      |    5 // 7 records 5 of which are unique
+    4     |   10  |     10     |    5 // 14 records 5 of which are unique
+    4     |   10  |     11     |    5
+
   }
 }
