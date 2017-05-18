@@ -23,7 +23,7 @@ Note: if you are running integration tests and make a change to the docker templ
 ##Saving via RABBITMQ
 Save metadata:
 Properties: content_type = application/json
-Payload: {"GRANULE_ID":"1asdf123s", "dataset":"csb", "fileName":"/blah/fileName1"}
+Payload: {"id":"1asdf123s", "type":"metadata", "attributes": {"dataset":"csb", "fileName":"/blah/fileName1"}}
 
 ##Searching via REST
 http://localhost:8088/index/search?q=dataset:csb fileName:/blah/fileName1
