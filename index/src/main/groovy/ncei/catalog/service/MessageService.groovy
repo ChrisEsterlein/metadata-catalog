@@ -19,7 +19,7 @@ class MessageService {
     log.info "Received rabbit message: $message"
 
     if (message) {
-      Map response = service.upsert(message)
+      Map response = service.updateResources(message)
       if (response.containsKey('data')) {
         log.info "Insert succeeded: metadata='$message' with Elasticsearch response: $response"
       } else {

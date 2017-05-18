@@ -42,10 +42,10 @@ class ServiceSpec extends Specification {
     1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, created ? 201 : 200)
 
     and:
-    result.data.id == metadata.id
-    result.data.type == metadata.type
-    result.data.attributes == metadata.attributes
-    result.data.meta.created == created
+    result.id == metadata.id
+    result.type == metadata.type
+    result.attributes == metadata.attributes
+    result.meta.created == created
 
     where:
     created << [true, false]
@@ -112,9 +112,9 @@ class ServiceSpec extends Specification {
     1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, 200)
 
     and:
-    result.data.id == metadata.id
-    result.data.type == metadata.type
-    result.data.meta.deleted == true
+    result.id == metadata.id
+    result.type == metadata.type
+    result.meta.deleted == true
   }
 
   def 'Delete: returns JSON API formatted information for nonexistent resource'() {
@@ -144,9 +144,9 @@ class ServiceSpec extends Specification {
 
     and:
     notThrown(Exception)
-    result.data.id == metadata.id
-    result.data.type == metadata.type
-    result.data.meta.deleted == false
+    result.id == metadata.id
+    result.type == metadata.type
+    result.meta.deleted == false
   }
 
   def 'Search: returns JSON API formatted information with query [#query] and matching results [#hits]'() {

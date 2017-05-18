@@ -56,9 +56,74 @@ class Service {
   }
 
   /**
+   * Handle a JSON-API style payload with an array of
+   * resources needing to be either upserted or deleted
+   * @param payload The payload to process. Must contain a "data"
+   *                key which is an array of resources to process.
+   * @return A JSON-API style response indicating the results
+   */
+  Map updateResources(Map payload) {
+    def resources = payload?.data
+    if (resources instanceof Map) {
+      resources = [resources]
+    }
+    if (!(resources instanceof List)) {
+      log.warn("Received malformed payload of resources to update. Must contain data: ${payload}")
+      return null
+    }
+
+    def created = 0
+    def updated = 0
+    def deleted = 0
+    def failed = 0
+
+    resources.each { resource ->
+      log.debug("Begin update for metadata ${resource}")
+      def result = null
+      def action = resource?.meta?.action
+      try {
+        switch (action) {
+          case 'insert':
+          case 'update':
+          case 'upsert':
+            log.debug("Upserting metadata with id ${resource?.id}")
+            result = upsert(resource)
+            break
+
+          case 'delete':
+            log.debug("Deleting metadata with id ${resource?.id}")
+            result = delete(resource)
+            break
+        }
+      }
+      catch (e) {
+        log.warn("An error occurred performing action [$action] on metadata with id ${resource?.id}", e)
+      }
+
+      if (result) {
+        if (result?.meta?.created == true) {
+          created++
+        }
+        if (result?.meta?.created == false) {
+          updated++
+        }
+        if (result?.meta?.deleted == true) {
+          deleted++
+        }
+      }
+      else {
+        failed++
+      }
+    }
+
+    log.info("Handled update payload - created: $created, updated: $updated, deleted: $deleted, failed: $failed")
+    return [meta: [created: created, updated: updated, deleted: deleted, failed: failed]]
+  }
+
+  /**
    * Insert a resource to Elasticsearch
    * @param resource data to upsert
-   * @return The inserted item
+   * @return The inserted resource
    */
   Map upsert(Map resource) {
     def id = resource?.id
@@ -83,12 +148,10 @@ class Service {
 
     def result = parseResponse(response)
     return [
-        data: [
-            id        : result._id,
-            type      : result._type,
-            attributes: attributes,
-            meta      : [created: result.created]
-        ]
+        id        : result._id,
+        type      : result._type,
+        attributes: attributes,
+        meta      : [created: result.created]
     ]
   }
 
@@ -127,7 +190,7 @@ class Service {
       }
     }
 
-    return [data: result]
+    return result
   }
 
   private static Map parseResponse(Response response) {
