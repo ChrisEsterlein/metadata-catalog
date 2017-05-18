@@ -20,23 +20,12 @@ class MessageService {
    * @param message
    */
   void handleMessage(Map message) {
-    log.info "Received rabbit message: $message"
-
-    if (message) {
-      try {
-        Map response = processResources(message)
-
-        if (response?.containsKey('data')) {
-          log.info "Insert succeeded: metadata='$message' with Elasticsearch response: $response"
-        } else {
-          log.info "Insert failed: metadata='$message' with Elasticsearch response: $response"
-        }
-      } catch(e) {
-        log.error("Insert failed:  metadata=$message Exception:", e)
-      }
-
-    } else {
-      log.warn("Insert task - received bad message: '$message'")
+    try {
+      log.debug "Received rabbit message: $message"
+      processResources(message)
+    }
+    catch(e) {
+      log.error("Processing payload failed:  metadata=$message Exception:", e)
     }
   }
 
@@ -53,7 +42,7 @@ class MessageService {
       resources = [resources]
     }
     if (!(resources instanceof List)) {
-      log.warn("Received malformed payload of resources to update. Must contain data: ${payload}")
+      log.warn("Received malformed payload of resources to process. Must contain data: ${payload}")
       return null
     }
 
@@ -88,16 +77,14 @@ class MessageService {
         log.warn("An error occurred performing action [$action] on metadata with id ${resource?.id}", e)
       }
 
-      if (result) {
-        if (result?.meta?.created == true) {
-          created++
-        }
-        if (result?.meta?.created == false) {
-          updated++
-        }
-        if (result?.meta?.deleted == true) {
-          deleted++
-        }
+      if (result?.meta?.created == true) {
+        created++
+      }
+      else if (result?.meta?.created == false) {
+        updated++
+      }
+      else if (result?.meta?.deleted == true) {
+        deleted++
       }
       else {
         failed++
