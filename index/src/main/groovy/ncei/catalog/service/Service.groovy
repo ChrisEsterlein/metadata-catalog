@@ -62,7 +62,7 @@ class Service {
    *                key which is an array of resources to process.
    * @return A JSON-API style response indicating the results
    */
-  Map updateResources(Map payload) {
+  Map processResources(Map payload) {
     def resources = payload?.data
     if (resources instanceof Map) {
       resources = [resources]
@@ -94,6 +94,9 @@ class Service {
             log.debug("Deleting metadata with id ${resource?.id}")
             result = delete(resource)
             break
+
+          default:
+            log.warn("Received resource with unexpected action: $action")
         }
       }
       catch (e) {
