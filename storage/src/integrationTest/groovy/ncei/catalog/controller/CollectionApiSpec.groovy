@@ -320,4 +320,66 @@ class CollectionApiSpec extends Specification {
 
   }
 
+  @Unroll
+  def 'messages are sent with appropriate action'(){
+    setup:
+
+    collectionMetadataRepository.deleteAll()
+
+    (1..updates).each{ i ->
+      collectionMetadataRepository.save(new CollectionMetadata(postBody))
+    }
+
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.deleted = true
+    CollectionMetadata newVersion = new CollectionMetadata(updatedPostBody)
+    (1..deletes).each{
+      collectionMetadataRepository.save(newVersion)
+    }
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .body([limit : 0])
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/collections/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+
+    int total = 0
+    int updateMessages = 0
+    int deleteMessages = 0
+
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        total ++
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        if(object.data[0].meta.action == 'update'){
+          println object.data[0].meta.action
+          println object.data[0].meta.action == 'update'
+          updateMessages++
+        }
+        if(object.data[0].meta.action == 'delete'){
+          println object.data[0].meta.action
+          println object.data[0].meta.action == 'delete'
+          deleteMessages++
+        }
+        assert total == messagesSent
+        assert updates == updateMessages
+        assert deletes == deleteMessages
+      }
+    }
+
+    where:
+    updates | deletes | messagesSent
+    1|1|2
+    1|2|3
+    2|1|3
+  }
+
 }

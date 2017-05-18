@@ -251,4 +251,66 @@ class SchemaApiSpec extends Specification {
       4     |   10  |     11     |    5
 
   }
+  
+  @Unroll
+  def 'messages are sent with appropriate action'(){
+    setup:
+
+    metadataSchemaRepository.deleteAll()
+
+    (1..updates).each{ i ->
+      metadataSchemaRepository.save(new MetadataSchema (postBody))
+    }
+
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.deleted = true
+    MetadataSchema  newVersion = new MetadataSchema (updatedPostBody)
+    (1..deletes).each{
+      metadataSchemaRepository.save(newVersion)
+    }
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .body([limit : 0])
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/schemas/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+
+    int total = 0
+    int updateMessages = 0
+    int deleteMessages = 0
+
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        total ++
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        if(object.data[0].meta.action == 'update'){
+          println object.data[0].meta.action
+          println object.data[0].meta.action == 'update'
+          updateMessages++
+        }
+        if(object.data[0].meta.action == 'delete'){
+          println object.data[0].meta.action
+          println object.data[0].meta.action == 'delete'
+          deleteMessages++
+        }
+        assert total == messagesSent
+        assert updates == updateMessages
+        assert deletes == deleteMessages
+      }
+    }
+
+    where:
+    updates | deletes | messagesSent
+    1|1|2
+    1|2|3
+    2|1|3
+  }
 }

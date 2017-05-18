@@ -1,13 +1,15 @@
 package ncei.catalog.service
 
+import groovy.util.logging.Slf4j
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
+import ncei.catalog.domain.MetadataRecord
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import javax.servlet.http.HttpServletResponse
 
-//@CompileStatic
+@Slf4j
 @Unroll
 class RepoServiceSpec extends Specification {
 
@@ -441,6 +443,49 @@ class RepoServiceSpec extends Specification {
         3        |    1       |     2       |  0
         4        |    5       |     3       |  uniqueRows + duplicates //limit does not determine # of messages, just which find we use
 
+
+  }
+
+  def 'appropriate action is sent in message'(){
+    setup:
+
+    List <MetadataRecord> results = []
+
+    if(updates){
+      (1..updates).each{
+        results.add(
+                new GranuleMetadata([
+                        "deleted":false
+                ])
+        )
+      }
+    }
+
+    if(deletes){
+      (1..deletes).each{
+        results.add(
+                new GranuleMetadata([
+                        "deleted":true
+                ])
+        )
+      }
+    }
+
+    when:
+    repoService.recover(response, granuleMetadataRepository, 0)
+
+    then:
+    assert results.size == updates + deletes
+    1* granuleMetadataRepository.findAll() >> results
+
+    updates * messageService.notifyIndex({it.data[0].meta.action == 'update'})
+    deletes * messageService.notifyIndex({it.data[0].meta.action == 'delete'})
+
+    where:
+    updates | deletes
+    1|0
+    0|1
+    1|1
 
   }
 }

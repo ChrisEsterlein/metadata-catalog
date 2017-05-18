@@ -22,7 +22,7 @@ class RepoService {
       log.debug("Resending to rabbit, record : $it")
       if(!(it.id in sentIds)){
         sentIds.add(it.id)
-        String action = it.deleted ? 'deleted' : 'update'
+        String action = it.deleted ? 'delete' : 'update'
         messageService.notifyIndex([data:[createDataItem(it, action)]])
       }
     }

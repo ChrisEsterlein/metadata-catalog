@@ -269,13 +269,14 @@ class GranuleApiSpec extends Specification {
   }
 
   @Unroll
-  def 're-populate the index with #records records in storage and limit #limit'(){
+  def 'correct number of messages are sent for #records records, #duplicates duplicates, with limit #limit'(){
     setup:
 
     granuleMetadataRepository.deleteAll()
 
-    (1..records).each{
-      granuleMetadataRepository.save(new GranuleMetadata(postBody))
+    (1..records).each{ i ->
+        granuleMetadataRepository.save(new GranuleMetadata(postBody))
+
     }
 
     if(duplicates){
@@ -298,27 +299,87 @@ class GranuleApiSpec extends Specification {
             .statusCode(200)
 
     then:
-    int count = 0
+    int total = 0
     poller.eventually {
       String m
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
-        count ++
+        total ++
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        object.data.each{assert it.meta != null}
+        object.data[0].meta.action == 'update'
       }
-      assert count == messagesSent
+      assert total == messagesSent
+
     }
 
     where:
     records | limit | duplicates | messagesSent
-    1     |   0   |     0      |    1 //send everything - set to 0 same as not specifying a limit
-    2     |   1   |     0      |    1
-    3     |   2   |     0      |    2
-    4     |   10  |     0      |    4
-    4     |   10  |     3      |    5 // 7 records 5 of which are unique
-    4     |   10  |     10     |    5 // 14 records 5 of which are unique
-    4     |   10  |     11     |    5
+      10    |   0   |     0      |    10 //send everything - set to 0 same as not specifying a limit
+      20    |   10  |     0      |    10 // limit less than records
+      4     |   0   |     2      |    5 // 6 records 5 of which are unique
+      5     |   5   |     2      |    5 //duplicates (inserted last) are outside limit and no message is sent for duplicate
 
+  }
+
+  @Unroll
+  def 'messages are sent with appropriate action'(){
+    setup:
+
+    granuleMetadataRepository.deleteAll()
+
+    (1..updates).each{ i ->
+      granuleMetadataRepository.save(new GranuleMetadata(postBody))
+    }
+
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.deleted = true
+    GranuleMetadata newVersion = new GranuleMetadata(updatedPostBody)
+    (1..deletes).each{
+      granuleMetadataRepository.save(newVersion)
+    }
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .body([limit : 0])
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/granules/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+
+    int total = 0
+    int updateMessages = 0
+    int deleteMessages = 0
+
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        total ++
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        if(object.data[0].meta.action == 'update'){
+          println object.data[0].meta.action
+          println object.data[0].meta.action == 'update'
+          updateMessages++
+        }
+        if(object.data[0].meta.action == 'delete'){
+          println object.data[0].meta.action
+          println object.data[0].meta.action == 'delete'
+          deleteMessages++
+        }
+        assert total == messagesSent
+        assert updates == updateMessages
+        assert deletes == deleteMessages
+      }
+    }
+
+    where:
+    updates | deletes | messagesSent
+    1|1|2
+    1|2|3
+    2|1|3
   }
 }
