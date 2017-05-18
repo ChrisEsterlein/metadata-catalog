@@ -15,6 +15,11 @@ class RepoService {
   @Autowired
   MessageService messageService
 
+  final String INSERT = 'insert'
+  final String DELETE = 'delete'
+  final String UPDATE = 'update'
+  final String READ = 'read'
+
   void recover(HttpServletResponse response, CassandraRepository repositoryObject, int limit){
     Iterable results = limit ? repositoryObject.findAllWithLimit(limit) : repositoryObject.findAll()
     List sentIds = []
@@ -22,7 +27,7 @@ class RepoService {
       log.debug("Resending to rabbit, record : $it")
       if(!(it.id in sentIds)){
         sentIds.add(it.id)
-        String action = it.deleted ? 'delete' : 'update'
+        String action = it.deleted ? DELETE : UPDATE
         messageService.notifyIndex([data:[createDataItem(it, action)]])
       }
     }
@@ -48,7 +53,7 @@ class RepoService {
       MetadataRecord saveResult = repositoryObject.save(metadataRecord)
       log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
       saveDetails.data = []
-      saveDetails.data.add(createDataItem(metadataRecord, 'insert'))
+      saveDetails.data.add(createDataItem(metadataRecord, INSERT))
       response.status = HttpServletResponse.SC_CREATED
       messageService.notifyIndex(saveDetails)
     }
@@ -72,7 +77,7 @@ class RepoService {
         log.debug("Updated record: ${metadataRecord}")
         metadataRecord.last_update = new Date()
         MetadataRecord record = repositoryObject.save(metadataRecord)
-        updateDetails.data = [createDataItem(record, 'update')]
+        updateDetails.data = [createDataItem(record, UPDATE)]
         response.status = HttpServletResponse.SC_OK
         messageService.notifyIndex(updateDetails)
       }
@@ -112,7 +117,7 @@ class RepoService {
     //filter deleted and versions - or don't
     if (showDeleted && showVersions) {
       log.debug("Returning all records, including old versions and deleted records")
-      listDetails.data = allResults.collect{createDataItem(it, 'read')}
+      listDetails.data = allResults.collect{createDataItem(it, READ)}
     } else if (showVersions) {
       log.debug("Filtering deleted records")
       List deletedList = []
@@ -123,7 +128,7 @@ class RepoService {
           deletedList.add(id)
         }
         else if(!(id in deletedList)){
-          listDetails.data.add(createDataItem(mR, 'read'))
+          listDetails.data.add(createDataItem(mR, READ))
         }
       }
     } else {
@@ -162,7 +167,7 @@ class RepoService {
       }
     }
     mostRecent = idMostRecentMap.collect { key, value ->
-      createDataItem(value, 'read')
+      createDataItem(value, READ)
     }
     mostRecent
   }
@@ -185,7 +190,7 @@ class RepoService {
     if(items){
       purgeDetails.data = []
       items.each {
-        purgeDetails.data.add(createDataItem(it, 'delete'))
+        purgeDetails.data.add(createDataItem(it, DELETE))
         UUID id = it.id
         delete(repositoryObject, id, it.last_update)
       }
@@ -228,7 +233,7 @@ class RepoService {
         record.deleted = true
         log.info("Soft delete successful for record with id: $id")
         MetadataRecord newRecord = repositoryObject.save(record)
-        deleteDetails.data = [createDataItem(newRecord, 'delete')]
+        deleteDetails.data = [createDataItem(newRecord, DELETE)]
         response.status = HttpServletResponse.SC_OK
         messageService.notifyIndex(deleteDetails)
       }

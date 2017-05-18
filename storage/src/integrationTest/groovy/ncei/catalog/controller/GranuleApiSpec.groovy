@@ -136,7 +136,7 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-
+            .body('data.size', equalTo(2))
     //first one is the newest
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
@@ -196,6 +196,7 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+            .body('data.size', equalTo(1))
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
             .body('data[0].attributes.filename', equalTo(postBody.filename))
@@ -217,6 +218,7 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+            .body('data.size', equalTo(3))
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
             .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))

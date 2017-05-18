@@ -102,6 +102,8 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+            .body('data.size', equalTo(2))
+
     //first one is the newest
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
@@ -155,6 +157,7 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+            .body('data.size', equalTo(3))
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
@@ -175,6 +178,8 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+            .body('data.size', equalTo(3))
+
 
             .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[1].attributes.json_schema', equalTo(updatedSchema))

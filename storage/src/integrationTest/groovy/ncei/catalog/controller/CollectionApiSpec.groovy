@@ -151,6 +151,8 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
+        .body('data.size', equalTo(2))
+
     //first one is the newest
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
@@ -219,6 +221,7 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
+        .body('data.size', equalTo(1))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
@@ -235,7 +238,7 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-
+        .body('data.size', equalTo(2))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
@@ -313,7 +316,7 @@ class CollectionApiSpec extends Specification {
       1     |   0   |     0      |    1 //send everything - set to 0 same as not specifying a limit
       2     |   1   |     0      |    1
       3     |   2   |     0      |    2
-      4     |   10  |     0      |    4
+      4     |   0   |     0      |    4
       4     |   10  |     3      |    5 // 7 records 5 of which are unique
       4     |   10  |     10     |    5 // 14 records 5 of which are unique
       4     |   10  |     11     |    5
