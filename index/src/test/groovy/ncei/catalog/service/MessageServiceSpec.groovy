@@ -2,7 +2,9 @@ package ncei.catalog.service
 
 import spock.lang.Shared
 import spock.lang.Specification
+import spock.lang.Unroll
 
+@Unroll
 class MessageServiceSpec extends Specification {
 
   MessageService messageService = new MessageService()
@@ -10,9 +12,12 @@ class MessageServiceSpec extends Specification {
 
   @Shared
   Map insertMessage = [
-      id        : '1',
-      type      : "junk",
-      attributes: [dataset: "testDataset", fileName: "testFileName1"]
+      data: [
+          id        : '1',
+          type      : "junk",
+          attributes: [dataset: "testDataset", fileName: "testFileName1"],
+          meta      : [action: 'insert']
+      ]
   ]
 
   @Shared
@@ -35,7 +40,7 @@ class MessageServiceSpec extends Specification {
     messageService.handleMessage(insertMessage)
 
     then:
-    1 * service.insert(insertMessage) >> mockedInsertReturn
+    1 * service.upsert(insertMessage.data) >> mockedInsertReturn
     noExceptionThrown()
 
     where:
