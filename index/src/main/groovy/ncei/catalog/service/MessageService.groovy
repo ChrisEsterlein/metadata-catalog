@@ -8,8 +8,12 @@ import org.springframework.stereotype.Component
 @Component
 class MessageService {
 
-  @Autowired
   private Service service
+
+  @Autowired
+  MessageService(Service service) {
+    this.service = service
+  }
 
   /**
    * Via Spring magic this handleMessage is recognized by the spring rabbit plugin.

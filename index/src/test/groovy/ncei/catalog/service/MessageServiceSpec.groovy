@@ -7,8 +7,8 @@ import spock.lang.Unroll
 @Unroll
 class MessageServiceSpec extends Specification {
 
-  MessageService messageService = new MessageService()
   Service service = Mock(Service)
+  MessageService messageService = new MessageService(service)
 
   @Shared
   Map insertMessage = [
@@ -29,10 +29,6 @@ class MessageServiceSpec extends Specification {
           meta      : [created: true]
       ]
   ]
-
-  def setup() {
-    messageService.service = service
-  }
 
   def 'Rabbit message where insert return is #insertReturnType is gracefully dealt with'() {
 
