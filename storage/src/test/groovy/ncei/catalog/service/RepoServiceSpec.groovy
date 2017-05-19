@@ -410,7 +410,7 @@ class RepoServiceSpec extends Specification {
       )
     }
 
-    if(duplicates){ //todo see if you really need this
+    if(duplicates){
       (1..duplicates).each{
         results.add(
                 new GranuleMetadata([
