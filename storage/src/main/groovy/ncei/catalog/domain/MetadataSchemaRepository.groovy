@@ -5,9 +5,6 @@ import org.springframework.data.cassandra.repository.Query
 
 interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
 
-  @Query("Select * from MetadataSchema LIMIT ?0")
-  Iterable<MetadataSchema> findAllWithLimit(int limit)
-
   @Query("Select * from MetadataSchema where id =?0 and last_update=?1")
   Iterable<MetadataSchema> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 

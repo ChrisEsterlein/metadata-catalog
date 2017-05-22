@@ -399,11 +399,12 @@ class RepoServiceSpec extends Specification {
     setup: 'mock out results from cassandra'
     List results = []
 
-    results << new GranuleMetadata(["id": UUID.randomUUID()])
+    UUID uniqueId = UUID.randomUUID()
+    results << new GranuleMetadata(["id": uniqueId])
 
-    UUID commonId = UUID.randomUUID()
-    results << new GranuleMetadata(["id": commonId])
-    results << new GranuleMetadata(["id": commonId])
+    UUID sharedId = UUID.randomUUID()
+    results << new GranuleMetadata(["id": sharedId])
+    results << new GranuleMetadata(["id": sharedId])
 
     when:
     repoService.recover(response, granuleMetadataRepository)
@@ -412,7 +413,9 @@ class RepoServiceSpec extends Specification {
 
     1 * granuleMetadataRepository.findAll() >> results
 
-    2 * messageService.notifyIndex(_ as Map)
+    1 * messageService.notifyIndex({it.data[0].id == uniqueId})
+    1 * messageService.notifyIndex({it.data[0].id == sharedId})
+
   }
 
   def 'appropriate action is sent in message'(){

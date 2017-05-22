@@ -5,9 +5,6 @@ import org.springframework.data.cassandra.repository.Query
 
 interface GranuleMetadataRepository extends CassandraRepository<GranuleMetadata> {
 
-  @Query("Select * from GranuleMetadata LIMIT ?0")
-  Iterable<GranuleMetadata> findAllWithLimit(int limit)
-
   @Query("Select * from GranuleMetadata where id=?0 and last_update=?1")
   Iterable<GranuleMetadata> findByIdAndLastUpdate(UUID id, Date lastUpdate)
 

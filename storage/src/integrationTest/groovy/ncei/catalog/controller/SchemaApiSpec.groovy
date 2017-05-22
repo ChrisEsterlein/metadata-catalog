@@ -212,7 +212,7 @@ class SchemaApiSpec extends Specification {
 
     when: 'we trigger the recovery process'
 
-    MetadataRecord record = metadataSchemaRepository.save(postBody)
+    MetadataRecord record = metadataSchemaRepository.save(new MetadataSchema(postBody))
 
     RestAssured.given()
             .contentType(ContentType.JSON)
@@ -234,25 +234,21 @@ class SchemaApiSpec extends Specification {
 
   }
 
-
   def 'messages are sent with appropriate action'(){
     setup:
 
     metadataSchemaRepository.deleteAll()
 
+    MetadataRecord original = metadataSchemaRepository.save(new MetadataSchema(postBody))
+
     Map updatedPostBody = postBody.clone()
     updatedPostBody.deleted = true
     MetadataSchema deletedVersion = new MetadataSchema(updatedPostBody)
 
-    metadataSchemaRepository.save(deletedVersion)
-
-    int expectedMessages = 2
-    int updates  = 1
-    int deletes = 1
+    MetadataRecord deleted = metadataSchemaRepository.save(deletedVersion)
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body()
             .contentType(ContentType.JSON)
             .when()
             .put('/schemas/recover')
@@ -261,9 +257,6 @@ class SchemaApiSpec extends Specification {
             .statusCode(200)
 
     then:
-    int total = 0
-    int updateMessages = 0
-    int deleteMessages = 0
 
     poller.eventually {
       String m
@@ -271,16 +264,12 @@ class SchemaApiSpec extends Specification {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){
-          updateMessages++
+          assert object.data[0].id == original.id
         }
         if(object.data[0].meta.action == 'delete'){
-          deleteMessages++
+          assert object.data[0].id == deleted.id
         }
-        assert total == expectedMessages
-        assert updates == updateMessages
-        assert deletes == deleteMessages
       }
     }
-
   }
 }

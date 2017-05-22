@@ -278,7 +278,7 @@ class CollectionApiSpec extends Specification {
 
     when: 'we trigger the recovery process'
 
-    MetadataRecord record = collectionMetadataRepository.save(postBody)
+    MetadataRecord record = collectionMetadataRepository.save(new CollectionMetadata(postBody))
 
     RestAssured.given()
             .contentType(ContentType.JSON)
@@ -300,25 +300,21 @@ class CollectionApiSpec extends Specification {
 
   }
 
-
   def 'messages are sent with appropriate action'(){
     setup:
 
     collectionMetadataRepository.deleteAll()
 
+    MetadataRecord original = collectionMetadataRepository.save(new CollectionMetadata(postBody))
+
     Map updatedPostBody = postBody.clone()
     updatedPostBody.deleted = true
     CollectionMetadata deletedVersion = new CollectionMetadata(updatedPostBody)
 
-    collectionMetadataRepository.save(deletedVersion)
-
-    int expectedMessages = 2
-    int updates  = 1
-    int deletes = 1
+    MetadataRecord deleted = collectionMetadataRepository.save(deletedVersion)
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body()
             .contentType(ContentType.JSON)
             .when()
             .put('/collections/recover')
@@ -327,9 +323,6 @@ class CollectionApiSpec extends Specification {
             .statusCode(200)
 
     then:
-    int total = 0
-    int updateMessages = 0
-    int deleteMessages = 0
 
     poller.eventually {
       String m
@@ -337,17 +330,13 @@ class CollectionApiSpec extends Specification {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){
-          updateMessages++
+          assert object.data[0].id == original.id
         }
         if(object.data[0].meta.action == 'delete'){
-          deleteMessages++
+          assert object.data[0].id == deleted.id
         }
-        assert total == expectedMessages
-        assert updates == updateMessages
-        assert deletes == deleteMessages
       }
     }
-
   }
 
 }
