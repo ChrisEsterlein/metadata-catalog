@@ -395,45 +395,24 @@ class RepoServiceSpec extends Specification {
     1 * response.setStatus(HttpServletResponse.SC_OK)
   }
 
-  @Unroll
-  def 'recover index - limit #limit, #uniqueRows unique rows, #duplicates duplicates, and #messagesSent expected messages'(){
-    setup:
-
+  def 'only latest version is sent during recover'(){
+    setup: 'mock out results from cassandra'
     List results = []
-    (1..uniqueRows).each{
-      results.add(
-              new GranuleMetadata([
-                      "id": UUID.randomUUID()
-              ])
-      )
-    }
 
-    if(duplicates){
-      (1..duplicates).each{
-        def id = UUID.randomUUID()
-        results << new GranuleMetadata(["id": id])
-        results << new GranuleMetadata(["id": id])
-      }
-    }
+    results << new GranuleMetadata(["id": UUID.randomUUID()])
+
+    UUID commonId = UUID.randomUUID()
+    results << new GranuleMetadata(["id": commonId])
+    results << new GranuleMetadata(["id": commonId])
 
     when:
-    repoService.recover(response, granuleMetadataRepository, 0)
+    repoService.recover(response, granuleMetadataRepository)
 
     then:
 
-    _ * granuleMetadataRepository.findAll() >> results
+    1 * granuleMetadataRepository.findAll() >> results
 
-
-    messagesSent * messageService.notifyIndex(_ as Map)
-
-    where:
-    duplicates  | uniqueRows  | messagesSent
-        0       |     1       |  uniqueRows + duplicates
-        2       |     1       |  uniqueRows + duplicates
-        2       |     2       |  uniqueRows + duplicates
-        5       |     3       |  uniqueRows + duplicates
-
-
+    2 * messageService.notifyIndex(_ as Map)
   }
 
   def 'appropriate action is sent in message'(){
@@ -441,41 +420,17 @@ class RepoServiceSpec extends Specification {
 
     List <MetadataRecord> results = []
 
-    if(updates){
-      (1..updates).each{
-        results.add(
-                new GranuleMetadata([
-                        "deleted":false
-                ])
-        )
-      }
-    }
-
-    if(deletes){
-      (1..deletes).each{
-        results.add(
-                new GranuleMetadata([
-                        "deleted":true
-                ])
-        )
-      }
-    }
+    results << new GranuleMetadata(["deleted":false])
+    results << new GranuleMetadata(["deleted":true])
 
     when:
-    repoService.recover(response, granuleMetadataRepository, 0)
+    repoService.recover(response, granuleMetadataRepository)
 
     then:
-    assert results.size == updates + deletes
     1* granuleMetadataRepository.findAll() >> results
 
-    updates * messageService.notifyIndex({it.data[0].meta.action == 'update'})
-    deletes * messageService.notifyIndex({it.data[0].meta.action == 'delete'})
-
-    where:
-    updates | deletes
-    1|0
-    0|1
-    1|1
+    1 * messageService.notifyIndex({it.data[0].meta.action == 'update'})
+    1 * messageService.notifyIndex({it.data[0].meta.action == 'delete'})
 
   }
 }

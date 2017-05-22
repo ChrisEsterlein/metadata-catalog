@@ -70,8 +70,7 @@ class CollectionController {
   @ResponseBody
   Map recover(@RequestBody params, HttpServletResponse response) {
     log.info 'Attempting to recover all collection metadata records'
-    int limit = params?.limit ?: 0
-    repoService.recover(response, collectionMetadataRepository, limit)
+    repoService.recover(response, collectionMetadataRepository)
   }
 
 }

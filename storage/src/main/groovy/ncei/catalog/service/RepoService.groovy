@@ -20,8 +20,8 @@ class RepoService {
   final String UPDATE = 'update'
   final String READ = 'read'
 
-  void recover(HttpServletResponse response, CassandraRepository repositoryObject, int limit){
-    Iterable results = limit ? repositoryObject.findAllWithLimit(limit) : repositoryObject.findAll()
+  void recover(HttpServletResponse response, CassandraRepository repositoryObject){
+    Iterable results = repositoryObject.findAll()
     List sentIds = []
     results.each{
       log.debug("Resending to rabbit, record : $it")

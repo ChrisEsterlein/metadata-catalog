@@ -1,11 +1,13 @@
 package ncei.catalog.controller
 
+import com.datastax.driver.core.utils.UUIDs
 import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
+import ncei.catalog.domain.MetadataRecord
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -243,7 +245,7 @@ class GranuleApiSpec extends Specification {
             .body('data[2].attributes.type', equalTo(postBody.type))
             .body('data[2].attributes.deleted', equalTo(false))
 
-    then: 'clean up the db, purge all 3 records by id'
+    then: 'clean up the db, purge all 3 uniqueRecords by id'
     //delete all with that id
     RestAssured.given()
             .body(updatedRecord) //id in here
@@ -270,29 +272,17 @@ class GranuleApiSpec extends Specification {
     }
   }
 
-  @Unroll
-  def 'correct number of messages are sent for #records records, #duplicates duplicates, with limit #limit'(){
+
+  def 'trigger recovery'(){
     setup:
 
     granuleMetadataRepository.deleteAll()
 
-    (1..records).each{ i ->
-        granuleMetadataRepository.save(new GranuleMetadata(postBody))
-
-    }
-
-    if(duplicates){
-      Map updatedPostBody = postBody.clone()
-      updatedPostBody.id = UUID.fromString('52b72220-3ab3-11e7-a671-7137e3cfed7e')
-      GranuleMetadata newVersion = new GranuleMetadata(updatedPostBody)
-      (1..duplicates).each{
-        granuleMetadataRepository.save(newVersion)
-      }
-    }
-
     when: 'we trigger the recovery process'
+
+    MetadataRecord record = granuleMetadataRepository.save(postBody)
+
     RestAssured.given()
-            .body([limit : limit])
             .contentType(ContentType.JSON)
             .when()
             .put('/granules/recover')
@@ -301,48 +291,36 @@ class GranuleApiSpec extends Specification {
             .statusCode(200)
 
     then:
-    int total = 0
     poller.eventually {
       String m
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
-        total ++
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        object.data[0].meta.action == 'update'
+        assert object.data[0] == record
       }
-      assert total == messagesSent
-
     }
-
-    where:
-    records | limit | duplicates | messagesSent
-      10    |   0   |     0      |    10 //send everything - set to 0 same as not specifying a limit
-      20    |   10  |     0      |    10 // limit less than records
-      4     |   0   |     2      |    5 // 6 records 5 of which are unique
-      5     |   5   |     2      |    5 //duplicates (inserted last) are outside limit and no message is sent for duplicate
 
   }
 
-  @Unroll
+
   def 'messages are sent with appropriate action'(){
     setup:
 
     granuleMetadataRepository.deleteAll()
 
-    (1..updates).each{ i ->
-      granuleMetadataRepository.save(new GranuleMetadata(postBody))
-    }
-
     Map updatedPostBody = postBody.clone()
     updatedPostBody.deleted = true
-    GranuleMetadata newVersion = new GranuleMetadata(updatedPostBody)
-    (1..deletes).each{
-      granuleMetadataRepository.save(newVersion)
-    }
+    GranuleMetadata deletedVersion = new GranuleMetadata(updatedPostBody)
+
+    granuleMetadataRepository.save(deletedVersion)
+
+    int expectedMessages = 2
+    int updates  = 1
+    int deletes = 1
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body([limit : 0])
+            .body()
             .contentType(ContentType.JSON)
             .when()
             .put('/granules/recover')
@@ -351,7 +329,6 @@ class GranuleApiSpec extends Specification {
             .statusCode(200)
 
     then:
-
     int total = 0
     int updateMessages = 0
     int deleteMessages = 0
@@ -359,29 +336,19 @@ class GranuleApiSpec extends Specification {
     poller.eventually {
       String m
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
-        total ++
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){
-          println object.data[0].meta.action
-          println object.data[0].meta.action == 'update'
           updateMessages++
         }
         if(object.data[0].meta.action == 'delete'){
-          println object.data[0].meta.action
-          println object.data[0].meta.action == 'delete'
           deleteMessages++
         }
-        assert total == messagesSent
+        assert total == expectedMessages
         assert updates == updateMessages
         assert deletes == deleteMessages
       }
     }
 
-    where:
-    updates | deletes | messagesSent
-    1|1|2
-    1|2|3
-    2|1|3
   }
 }

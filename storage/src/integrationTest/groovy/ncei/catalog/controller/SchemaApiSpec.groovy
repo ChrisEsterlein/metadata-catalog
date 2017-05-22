@@ -1,9 +1,11 @@
 package ncei.catalog.controller
 
+import com.datastax.driver.core.utils.UUIDs
 import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.domain.MetadataRecord
 import ncei.catalog.domain.MetadataSchema
 import ncei.catalog.domain.MetadataSchemaRepository
 import org.springframework.amqp.rabbit.core.RabbitTemplate
@@ -203,80 +205,54 @@ class SchemaApiSpec extends Specification {
     }
   }
 
-  @Unroll
-  def 're-populate the index with #records records in storage and limit #limit'(){
+  def 'trigger recovery'(){
     setup:
 
     metadataSchemaRepository.deleteAll()
 
-    (1..records).each{
-      metadataSchemaRepository.save(new MetadataSchema(postBody))
-    }
-
-    if(duplicates){
-      Map updatedPostBody = postBody.clone()
-      updatedPostBody.id = UUID.fromString('52b72220-3ab3-11e7-a671-7137e3cfed7e')
-      MetadataSchema newVersion = new MetadataSchema(updatedPostBody)
-      (1..duplicates).each{
-        metadataSchemaRepository.save(newVersion)
-      }
-    }
-
     when: 'we trigger the recovery process'
+
+    MetadataRecord record = metadataSchemaRepository.save(postBody)
+
     RestAssured.given()
-            .body([limit : limit])
             .contentType(ContentType.JSON)
             .when()
-            .put('/schemas/recover')
+            .put('/granules/recover')
             .then()
             .assertThat()
             .statusCode(200)
 
     then:
-    int count = 0
     poller.eventually {
       String m
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
-        count ++
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        object.data.each{assert it.meta != null}
+        assert object.data[0] == record
       }
-      assert count == messagesSent
     }
 
-    where:
-    records | limit | duplicates | messagesSent
-      1     |   0   |     0      |    1 //send everything - set to 0 same as not specifying a limit
-      2     |   1   |     0      |    1
-      3     |   2   |     0      |    2
-      4     |   10  |     0      |    4
-      4     |   10  |     3      |    5 // 7 records 5 of which are unique
-      4     |   10  |     10     |    5 // 14 records 5 of which are unique
-      4     |   10  |     11     |    5
-
   }
-  
-  @Unroll
+
+
   def 'messages are sent with appropriate action'(){
     setup:
 
     metadataSchemaRepository.deleteAll()
 
-    (1..updates).each{ i ->
-      metadataSchemaRepository.save(new MetadataSchema (postBody))
-    }
-
     Map updatedPostBody = postBody.clone()
     updatedPostBody.deleted = true
-    MetadataSchema  newVersion = new MetadataSchema (updatedPostBody)
-    (1..deletes).each{
-      metadataSchemaRepository.save(newVersion)
-    }
+    MetadataSchema deletedVersion = new MetadataSchema(updatedPostBody)
+
+    metadataSchemaRepository.save(deletedVersion)
+
+    int expectedMessages = 2
+    int updates  = 1
+    int deletes = 1
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .body([limit : 0])
+            .body()
             .contentType(ContentType.JSON)
             .when()
             .put('/schemas/recover')
@@ -285,7 +261,6 @@ class SchemaApiSpec extends Specification {
             .statusCode(200)
 
     then:
-
     int total = 0
     int updateMessages = 0
     int deleteMessages = 0
@@ -293,29 +268,19 @@ class SchemaApiSpec extends Specification {
     poller.eventually {
       String m
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
-        total ++
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){
-          println object.data[0].meta.action
-          println object.data[0].meta.action == 'update'
           updateMessages++
         }
         if(object.data[0].meta.action == 'delete'){
-          println object.data[0].meta.action
-          println object.data[0].meta.action == 'delete'
           deleteMessages++
         }
-        assert total == messagesSent
+        assert total == expectedMessages
         assert updates == updateMessages
         assert deletes == deleteMessages
       }
     }
 
-    where:
-    updates | deletes | messagesSent
-    1|1|2
-    1|2|3
-    2|1|3
   }
 }

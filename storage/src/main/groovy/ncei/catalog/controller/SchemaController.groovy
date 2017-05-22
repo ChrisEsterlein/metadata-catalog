@@ -68,9 +68,8 @@ class SchemaController {
 
   @RequestMapping(value = '/recover', method = RequestMethod.PUT)
   @ResponseBody
-  Map recover(@RequestBody Map params, HttpServletResponse response) {
+  Map recover(HttpServletResponse response) {
     log.info 'Attempting to recover all metadata schemas'
-    int limit = params?.limit ?: 0
-    repoService.recover(response, schemaRepository, limit)
+    repoService.recover(response, schemaRepository)
   }
 }
