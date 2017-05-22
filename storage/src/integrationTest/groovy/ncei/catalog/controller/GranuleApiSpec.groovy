@@ -273,7 +273,7 @@ class GranuleApiSpec extends Specification {
   }
 
 
-  def 'trigger recovery'(){
+  def 'trigger recovery - only latest version is sent'(){
     setup:
 
     granuleMetadataRepository.deleteAll()
@@ -281,6 +281,13 @@ class GranuleApiSpec extends Specification {
     when: 'we trigger the recovery process'
 
     MetadataRecord record = granuleMetadataRepository.save(new GranuleMetadata(postBody))
+
+    //create two records with same id
+    UUID sharedId = UUIDs.timeBased()
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.id = sharedId
+    MetadataRecord oldVersion = granuleMetadataRepository.save(new GranuleMetadata(updatedPostBody))
+    MetadataRecord latestVersion = granuleMetadataRepository.save(new GranuleMetadata(updatedPostBody))
 
     RestAssured.given()
             .contentType(ContentType.JSON)
@@ -296,7 +303,7 @@ class GranuleApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        assert object.data[0] == record
+        assert (object.data[0] == record || object.data[0]== latestVersion) && !(object.data[0] == oldVersion)
       }
     }
 

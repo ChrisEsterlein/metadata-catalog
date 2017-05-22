@@ -205,7 +205,7 @@ class SchemaApiSpec extends Specification {
     }
   }
 
-  def 'trigger recovery'(){
+  def 'trigger recovery - only latest version is sent'(){
     setup:
 
     metadataSchemaRepository.deleteAll()
@@ -214,10 +214,17 @@ class SchemaApiSpec extends Specification {
 
     MetadataRecord record = metadataSchemaRepository.save(new MetadataSchema(postBody))
 
+    //create two records with same id
+    UUID sharedId = UUIDs.timeBased()
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.id = sharedId
+    MetadataRecord oldVersion = metadataSchemaRepository.save(new MetadataSchema(updatedPostBody))
+    MetadataRecord latestVersion = metadataSchemaRepository.save(new MetadataSchema(updatedPostBody))
+
     RestAssured.given()
             .contentType(ContentType.JSON)
             .when()
-            .put('/granules/recover')
+            .put('/schemas/recover')
             .then()
             .assertThat()
             .statusCode(200)
@@ -228,7 +235,7 @@ class SchemaApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        assert object.data[0] == record
+        assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
       }
     }
 

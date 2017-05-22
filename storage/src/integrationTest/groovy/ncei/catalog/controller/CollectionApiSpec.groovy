@@ -271,7 +271,7 @@ class CollectionApiSpec extends Specification {
 
   }
 
-  def 'trigger recovery'(){
+  def 'trigger recovery - only latest version is sent'(){
     setup:
 
     collectionMetadataRepository.deleteAll()
@@ -280,10 +280,17 @@ class CollectionApiSpec extends Specification {
 
     MetadataRecord record = collectionMetadataRepository.save(new CollectionMetadata(postBody))
 
+    //create two records with same id
+    UUID sharedId = UUIDs.timeBased()
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.id = sharedId
+    MetadataRecord oldVersion = collectionMetadataRepository.save(new CollectionMetadata(updatedPostBody))
+    MetadataRecord latestVersion = collectionMetadataRepository.save(new CollectionMetadata(updatedPostBody))
+
     RestAssured.given()
             .contentType(ContentType.JSON)
             .when()
-            .put('/granules/recover')
+            .put('/collections/recover')
             .then()
             .assertThat()
             .statusCode(200)
@@ -294,7 +301,7 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        assert object.data[0] == record
+        assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
       }
     }
 
