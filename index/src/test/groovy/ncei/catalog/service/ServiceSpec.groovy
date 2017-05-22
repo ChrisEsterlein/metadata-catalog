@@ -2,8 +2,11 @@ package ncei.catalog.service
 
 import groovy.json.JsonOutput
 import org.apache.http.HttpEntity
+import org.apache.http.HttpHost
+import org.apache.http.RequestLine
 import org.apache.http.StatusLine
 import org.elasticsearch.client.Response
+import org.elasticsearch.client.ResponseException
 import org.elasticsearch.client.RestClient
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -31,26 +34,18 @@ class ServiceSpec extends Specification {
         ],
         "created" : created
     ]
-    def contentStream = new ByteArrayInputStream(JsonOutput.toJson(elasticsearchResponse).bytes)
-    def mockEntity = Mock(HttpEntity)
-    mockEntity.getContent() >> contentStream
-    def mockStatusLine = Mock(StatusLine)
-    mockStatusLine.getStatusCode() >> (created ? 201 : 200)
-    def mockResponse = Mock(Response)
-    mockResponse.getEntity() >> mockEntity
-    mockResponse.getStatusLine() >> mockStatusLine
 
     when:
-    def result = service.insert(metadata)
+    def result = service.upsert(metadata)
 
     then:
-    1 * mockRestClient.performRequest(*_) >> mockResponse
+    1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, created ? 201 : 200)
 
     and:
-    result.data.id == metadata.id
-    result.data.type == metadata.type
-    result.data.attributes == metadata.attributes
-    result.data.meta.created == created
+    result.id == metadata.id
+    result.type == metadata.type
+    result.attributes == metadata.attributes
+    result.meta.created == created
 
     where:
     created << [true, false]
@@ -58,7 +53,7 @@ class ServiceSpec extends Specification {
 
   def 'Insert: messages with [#missingCombination] missing are ignored'() {
     when:
-    def result = service.insert(metadata)
+    def result = service.upsert(metadata)
 
     then:
     result == null
@@ -77,7 +72,7 @@ class ServiceSpec extends Specification {
 
   def 'Insert: messages with invalid values for [#invalidCombination] are ignored'() {
     when:
-    def result = service.insert(metadata)
+    def result = service.upsert(metadata)
 
     then:
     result == null
@@ -91,6 +86,67 @@ class ServiceSpec extends Specification {
     'id'               | [type: 'granule', attributes: [name: 'test']]
     'type'             | [id: 'abc', attributes: [name: 'test']]
     'attributes'       | [id: 'abc', type: 'granule']
+  }
+
+  def 'Delete: returns JSON API formatted information for existing resource'() {
+    setup:
+    def metadata = [id: 'abc', type: 'granule']
+    def elasticsearchResponse = [
+        "found"   : true,
+        "_index"  : "search_index",
+        "_type"   : metadata.type,
+        "_id"     : metadata.id,
+        "_version": 1,
+        "result"  : 'deleted',
+        "_shards" : [
+            "total"     : 2,
+            "successful": 1,
+            "failed"    : 0
+        ]
+    ]
+
+    when:
+    def result = service.delete(metadata)
+
+    then:
+    1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, 200)
+
+    and:
+    result.id == metadata.id
+    result.type == metadata.type
+    result.meta.deleted == true
+  }
+
+  def 'Delete: returns JSON API formatted information for nonexistent resource'() {
+    setup:
+    def metadata = [id: 'abc', type: 'granule']
+    def elasticsearchResponse = [
+        "found"   : false,
+        "_index"  : "search_index",
+        "_type"   : metadata.type,
+        "_id"     : metadata.id,
+        "_version": 1,
+        "result"  : 'not_found',
+        "_shards" : [
+            "total"     : 2,
+            "successful": 1,
+            "failed"    : 0
+        ]
+    ]
+
+    when:
+    def result = service.delete(metadata)
+
+    then:
+    1 * mockRestClient.performRequest(*_) >> {
+      throw new ResponseException(buildMockResponse(elasticsearchResponse, 404))
+    }
+
+    and:
+    notThrown(Exception)
+    result.id == metadata.id
+    result.type == metadata.type
+    result.meta.deleted == false
   }
 
   def 'Search: returns JSON API formatted information with query [#query] and matching results [#hits]'() {
@@ -118,20 +174,12 @@ class ServiceSpec extends Specification {
             "hits"     : hits ? [searchHit] : []
         ]
     ]
-    def contentStream = new ByteArrayInputStream(JsonOutput.toJson(elasticsearchResponse).bytes)
-    def mockEntity = Mock(HttpEntity)
-    mockEntity.getContent() >> contentStream
-    def mockStatusLine = Mock(StatusLine)
-    mockStatusLine.getStatusCode() >> 200
-    def mockResponse = Mock(Response)
-    mockResponse.getEntity() >> mockEntity
-    mockResponse.getStatusLine() >> mockStatusLine
 
     when:
     def result = service.search(query)
 
     then:
-    1 * mockRestClient.performRequest(*_) >> mockResponse
+    1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, 200)
 
     and:
     result.data == (hits ? [[id: searchHit._id, type: searchHit._type, attributes: searchHit._source]] : [])
@@ -145,6 +193,26 @@ class ServiceSpec extends Specification {
     'something' | false
     null        | true
     null        | false
+  }
 
+  private buildMockResponse(Map payload, int statusCode, String method = 'GET') {
+    def mockEntity = Mock(HttpEntity)
+    mockEntity.getContent() >> new ByteArrayInputStream(JsonOutput.toJson(payload).bytes)
+    mockEntity.isRepeatable() >> true
+
+    def mockRequestLine = Mock(RequestLine)
+    mockRequestLine.getMethod() >> method
+    mockRequestLine.getUri() >> 'testuri'
+
+    def mockStatusLine = Mock(StatusLine)
+    mockStatusLine.getStatusCode() >> statusCode
+
+    def mockResponse = Mock(Response)
+    mockResponse.getEntity() >> mockEntity
+    mockResponse.getStatusLine() >> mockStatusLine
+    mockResponse.getRequestLine() >> mockRequestLine
+    mockResponse.getHost() >> new HttpHost('testhost', 1234)
+
+    return mockResponse
   }
 }

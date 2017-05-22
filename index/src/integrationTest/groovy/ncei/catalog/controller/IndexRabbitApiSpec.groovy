@@ -17,14 +17,10 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
 class IndexRabbitApiSpec extends Specification {
 
-  @Autowired
-  RabbitConfig rabbitConfig
-  @Autowired
-  RabbitTemplate rabbitTemplate
-  @Autowired
-  Service service
-  @Autowired
-  IndexAdminService indexAdminService
+  @Autowired RabbitConfig rabbitConfig
+  @Autowired RabbitTemplate rabbitTemplate
+  @Autowired Service service
+  @Autowired IndexAdminService indexAdminService
 
   def poller = new PollingConditions(timeout: 5)
 
@@ -36,25 +32,70 @@ class IndexRabbitApiSpec extends Specification {
     indexAdminService.createIndex('test_index')
   }
 
-  def 'save to elastic search works'() {
+  def 'save one to elastic search'() {
     setup:
-    Map metadata = [
-        type      : 'junk',
-        id        : '1',
-        attributes: [
-            dataset : 'testDataset',
-            fileName: "testFileName"
+    Map message = [
+        data: [id: 'abc', type: 'granule', attributes: [name: 'one'], meta: [action: 'insert']]
+    ]
+
+    when:
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, message)
+
+    then:
+    poller.eventually {
+      def searchResults = service.search("name:one")
+      assert searchResults.meta.totalResults == 1
+      assert searchResults.data[0] == message.data.subMap(['id', 'type', 'attributes'])
+    }
+  }
+
+  def 'save multiple to elastic search'() {
+    setup:
+    Map message = [
+        data: [
+            [id: 'a', type: 'granule', attributes: [name: 'one'], meta: [action: 'insert']],
+            [id: 'b', type: 'granule', attributes: [name: 'two'], meta: [action: 'update']],
         ]
     ]
 
     when:
-    rabbitTemplate.convertAndSend(rabbitConfig.queueName, metadata)
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, message)
 
     then:
     poller.eventually {
-      def searchResults = service.search("fileName:${metadata.attributes.fileName}")
-      assert searchResults.meta.totalResults == 1
-      assert searchResults.data[0] == metadata
+      assert service.search().data.size() == 2
+    }
+  }
+
+  def 'save multiple to elastic search then delete one'() {
+    setup:
+    Map insertMessage = [
+        data: [
+            [id: 'a', type: 'granule', attributes: [name: 'one'], meta: [action: 'insert']],
+            [id: 'b', type: 'granule', attributes: [name: 'two'], meta: [action: 'update']],
+        ]
+    ]
+    Map deleteMessage = [
+        data: [
+            [id: 'a', type: 'granule', meta: [action: 'delete']],
+        ]
+    ]
+
+    when:
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, insertMessage)
+
+    then:
+    poller.eventually {
+      assert service.search().data.size() == 2
+    }
+
+    when:
+    rabbitTemplate.convertAndSend(rabbitConfig.queueName, deleteMessage)
+
+    then:
+    poller.eventually {
+      assert service.search().data.size() == 1
+      assert service.search().data[0].id == 'b'
     }
   }
 

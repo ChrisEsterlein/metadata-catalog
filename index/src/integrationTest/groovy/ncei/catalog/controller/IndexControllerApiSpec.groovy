@@ -59,8 +59,8 @@ class IndexControllerApiSpec extends Specification {
     ]
 
     when: "Inserted data has appeared in elasticsearch"
-    service.insert(metadata)
-    service.insert(metadata2)
+    service.upsert(metadata)
+    service.upsert(metadata2)
     poller.eventually {
       assert service.search().data.size() == 2
     }
@@ -89,8 +89,8 @@ class IndexControllerApiSpec extends Specification {
         type      : "junk",
         attributes: [dataset: "testDataset", fileName: "testFileName2"]
     ]
-    service.insert(metadata)
-    service.insert(metadata2)
+    service.upsert(metadata)
+    service.upsert(metadata2)
 
     when: "Inserted data has appeared in the database"
     def metadataSearch = generateQueryString(metadata.attributes)
