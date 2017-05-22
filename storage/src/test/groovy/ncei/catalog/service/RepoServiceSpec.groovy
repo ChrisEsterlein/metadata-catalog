@@ -398,9 +398,7 @@ class RepoServiceSpec extends Specification {
   @Unroll
   def 'recover index - limit #limit, #uniqueRows unique rows, #duplicates duplicates, and #messagesSent expected messages'(){
     setup:
-    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
 
-    Random random = new Random()
     List results = []
     (1..uniqueRows).each{
       results.add(
@@ -412,20 +410,16 @@ class RepoServiceSpec extends Specification {
 
     if(duplicates){
       (1..duplicates).each{
-        results.add(
-                new GranuleMetadata([
-                        "id": uuid
-                ])
-        )
+        def id = UUID.randomUUID()
+        results << new GranuleMetadata(["id": id])
+        results << new GranuleMetadata(["id": id])
       }
     }
 
     when:
-    repoService.recover(response, granuleMetadataRepository, limit)
+    repoService.recover(response, granuleMetadataRepository, 0)
 
     then:
-
-    _ * granuleMetadataRepository.findAllWithLimit(limit) >> results
 
     _ * granuleMetadataRepository.findAll() >> results
 
@@ -433,11 +427,11 @@ class RepoServiceSpec extends Specification {
     messagesSent * messageService.notifyIndex(_ as Map)
 
     where:
-    messagesSent | duplicates | uniqueRows  | limit
-        1        |    0       |     1       |  0 //no limit
-        2        |    2       |     1       |  0
-        3        |    2       |     2       |  0
-        4        |    5       |     3       |  uniqueRows + duplicates //limit does not determine # of messages, just which find we use
+    duplicates  | uniqueRows  | messagesSent
+        0       |     1       |  uniqueRows + duplicates
+        2       |     1       |  uniqueRows + duplicates
+        2       |     2       |  uniqueRows + duplicates
+        5       |     3       |  uniqueRows + duplicates
 
 
   }
