@@ -1,16 +1,19 @@
 package ncei.catalog.controller
 
+import com.datastax.driver.core.utils.UUIDs
 import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
 import ncei.catalog.domain.CollectionMetadata
 import ncei.catalog.domain.CollectionMetadataRepository
+import ncei.catalog.domain.MetadataRecord
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
@@ -92,7 +95,7 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -136,7 +139,6 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.totalResults', equalTo(1))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(updatedMetadata))
@@ -151,7 +153,8 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.totalResults', equalTo(2))
+        .body('data.size', equalTo(2))
+
     //first one is the newest
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
@@ -175,7 +178,7 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
@@ -198,7 +201,8 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + collectionMetadata.id))
+        .body('data[0].meta.action', equalTo('delete'))
+        .body('data[0].id', equalTo(collectionMetadata.id as String))
 
     then: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -219,7 +223,7 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.totalResults', equalTo(1))
+        .body('data.size', equalTo(1))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
@@ -236,11 +240,7 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('meta.code', equalTo(200))
-        .body('meta.success', equalTo(true))
-        .body('meta.action', equalTo('read'))
-        .body('meta.totalResults', equalTo(2))
-
+        .body('data.size', equalTo(2))
         .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
         .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
         .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
@@ -264,10 +264,86 @@ class CollectionApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
       }
     }
 
   }
+
+  def 'trigger recovery - only latest version is sent'(){
+    setup:
+
+    collectionMetadataRepository.deleteAll()
+
+    when: 'we trigger the recovery process'
+
+    MetadataRecord record = collectionMetadataRepository.save(new CollectionMetadata(postBody))
+
+    //create two records with same id
+    UUID sharedId = UUIDs.timeBased()
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.id = sharedId
+    MetadataRecord oldVersion = collectionMetadataRepository.save(new CollectionMetadata(updatedPostBody))
+    MetadataRecord latestVersion = collectionMetadataRepository.save(new CollectionMetadata(updatedPostBody))
+
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/collections/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
+      }
+    }
+
+  }
+
+  def 'messages are sent with appropriate action'(){
+    setup:
+
+    collectionMetadataRepository.deleteAll()
+
+    MetadataRecord original = collectionMetadataRepository.save(new CollectionMetadata(postBody))
+
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.deleted = true
+    CollectionMetadata deletedVersion = new CollectionMetadata(updatedPostBody)
+
+    MetadataRecord deleted = collectionMetadataRepository.save(deletedVersion)
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/collections/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        if(object.data[0].meta.action == 'update'){
+          assert object.data[0].id == original.id
+        }
+        if(object.data[0].meta.action == 'delete'){
+          assert object.data[0].id == deleted.id
+        }
+      }
+    }
+  }
+
 }

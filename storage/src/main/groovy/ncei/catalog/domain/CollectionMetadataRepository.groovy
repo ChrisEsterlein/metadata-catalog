@@ -20,9 +20,6 @@ interface CollectionMetadataRepository extends CassandraRepository<CollectionMet
   @Query("SELECT*FROM CollectionMetadata WHERE granule_schema=?0")
   Iterable<CollectionMetadata> findBySchema(String schema)
 
-  @Query("SELECT*FROM CollectionMetadata WHERE collection_name =?0 AND granule_schema=?1")
-  Iterable<CollectionMetadata> findByCollectionNameAndSchema(String collection_name, String schema)
-
   @Query("SELECT DISTINCT id FROM CollectionMetadata WHERE collection_name=?0")
   Iterable<CollectionMetadata> findDistinctTrackingIdsByCollectionName(String collection_name)
 

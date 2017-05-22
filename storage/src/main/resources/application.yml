@@ -17,4 +17,4 @@ rabbitmq:
     password: guest
 
 spring.mvc.throw-exception-if-no-handler-found: true
-#spring.resources.add-mapping: false
+spring.resources.add-mappings: false

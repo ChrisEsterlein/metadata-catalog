@@ -1,14 +1,19 @@
 package ncei.catalog.controller
 
+import com.datastax.driver.core.utils.UUIDs
 import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.domain.GranuleMetadata
+import ncei.catalog.domain.GranuleMetadataRepository
+import ncei.catalog.domain.MetadataRecord
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
@@ -25,6 +30,9 @@ class GranuleApiSpec extends Specification {
   private String contextPath
 
   @Autowired
+  GranuleMetadataRepository granuleMetadataRepository
+
+  @Autowired
   RabbitTemplate rabbitTemplate
 
   PollingConditions poller
@@ -36,19 +44,20 @@ class GranuleApiSpec extends Specification {
     RestAssured.basePath = contextPath
   }
 
+  def postBody = [
+          "tracking_id"     : "abc123",
+          "filename"        : "granuleFace",
+          "granule_schema"  : "a granule schema",
+          "granule_size"    : 1024,
+          "geometry"        : "POLYGON()",
+          "access_protocol" : "FILE",
+          "type"            : "fos",
+          "granule_metadata": "{blah:blah}",
+          "collections"     : ["a", "list", "of", "collections"]
+  ]
+
   def 'create, read, update, delete granule metadata'() {
     setup: 'define a granule metadata record'
-    def postBody = [
-            "tracking_id"     : "abc123",
-            "filename"        : "granuleFace",
-            "granule_schema"  : "a granule schema",
-            "granule_size"    : 1024,
-            "geometry"        : "POLYGON()",
-            "access_protocol" : "FILE",
-            "type"            : "fos",
-            "granule_metadata": "{blah:blah}",
-            "collections"     : ["a", "list", "of", "collections"]
-    ]
 
     when: 'we post, a new record is created and returned in response'
     Map granuleMetadata = RestAssured.given()
@@ -129,11 +138,7 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(2))
-            .body('meta.code', equalTo(200))
-            .body('meta.success', equalTo(true))
-            .body('meta.action', equalTo('read'))
-
+            .body('data.size', equalTo(2))
     //first one is the newest
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
@@ -172,7 +177,8 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
+            .body('data[0].meta.action', equalTo('delete'))
+            .body('data[0].id', equalTo(granuleMetadata.id as String))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -192,6 +198,7 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
+            .body('data.size', equalTo(1))
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
             .body('data[0].attributes.filename', equalTo(postBody.filename))
@@ -213,7 +220,7 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(3))
+            .body('data.size', equalTo(3))
             .body('data[0].type', equalTo('granule'))
             .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
             .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
@@ -238,7 +245,7 @@ class GranuleApiSpec extends Specification {
             .body('data[2].attributes.type', equalTo(postBody.type))
             .body('data[2].attributes.deleted', equalTo(false))
 
-    then: 'clean up the db, purge all 3 records by id'
+    then: 'clean up the db, purge all 3 uniqueRecords by id'
     //delete all with that id
     RestAssured.given()
             .body(updatedRecord) //id in here
@@ -248,9 +255,6 @@ class GranuleApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.id', equalTo(updatedRecord.id))
-            .body('meta.totalResultsDeleted', equalTo(3))
-            .body('meta.success', equalTo(true))
 
     and: 'finally, we should have sent 3 messages'
 
@@ -262,8 +266,84 @@ class GranuleApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
+      }
+    }
+  }
+
+
+  def 'trigger recovery - only latest version is sent'(){
+    setup:
+
+    granuleMetadataRepository.deleteAll()
+
+    when: 'we trigger the recovery process'
+
+    MetadataRecord record = granuleMetadataRepository.save(new GranuleMetadata(postBody))
+
+    //create two records with same id
+    UUID sharedId = UUIDs.timeBased()
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.id = sharedId
+    MetadataRecord oldVersion = granuleMetadataRepository.save(new GranuleMetadata(updatedPostBody))
+    MetadataRecord latestVersion = granuleMetadataRepository.save(new GranuleMetadata(updatedPostBody))
+
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/granules/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        assert (object.data[0] == record || object.data[0]== latestVersion) && !(object.data[0] == oldVersion)
+      }
+    }
+
+  }
+
+  def 'messages are sent with appropriate action'(){
+    setup:
+
+    granuleMetadataRepository.deleteAll()
+
+    MetadataRecord original = granuleMetadataRepository.save(new GranuleMetadata(postBody))
+
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.deleted = true
+    GranuleMetadata deletedVersion = new GranuleMetadata(updatedPostBody)
+
+    MetadataRecord deleted = granuleMetadataRepository.save(deletedVersion)
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/granules/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        if(object.data[0].meta.action == 'update'){
+          assert object.data[0].id == original.id
+        }
+        if(object.data[0].meta.action == 'delete'){
+          assert object.data[0].id == deleted.id
+        }
       }
     }
   }

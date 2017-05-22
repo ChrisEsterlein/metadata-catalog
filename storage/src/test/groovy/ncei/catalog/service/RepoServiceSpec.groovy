@@ -1,13 +1,15 @@
 package ncei.catalog.service
 
+import groovy.util.logging.Slf4j
 import ncei.catalog.domain.GranuleMetadata
 import ncei.catalog.domain.GranuleMetadataRepository
+import ncei.catalog.domain.MetadataRecord
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import javax.servlet.http.HttpServletResponse
 
-//@CompileStatic
+@Slf4j
 @Unroll
 class RepoServiceSpec extends Specification {
 
@@ -56,12 +58,12 @@ class RepoServiceSpec extends Specification {
 
     and: 'an insert notification is sent'
     1 * messageService.notifyIndex({
-      it.meta.action == 'insert'
+      it.data[0].meta.action == 'insert'
     })
 
     and: 'the status is good'
     1 * response.setStatus(HttpServletResponse.SC_CREATED)
-    result.meta.action == 'insert'
+    result.data[0].meta.action == 'insert'
     result.errors == null
   }
 
@@ -82,7 +84,7 @@ class RepoServiceSpec extends Specification {
 
     and: 'the conflict is returned'
     1 * response.setStatus(HttpServletResponse.SC_CONFLICT)
-    result.meta.action == 'insert'
+    result.data == null
     !result.errors.isEmpty()
   }
 
@@ -108,8 +110,8 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'granule not found'
-    result.meta.action == 'read'
-    result.meta.totalResults == 0
+    result.errors != null
+    result.data == null
     1 * response.setStatus(HttpServletResponse.SC_NOT_FOUND)
   }
   def 'list by id, show versions'() {
@@ -133,8 +135,7 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'all results for granule returned'
-    result.meta.action == 'read'
-    result.meta.totalResults == 3
+    result.data[0].meta.action == 'read'
     1 * response.setStatus(HttpServletResponse.SC_OK)
   }
   def 'list by id, show versions (soft delete reverted)'() {
@@ -167,8 +168,8 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'entries since it was deleted for granule returned'
-    result.meta.action == 'read'
-    result.meta.totalResults == 2
+    result.data[0].meta.action == 'read'
+    result.data.size == 2
     1 * response.setStatus(HttpServletResponse.SC_OK)
     result.data[0].attributes.granule_metadata == "{fourth: true}"
     result.data[1].attributes.granule_metadata == "{third: true}"
@@ -221,8 +222,8 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'entries since it was deleted for granule returned'
-    result.meta.action == 'read'
-    result.meta.totalResults == 3
+    result.data[0].meta.action == 'read'
+    result.data.size == 3
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries since it was deleted for granule returned'
     result.data[0].attributes.id == uuid
@@ -280,8 +281,8 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'entries since it was deleted for granule returned'
-    result.meta.action == 'read'
-    result.meta.totalResults == 2
+    result.data[0].meta.action == 'read'
+    result.data.size == 2
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries with the latest not deleted are returned'
     result.data[0].attributes.id == uuid
@@ -312,8 +313,8 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'no entries are excluded (limit 1 per id)'
-    result.meta.action == 'read'
-    result.meta.totalResults == 2
+    result.data[0].meta.action == 'read'
+    result.data.size == 2
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries with the latest not deleted are returned'
     result.data[0].attributes.id == uuid
@@ -334,8 +335,8 @@ class RepoServiceSpec extends Specification {
             ])
     ]
     and: 'one result is returned'
-    result.meta.action == 'read'
-    result.meta.totalResults == 1
+    result.data[0].meta.action == 'read'
+    result.data.size == 1
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries with the latest not deleted are returned'
     result.data[0].attributes.id == uuid
@@ -389,8 +390,50 @@ class RepoServiceSpec extends Specification {
             ]),
     ]
     and: 'everything is returned'
-    result.meta.action == 'read'
-    result.meta.totalResults == 7
+    result.data[0].meta.action == 'read'
+    result.data.size == 7
     1 * response.setStatus(HttpServletResponse.SC_OK)
+  }
+
+  def 'only latest version is sent during recover'(){
+    setup: 'mock out results from cassandra'
+    List results = []
+
+    UUID uniqueId = UUID.randomUUID()
+    results << new GranuleMetadata(["id": uniqueId])
+
+    UUID sharedId = UUID.randomUUID()
+    results << new GranuleMetadata(["id": sharedId])
+    results << new GranuleMetadata(["id": sharedId])
+
+    when:
+    repoService.recover(response, granuleMetadataRepository)
+
+    then:
+
+    1 * granuleMetadataRepository.findAll() >> results
+
+    1 * messageService.notifyIndex({it.data[0].id == uniqueId})
+    1 * messageService.notifyIndex({it.data[0].id == sharedId})
+
+  }
+
+  def 'appropriate action is sent in message'(){
+    setup:
+
+    List <MetadataRecord> results = []
+
+    results << new GranuleMetadata(["deleted":false])
+    results << new GranuleMetadata(["deleted":true])
+
+    when:
+    repoService.recover(response, granuleMetadataRepository)
+
+    then:
+    1* granuleMetadataRepository.findAll() >> results
+
+    1 * messageService.notifyIndex({it.data[0].meta.action == 'update'})
+    1 * messageService.notifyIndex({it.data[0].meta.action == 'delete'})
+
   }
 }

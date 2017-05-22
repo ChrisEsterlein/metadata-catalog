@@ -66,4 +66,10 @@ class SchemaController {
     repoService.purge(response, schemaRepository, params)
   }
 
+  @RequestMapping(value = '/recover', method = RequestMethod.PUT)
+  @ResponseBody
+  Map recover(HttpServletResponse response) {
+    log.info 'Attempting to recover all metadata schemas'
+    repoService.recover(response, schemaRepository)
+  }
 }

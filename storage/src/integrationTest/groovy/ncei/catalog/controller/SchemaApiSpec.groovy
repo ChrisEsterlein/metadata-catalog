@@ -1,14 +1,19 @@
 package ncei.catalog.controller
 
+import com.datastax.driver.core.utils.UUIDs
 import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.domain.MetadataRecord
+import ncei.catalog.domain.MetadataSchema
+import ncei.catalog.domain.MetadataSchemaRepository
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
+import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
@@ -24,6 +29,9 @@ class SchemaApiSpec extends Specification {
   private String contextPath
 
   @Autowired
+  MetadataSchemaRepository metadataSchemaRepository
+
+  @Autowired
   RabbitTemplate rabbitTemplate
 
   PollingConditions poller
@@ -35,12 +43,13 @@ class SchemaApiSpec extends Specification {
     RestAssured.basePath = contextPath
   }
 
+  def postBody = [
+          "schema_name": "schemaFace",
+          "json_schema": "{blah:blah}"
+  ]
+
   def 'create, read, update, delete schema metadata'() {
     setup: 'define a schema metadata record'
-    def postBody = [
-            "schema_name": "schemaFace",
-            "json_schema": "{blah:blah}"
-    ]
 
     when: 'we post, a new record is create and returned in response'
     Map schemaMetadata = RestAssured.given()
@@ -95,7 +104,8 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(2))
+            .body('data.size', equalTo(2))
+
     //first one is the newest
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
@@ -115,7 +125,8 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.message' as String, equalTo('Successfully deleted row with id: ' + updatedPostBody.id))
+            .body('data[0].meta.action', equalTo('delete'))
+            .body('data[0].id', equalTo(schemaMetadata.id as String))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
@@ -135,7 +146,6 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.totalResults', equalTo(1))
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
@@ -149,10 +159,7 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.code', equalTo(200))
-            .body('meta.success', equalTo(true))
-            .body('meta.action', equalTo('read'))
-            .body('meta.totalResults', equalTo(3))
+            .body('data.size', equalTo(3))
             .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
@@ -173,9 +180,8 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('meta.id', equalTo(updatedRecord.id))
-            .body('meta.totalResultsDeleted', equalTo(3))
-            .body('meta.success', equalTo(true))
+            .body('data.size', equalTo(3))
+
 
             .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
             .body('data[1].attributes.json_schema', equalTo(updatedSchema))
@@ -193,8 +199,83 @@ class SchemaApiSpec extends Specification {
       while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        actions.add(object.meta.action)
+        actions.add(object.data[0].meta.action)
         assert actions == expectedActions
+      }
+    }
+  }
+
+  def 'trigger recovery - only latest version is sent'(){
+    setup:
+
+    metadataSchemaRepository.deleteAll()
+
+    when: 'we trigger the recovery process'
+
+    MetadataRecord record = metadataSchemaRepository.save(new MetadataSchema(postBody))
+
+    //create two records with same id
+    UUID sharedId = UUIDs.timeBased()
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.id = sharedId
+    MetadataRecord oldVersion = metadataSchemaRepository.save(new MetadataSchema(updatedPostBody))
+    MetadataRecord latestVersion = metadataSchemaRepository.save(new MetadataSchema(updatedPostBody))
+
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/schemas/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
+      }
+    }
+
+  }
+
+  def 'messages are sent with appropriate action'(){
+    setup:
+
+    metadataSchemaRepository.deleteAll()
+
+    MetadataRecord original = metadataSchemaRepository.save(new MetadataSchema(postBody))
+
+    Map updatedPostBody = postBody.clone()
+    updatedPostBody.deleted = true
+    MetadataSchema deletedVersion = new MetadataSchema(updatedPostBody)
+
+    MetadataRecord deleted = metadataSchemaRepository.save(deletedVersion)
+
+    when: 'we trigger the recovery process'
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .put('/schemas/recover')
+            .then()
+            .assertThat()
+            .statusCode(200)
+
+    then:
+
+    poller.eventually {
+      String m
+      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        if(object.data[0].meta.action == 'update'){
+          assert object.data[0].id == original.id
+        }
+        if(object.data[0].meta.action == 'delete'){
+          assert object.data[0].id == deleted.id
+        }
       }
     }
   }
