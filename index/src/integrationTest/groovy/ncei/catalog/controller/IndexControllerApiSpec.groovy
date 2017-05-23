@@ -172,7 +172,7 @@ class IndexControllerApiSpec extends Specification {
             .statusCode(404)
             .body('meta.message', equalTo('Not Found'))
             .body('errors', isA(List))
-            .body('errors[0]', containsString("No handler found for GET /index$badPath"))
+            .body('errors[0]', containsString("No handler found for GET $badPath"))
 
   }
 }
