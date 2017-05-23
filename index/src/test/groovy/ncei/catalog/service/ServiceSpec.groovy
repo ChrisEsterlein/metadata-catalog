@@ -18,6 +18,27 @@ class ServiceSpec extends Specification {
   IndexAdminService mockIndexAdminService = Mock(IndexAdminService)
   Service service = Spy(Service, constructorArgs: [mockRestClient, mockIndexAdminService])
 
+  private buildMockResponse(Map payload, int statusCode, String method = 'GET') {
+    def mockEntity = Mock(HttpEntity)
+    mockEntity.getContent() >> new ByteArrayInputStream(JsonOutput.toJson(payload).bytes)
+    mockEntity.isRepeatable() >> true
+
+    def mockRequestLine = Mock(RequestLine)
+    mockRequestLine.getMethod() >> method
+    mockRequestLine.getUri() >> 'testuri'
+
+    def mockStatusLine = Mock(StatusLine)
+    mockStatusLine.getStatusCode() >> statusCode
+
+    def mockResponse = Mock(Response)
+    mockResponse.getEntity() >> mockEntity
+    mockResponse.getStatusLine() >> mockStatusLine
+    mockResponse.getRequestLine() >> mockRequestLine
+    mockResponse.getHost() >> new HttpHost('testhost', 1234)
+
+    return mockResponse
+  }
+
   def 'Insert: returns JSON API formatted information when created is #created'() {
     setup:
     def metadata = [id: 'abc', type: 'granule', attributes: [name: 'test']]
@@ -182,37 +203,30 @@ class ServiceSpec extends Specification {
     1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, 200)
 
     and:
-    result.data == (hits ? [[id: searchHit._id, type: searchHit._type, attributes: searchHit._source]] : [])
-    result.meta.totalResults == (hits ? 1 : 0)
-    result.meta.searchTerms == query
-    result.meta.code == 200
+    result == [data: (hits ? [[id: searchHit._id, type: searchHit._type, attributes: searchHit._source]] : []),
+        meta: [totalResults: (hits ? 1 : 0), code: 200, searchTerms: query]]
 
     where:
-    query       | hits
-    'something' | true
-    'something' | false
-    null        | true
-    null        | false
+    query           | hits
+    [q:'something'] | true
+    [q:'something'] | false
+    [:]             | true
+    [:]             | false
   }
 
-  private buildMockResponse(Map payload, int statusCode, String method = 'GET') {
-    def mockEntity = Mock(HttpEntity)
-    mockEntity.getContent() >> new ByteArrayInputStream(JsonOutput.toJson(payload).bytes)
-    mockEntity.isRepeatable() >> true
+  @Unroll
+  def 'Search query #searchParams properly built'() {
 
-    def mockRequestLine = Mock(RequestLine)
-    mockRequestLine.getMethod() >> method
-    mockRequestLine.getUri() >> 'testuri'
+    expect:
+    Service.buildSearchParams(searchParams) == expReducedSearchQuery
 
-    def mockStatusLine = Mock(StatusLine)
-    mockStatusLine.getStatusCode() >> statusCode
-
-    def mockResponse = Mock(Response)
-    mockResponse.getEntity() >> mockEntity
-    mockResponse.getStatusLine() >> mockStatusLine
-    mockResponse.getRequestLine() >> mockRequestLine
-    mockResponse.getHost() >> new HttpHost('testhost', 1234)
-
-    return mockResponse
+    where:
+    searchParams                          | expReducedSearchQuery
+    [:]                                   | [:]
+    [q: "dataset:junk AND type:metadata"] | [q: "dataset:junk AND type:metadata"]
+    [from: 0]                             | [from: 0]
+    [size: 5]                             | [size: 5]
+    [q: "dataset:junk AND type:metadata", from: 1, size: 1] | [q: "dataset:junk AND type:metadata", from: 1, size: 1]
+    [q: "dataset:junk AND type:metadata", from: 1, size: 1, j: "junk"] | [q: "dataset:junk AND type:metadata", from: 1, size: 1]
   }
 }

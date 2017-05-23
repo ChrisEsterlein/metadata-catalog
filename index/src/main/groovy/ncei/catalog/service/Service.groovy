@@ -29,19 +29,28 @@ class Service {
   }
 
   /**
-   * Search elasticsearch with query that is passed in.
-   * @param searchQuery the query to execute against elasticsearch (Ex: "dataset:csb fileName:name1" )
-   * @return Map of items
+   * Build search parameters map.
+   * @param searchParams Map of search params to cherry pick from
+   * @return Map of specific search params we wish to reference that weren't null.
    */
-  Map search(String searchQuery = null) {
+  private static Map buildSearchParams(Map searchParams = [:]) {
+    return searchParams?.subMap(['q', 'from', 'size'])
+  }
+
+  /**
+   * Search elasticsearch with the parameters that are passed in, or none if none are passed in.
+   * @param Map searchParams the search will cherry pick from
+   * @return Map of JSON API formatted results
+   */
+  Map search(Map searchParams = [:]) {
     String endpoint = "/$INDEX/_search"
 
-    log.debug("Search: endpoint=$endpoint query=$searchQuery")
-    def response = searchQuery ?
-        restClient.performRequest('GET', endpoint, [q: searchQuery] as Map<String, String>) :
-        restClient.performRequest('GET', endpoint)
-    log.debug("Search response: $response")
+    Map reducedSearchParams = buildSearchParams(searchParams)
 
+    log.debug("Search: endpoint=$endpoint params=$reducedSearchParams generated from=$searchParams")
+    def response = restClient.performRequest('GET', endpoint, reducedSearchParams as Map<String, String>)
+
+    log.debug("Search response: $response")
     def result = parseResponse(response)
     return [
         data: result.hits.hits.collect({
@@ -49,7 +58,7 @@ class Service {
         }),
         meta: [
             totalResults: result.hits.total,
-            searchTerms : searchQuery,
+            searchTerms : reducedSearchParams,
             code        : result.statusCode
         ]
     ]

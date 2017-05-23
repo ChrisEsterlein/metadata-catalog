@@ -26,7 +26,7 @@ Properties: content_type = application/json
 Payload: {"id":"1asdf123s", "type":"metadata", "attributes": {"dataset":"csb", "fileName":"/blah/fileName1"}}
 
 ##Searching via REST
-http://localhost:8088/index/search?q=dataset:csb fileName:/blah/fileName1
+http://localhost:8088/index/search?q=dataset:csb AND fileName:blah1&from=0&size=1
 The parameter is a simple query string as a parameter as a URI search as defined by Elastcisearch.
 
 ##Elasticsearch commands
