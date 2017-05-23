@@ -1,4 +1,4 @@
-package ncei.catalog.service
+package ncei.catalog.controller
 
 import groovy.util.logging.Slf4j
 import org.springframework.http.HttpHeaders
@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletRequest
 
 @Slf4j
 @ControllerAdvice
-class ExceptionHelper extends ResponseEntityExceptionHandler {
+class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 
   private Map<String, Object> buildErrorMap(HttpStatus status, String message, String path, Exception ex) {
     Map<String, Object> responseBody = new HashMap<>()
