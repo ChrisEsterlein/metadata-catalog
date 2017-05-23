@@ -111,9 +111,10 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'granule not found'
     result.errors != null
-    result.data == null
-    1 * response.setStatus(HttpServletResponse.SC_NOT_FOUND)
+    result.errors == ['No results found.']
+//    1 * response.setStatus(HttpServletResponse.SC_NOT_FOUND)
   }
+
   def 'list by id, show versions'() {
     setup: 'multiple versions of the granule returned'
     UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
@@ -169,7 +170,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'entries since it was deleted for granule returned'
     result.data[0].meta.action == 'read'
-    result.data.size == 2
+    result.data.size == 4
     1 * response.setStatus(HttpServletResponse.SC_OK)
     result.data[0].attributes.granule_metadata == "{fourth: true}"
     result.data[1].attributes.granule_metadata == "{third: true}"
@@ -223,15 +224,17 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'entries since it was deleted for granule returned'
     result.data[0].meta.action == 'read'
-    result.data.size == 3
+    result.data.size == 5
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries since it was deleted for granule returned'
     result.data[0].attributes.id == uuid
     result.data[1].attributes.id == uuid
-    result.data[2].attributes.id == uuid3
+    result.data[2].attributes.id == uuid
+    result.data[3].attributes.id == uuid
+    result.data[4].attributes.id == uuid3
     result.data[0].attributes.granule_metadata == "{fourth: true, reverted: true}"
     result.data[1].attributes.granule_metadata == "{third: true, reverted: true}"
-    result.data[2].attributes.granule_metadata == "{first: true, not-deleted-at-all: true}"
+    result.data[4].attributes.granule_metadata == "{first: true, not-deleted-at-all: true}"
   }
   def 'list all (soft delete reverted)'() {
     setup: 'multiple versions of the granule2 returned'

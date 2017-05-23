@@ -114,26 +114,15 @@ class RepoService {
       allResults = repositoryObject.findAll()
     }
 
-    //filter deleted and versions - or don't
-    if (showDeleted && showVersions) {
-      log.debug("Returning all records, including old versions and deleted records")
-      listDetails.data = allResults.collect{createDataItem(it, READ)}
-    } else if (showVersions) {
-      log.debug("Filtering deleted records")
-      List deletedList = []
-      listDetails.data = []
-      allResults.each{ mR ->
-        UUID id = mR.id
-        if (mR.deleted) {
-          deletedList.add(id)
-        }
-        else if(!(id in deletedList)){
-          listDetails.data.add(createDataItem(mR, READ))
-        }
-      }
-    } else {
-      log.debug("Filtering old versions and deleted records")
-      listDetails.data = getMostRecent(allResults, showDeleted)
+    listDetails.data = []
+    allResults.groupBy{it.id}.findResults {
+      // filter out deleted results
+      return showDeleted || !it.value[0].deleted ? it : null
+    }.collectMany {
+      // show all versions or only the first
+      return showVersions ? it.value : [ it.value[0] ]
+    }.each { mR ->
+      listDetails.data.add(createDataItem(mR, READ))
     }
 
     //build response
@@ -145,31 +134,6 @@ class RepoService {
       response.status = HttpServletResponse.SC_NOT_FOUND
     }
     listDetails
-  }
-
-  private List getMostRecent(Iterable<MetadataRecord> allResults, Boolean showDeleted) {
-    Map<UUID, MetadataRecord> idMostRecentMap = [:]
-    List mostRecent
-    List deletedList = []
-    allResults.each { mR ->
-      if (!showDeleted && mR.deleted) {
-        deletedList.add(mR.id)
-      }
-      if (!(mR.id in deletedList)) {
-        String metadataId = mR.id
-        if (idMostRecentMap[metadataId]) {
-          if (idMostRecentMap[metadataId].last_update < mR.last_update) {
-            idMostRecentMap[metadataId] = mR
-          }
-        } else {
-          idMostRecentMap[metadataId] = mR
-        }
-      }
-    }
-    mostRecent = idMostRecentMap.collect { key, value ->
-      createDataItem(value, READ)
-    }
-    mostRecent
   }
 
   Map purge(HttpServletResponse response, CassandraRepository repositoryObject, Map params) {
