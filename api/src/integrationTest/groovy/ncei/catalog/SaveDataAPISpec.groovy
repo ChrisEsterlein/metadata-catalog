@@ -4,9 +4,9 @@ import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
+import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.hasItems
 import static org.hamcrest.Matchers.equalTo
@@ -21,20 +21,17 @@ class SaveDataAPISpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
-  @Shared
-  private String appUrl
-
-//  def poller = new PollingConditions(timeout: 5)
+  def poller = new PollingConditions(timeout: 5)
 
   def setup() {
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
-    appUrl = "${RestAssured.baseURI}:${RestAssured.port}/api"
   }
 
   @Unroll
   def 'save new granules with #trackingId and #filename'() {
+
     when: 'posting a new granule to the storage'
     String id = RestAssured.given()
         .body([
@@ -43,7 +40,7 @@ class SaveDataAPISpec extends Specification {
         ])
         .contentType(ContentType.JSON)
         .when()
-        .post("${appUrl}/${route}/${path}")
+        .post("storage1/granules")
         .then()
         .assertThat()
         .statusCode(201)
@@ -54,39 +51,23 @@ class SaveDataAPISpec extends Specification {
     id != null
 
     and: 'eventually searching the index finds the record'
-    /*
     poller.eventually {
-
-      sleep(500)
-
-      def result = RestAssured.given()
+      RestAssured.given()
           .contentType(ContentType.JSON)
           .params([q: "_id:$id"])
           .when()
-          .get("${appUrl}/index/index/search")
+          .get("index/search")
           .then()
-          .extract()
-//      assert result.response().statusCode == 200
-      assert result.body().path("data.id").contains(id)
+          .assertThat()
+          .statusCode(200)
+          .body("data.size", equalTo(1))
+          .body("data.id", hasItems(id))
     }
-    // */
-
-    sleep(1000)
-    RestAssured.given()
-        .contentType(ContentType.JSON)
-        .params([q: "_id:$id"])
-        .when()
-        .get("${appUrl}/index/index/search")
-        .then()
-        .assertThat()
-        .statusCode(200)
-        .body("data.size", equalTo(1))
-        .body("data.id", hasItems(id))
 
     where:
-    route | path | trackingId | filename
-    'storage1' | 'metadata-catalog/granules' | "abc123" | "some_granule.txt"
-    'storage1' | 'metadata-catalog/granules' | "xyz789" | "a_granule.zip"
+    trackingId | filename
+    "abc123" | "some_granule.txt"
+    "xyz789" | "a_granule.zip"
   }
 
 }

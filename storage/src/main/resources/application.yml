@@ -5,7 +5,7 @@ cassandra:
   contactPoints: 'localhost'
 
 server:
-  context-path: /metadata-catalog
+  context-path: /
   error.whitelabel.enabled: false
 
 rabbitmq:

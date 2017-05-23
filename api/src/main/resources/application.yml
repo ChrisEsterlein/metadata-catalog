@@ -1,8 +1,8 @@
 spring.main.show_banner: false
 
 server:
-  port: 8088
-  context-path: /api
+  port: 8080
+  context-path: /
 
 spring:
   application:
@@ -27,7 +27,7 @@ zuul:
       stripPrefix: true
     storage2:
       path: /storage2/**
-      url: http://${storage.host}:${storage.port}/metadata-catalog/collections
+      url: http://${storage.host}:${storage.port}/collections
       stripPrefix: true
     index:
       path: /index/**
