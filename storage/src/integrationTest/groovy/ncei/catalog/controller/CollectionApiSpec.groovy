@@ -16,7 +16,9 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
+import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.isA
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
@@ -346,4 +348,20 @@ class CollectionApiSpec extends Specification {
     }
   }
 
+  def 'controller advice catches 404'() {
+
+    expect:
+    String badPath = '/noSuchEndpoint'
+
+    RestAssured.given()
+            .contentType(ContentType.JSON)
+            .when()
+            .get(badPath)
+            .then()
+            .assertThat()
+            .statusCode(404)
+            .body('meta.message', equalTo('Not Found'))
+            .body('errors', isA(List))
+            .body('errors[0]', containsString("No handler found for GET $badPath"))
+  }
 }

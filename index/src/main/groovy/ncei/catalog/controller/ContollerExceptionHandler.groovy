@@ -1,4 +1,4 @@
-package ncei.catalog.service
+package ncei.catalog.controller
 
 import groovy.util.logging.Slf4j
 import org.springframework.http.HttpHeaders
@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletRequest
 
 @Slf4j
 @ControllerAdvice
-class ExceptionHelper extends ResponseEntityExceptionHandler {
+class ContollerExceptionHandler extends ResponseEntityExceptionHandler {
 
   private Map<String, Object> buildErrorMap(HttpStatus status, String message, String path, Exception ex) {
     Map<String, Object> responseBody = new HashMap<>()
@@ -39,7 +39,7 @@ class ExceptionHelper extends ResponseEntityExceptionHandler {
   @ExceptionHandler(Exception.class)
   @ResponseBody
   def handleError(HttpServletRequest request, Exception ex) {
-    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occured.", request.getContextPath(), ex), HttpStatus.INTERNAL_SERVER_ERROR)
+    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.INTERNAL_SERVER_ERROR, 'An unexpected error occured.', request.getContextPath(), ex), HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
 //  @ExceptionHandler(AccessDeniedException.class )
