@@ -121,13 +121,17 @@ class RepoService {
     } else if (showVersions) {
       log.debug("Filtering deleted records")
       List deletedList = []
+      List latestVersions = []
       listDetails.data = []
       allResults.each{ mR ->
         UUID id = mR.id
-        if (mR.deleted) {
-          deletedList.add(id)
+        if(!(id in latestVersions)){ //only exclude deleted records if they are the latest version
+          latestVersions.add(id)
+          if (mR.deleted) {
+            deletedList.add(id)
+          }
         }
-        else if(!(id in deletedList)){
+        if(!(id in deletedList)){
           listDetails.data.add(createDataItem(mR, READ))
         }
       }
