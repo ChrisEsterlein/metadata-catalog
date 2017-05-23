@@ -4,7 +4,6 @@ import io.restassured.RestAssured
 import io.restassured.response.Response
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -19,20 +18,16 @@ class TutorialAPISpec extends Specification{
   @Value('${server.context-path:/}')
   private String contextPath
 
-  @Shared
-  private String appUrl
-
   def setup() {
     RestAssured.baseURI = "http://localhost"
     RestAssured.port = port as Integer
     RestAssured.basePath = contextPath
-    appUrl = "${RestAssured.baseURI}:${RestAssured.port}/api"
   }
 
   @Unroll
   def 'test various url configurations #route with path #path'() {
     when:
-    Response response = RestAssured.get("${appUrl}/${route}/${path}")
+    Response response = RestAssured.get("${route}/${path}")
 
     then:
     response.getStatusCode() == expectedStatus
@@ -40,20 +35,20 @@ class TutorialAPISpec extends Specification{
     where:
     route | path | expectedStatus
     'storage2' | '' | 404 // because there is no data
-    'storage1' | 'metadata-catalog/collections' | 404
-    'index' | 'index/search' | 200
+    'storage1' | 'collections' | 404
+    'index' | 'search' | 200
 
   }
 
   def 'test storage unconfigured path'() {
     expect:
-    Response response = RestAssured.get("${appUrl}/garbage")
+    Response response = RestAssured.get("garbage")
     response.getStatusCode() == 404
   }
 
   def 'test storage built in (features)'() {
     expect:
-    Response response = RestAssured.get("${appUrl}/features")
+    Response response = RestAssured.get("features")
     response.getStatusCode() == 200
   }
 
