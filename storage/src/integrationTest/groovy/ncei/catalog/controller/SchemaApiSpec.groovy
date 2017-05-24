@@ -5,6 +5,7 @@ import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.config.TestRabbitConfig
 import ncei.catalog.domain.MetadataRecord
 import ncei.catalog.domain.MetadataSchema
 import ncei.catalog.domain.MetadataSchemaRepository
@@ -12,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 import spock.lang.Specification
 import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
@@ -19,7 +21,8 @@ import spock.util.concurrent.PollingConditions
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-@SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
+@ActiveProfiles("test")
+@SpringBootTest(classes = [Application, TestRabbitConfig], webEnvironment = RANDOM_PORT)
 class SchemaApiSpec extends Specification {
 
   @Value('${local.server.port}')

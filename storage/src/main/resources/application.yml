@@ -9,7 +9,7 @@ server:
   error.whitelabel.enabled: false
 
 rabbitmq:
-  queue: index-consumer
+  routingKey: index-consumer
   connectionfactory:
     host: localhost
     virtualHost: /
