@@ -93,6 +93,7 @@ class UpdateDataAPISpec extends Specification {
               .statusCode(200)
               .body("data.size", equalTo(1))
               .body("data.id", hasItems(granuleMetadata.id))
+              .body("data[0].attributes.filename", equalTo(updatedFilename))
     }
 
   }
