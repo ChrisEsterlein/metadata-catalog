@@ -31,6 +31,9 @@ class SchemaApiSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
+  @Value('${rabbitmq.queue}')
+  String queueName
+
   @Autowired
   MetadataSchemaRepository metadataSchemaRepository
 
@@ -199,7 +202,7 @@ class SchemaApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['insert', 'update', 'delete']
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.data[0].meta.action)
@@ -235,7 +238,7 @@ class SchemaApiSpec extends Specification {
     then:
     poller.eventually {
       String m
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
@@ -270,7 +273,7 @@ class SchemaApiSpec extends Specification {
 
     poller.eventually {
       String m
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){

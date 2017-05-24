@@ -181,7 +181,7 @@ class CollectionApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['update']
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.data[0].meta.action)
@@ -267,7 +267,7 @@ class CollectionApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['delete']
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.data[0].meta.action)
@@ -304,7 +304,7 @@ class CollectionApiSpec extends Specification {
     then:
     poller.eventually {
       String m
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
@@ -339,7 +339,7 @@ class CollectionApiSpec extends Specification {
 
     poller.eventually {
       String m
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){

@@ -17,11 +17,7 @@ class MessageService {
       log.info "Notifying index of action"
       rabbitTemplate.convertAndSend('index-consumer', details)
     }catch(e){
-      log.error('Failed to notify index with exception', e)
+      log.error('Failed to notify index with exception: ', e)
     }
-  }
-
-  def handleMessage(Map message) {
-    return message
   }
 }
