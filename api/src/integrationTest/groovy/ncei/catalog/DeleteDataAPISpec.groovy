@@ -8,11 +8,6 @@ import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.hasItems
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @SpringBootTest(classes = [ApiApplication], webEnvironment = RANDOM_PORT)
