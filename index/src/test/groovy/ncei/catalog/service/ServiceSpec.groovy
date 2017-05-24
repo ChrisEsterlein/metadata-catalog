@@ -170,7 +170,7 @@ class ServiceSpec extends Specification {
     result.meta.deleted == false
   }
 
-  def 'Search: returns JSON API formatted information with query [#query] and matching results [#hits]'() {
+  def 'Search: returns JSON API formatted information with query "#query" and has results="#hasResults"'() {
     setup:
     def searchHit = [
         "_index" : "search_index",
@@ -190,9 +190,9 @@ class ServiceSpec extends Specification {
             "failed"    : 0
         ],
         "hits"     : [
-            "total"    : hits ? 1 : 0,
-            "max_score": hits ? searchHit._score : 0.0,
-            "hits"     : hits ? [searchHit] : []
+            "total"    : hasResults ? 1 : 0,
+            "max_score": hasResults ? searchHit._score : 0.0,
+            "hits"     : hasResults ? [searchHit] : []
         ]
     ]
 
@@ -203,30 +203,29 @@ class ServiceSpec extends Specification {
     1 * mockRestClient.performRequest(*_) >> buildMockResponse(elasticsearchResponse, 200)
 
     and:
-    result == [data: (hits ? [[id: searchHit._id, type: searchHit._type, attributes: searchHit._source]] : []),
-        meta: [totalResults: (hits ? 1 : 0), code: 200, searchTerms: query]]
+    result == [data: (hasResults ? [[id: searchHit._id, type: searchHit._type, attributes: searchHit._source]] : []),
+               meta: [totalResults: (hasResults ? 1 : 0), searchTerms: expSearchTerms, code: 200]]
 
     where:
-    query           | hits
-    [q:'something'] | true
-    [q:'something'] | false
-    [:]             | true
-    [:]             | false
+    query       | hasResults | expSearchTerms
+    'something' | true       | [q:"something"]
+    'something' | false      | [q:"something"]
+    null        | true       | [:]
+    null        | false      | [:]
   }
 
   @Unroll
-  def 'Search query #searchParams properly built'() {
+  def 'Search query #query offset #offset max #max properly built'() {
 
     expect:
-    Service.buildSearchParams(searchParams) == expReducedSearchQuery
+    Service.buildSearchParams(query, offset, max) == expReducedSearchQuery
 
     where:
-    searchParams                                                            | expReducedSearchQuery
-    [:]                                                                     | [:]
-    [q: "dataset:junk AND type:metadata"]                                   | [q: "dataset:junk AND type:metadata"]
-    [offset: "0"]                                                           | [from: "0"]
-    [max: "5"]                                                              | [size: "5"]
-    [q: "dataset:junk AND type:metadata", offset: "1", max: "1"]            | [q: "dataset:junk AND type:metadata", from: "1", size: "1"]
-    [q: "dataset:junk AND type:metadata", offset: "1", max: "1", j: "junk"] | [q: "dataset:junk AND type:metadata", from: "1", size: "1"]
+    query                            | offset | max  | expReducedSearchQuery
+    null                             | null   | null | [:]
+    "dataset:junk AND type:metadata" | null   | null | [q: "dataset:junk AND type:metadata"]
+    null                             | "0"    | null | [from: "0"]
+    null                             | null   | "5"  | [size: "5"]
+    "dataset:junk AND type:metadata" | "1"    | "1"  | [q: "dataset:junk AND type:metadata", from: "1", size: "1"]
   }
 }
