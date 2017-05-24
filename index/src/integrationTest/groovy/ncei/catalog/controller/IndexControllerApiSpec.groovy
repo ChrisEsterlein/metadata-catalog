@@ -14,10 +14,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
-import static org.hamcrest.Matchers.containsString
-import static org.hamcrest.Matchers.equalTo
-import static org.hamcrest.Matchers.hasItems
-import static org.hamcrest.Matchers.isA
+import static org.hamcrest.Matchers.*
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
@@ -74,9 +71,9 @@ class IndexControllerApiSpec extends Specification {
     expect: "You can hit the application search endpoint WITHOUT search params and get back the saved data"
     RestAssured.given()
         .contentType(contentType)
-      .when()
+        .when()
         .get(SEARCH_ENDPOINT)
-      .then()
+        .then()
         .assertThat()
         .statusCode(200)
         .body("data.size", equalTo(2))
@@ -96,9 +93,9 @@ class IndexControllerApiSpec extends Specification {
     RestAssured.given()
         .contentType(contentType)
         .params(searchParams)
-      .when()
+        .when()
         .get(SEARCH_ENDPOINT)
-      .then()
+        .then()
         .assertThat()
         .statusCode(200)
         .body("data.size", equalTo(expCount))
@@ -107,11 +104,15 @@ class IndexControllerApiSpec extends Specification {
     where:
     searchParams                                  | expCount | pathMatch                 | matcher
     [q: "dataset:${metadata.attributes.dataset}"] | 2        | "data.id"                 | hasItems(metadata.id, metadata2.id)
-    [size: 1]                                     | 1        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
+    [max: "1"]                                    | 1        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
+    [page: "0"]                                   | 2        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
   }
 
   def 'Search results from page 0 does not equal results from page 1'() {
     setup:
+    Map requestPage0 = [offset: "0", max: "1"]
+    Map requestPage1 = [offset: "1", max: "1"]
+
     service.upsert(metadata)
     service.upsert(metadata2)
     poller.eventually {
@@ -121,25 +122,25 @@ class IndexControllerApiSpec extends Specification {
     when: "Get search results of page 0 then page 1"
     Response responsePage0 =
         RestAssured.given()
-          .contentType(contentType)
-          .params([size: 1, from: 0])
-        .when()
-          .get(SEARCH_ENDPOINT)
-        .then()
-          .assertThat()
-          .statusCode(200)
-          .extract().response()
+            .contentType(contentType)
+            .params(requestPage0)
+            .when()
+            .get(SEARCH_ENDPOINT)
+            .then()
+            .assertThat()
+            .statusCode(200)
+            .extract().response()
 
     Response responsePage1 =
         RestAssured.given()
-          .contentType(contentType)
-          .params([size: 1, from: 1])
-        .when()
-          .get(SEARCH_ENDPOINT)
-        .then()
-          .assertThat()
-          .statusCode(200)
-          .extract().response()
+            .contentType(contentType)
+            .params(requestPage1)
+            .when()
+            .get(SEARCH_ENDPOINT)
+            .then()
+            .assertThat()
+            .statusCode(200)
+            .extract().response()
 
     then: "Search the results should be different between the two different pages"
     responsePage0.as(Map) != responsePage1.as(Map)
@@ -150,9 +151,9 @@ class IndexControllerApiSpec extends Specification {
     expect:
     RestAssured.given()
         .contentType(contentType)
-      .when()
+        .when()
         .get(SEARCH_ENDPOINT)
-      .then()
+        .then()
         .assertThat()
         .statusCode(200)
         .body("data.size", equalTo(0))
@@ -164,15 +165,14 @@ class IndexControllerApiSpec extends Specification {
     String badPath = '/noSuchEndpoint'
 
     RestAssured.given()
-            .contentType(contentType)
-            .when()
-            .get(badPath)
-            .then()
-            .assertThat()
-            .statusCode(404)
-            .body('meta.message', equalTo('Not Found'))
-            .body('errors', isA(List))
-            .body('errors[0]', containsString("No handler found for GET $badPath"))
-
+        .contentType(contentType)
+        .when()
+        .get(badPath)
+        .then()
+        .assertThat()
+        .statusCode(404)
+        .body('meta.message', equalTo('Not Found'))
+        .body('errors', isA(List))
+        .body('errors[0]', containsString("No handler found for GET $badPath"))
   }
 }

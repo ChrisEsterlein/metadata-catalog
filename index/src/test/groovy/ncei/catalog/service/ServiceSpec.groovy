@@ -221,12 +221,12 @@ class ServiceSpec extends Specification {
     Service.buildSearchParams(searchParams) == expReducedSearchQuery
 
     where:
-    searchParams                          | expReducedSearchQuery
-    [:]                                   | [:]
-    [q: "dataset:junk AND type:metadata"] | [q: "dataset:junk AND type:metadata"]
-    [from: 0]                             | [from: 0]
-    [size: 5]                             | [size: 5]
-    [q: "dataset:junk AND type:metadata", from: 1, size: 1] | [q: "dataset:junk AND type:metadata", from: 1, size: 1]
-    [q: "dataset:junk AND type:metadata", from: 1, size: 1, j: "junk"] | [q: "dataset:junk AND type:metadata", from: 1, size: 1]
+    searchParams                                                            | expReducedSearchQuery
+    [:]                                                                     | [:]
+    [q: "dataset:junk AND type:metadata"]                                   | [q: "dataset:junk AND type:metadata"]
+    [offset: "0"]                                                           | [from: "0"]
+    [max: "5"]                                                              | [size: "5"]
+    [q: "dataset:junk AND type:metadata", offset: "1", max: "1"]            | [q: "dataset:junk AND type:metadata", from: "1", size: "1"]
+    [q: "dataset:junk AND type:metadata", offset: "1", max: "1", j: "junk"] | [q: "dataset:junk AND type:metadata", from: "1", size: "1"]
   }
 }

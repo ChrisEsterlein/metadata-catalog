@@ -34,7 +34,11 @@ class Service {
    * @return Map of specific search params we wish to reference that weren't null.
    */
   private static Map buildSearchParams(Map searchParams = [:]) {
-    return searchParams?.subMap(['q', 'from', 'size'])
+    Map params = searchParams?.subMap(['q', 'offset', 'max'])
+    params?.q ? params.put('q', params.remove('q').toString()) : ''
+    params?.offset ? params.put('from', params.remove('offset').toString()) : ''
+    params?.max ? params.put('size', params.remove('max').toString()) : ''
+    return params
   }
 
   /**
@@ -128,8 +132,7 @@ class Service {
     catch (ResponseException e) {
       if (e.getResponse().statusLine.statusCode == 404) {
         result.meta.deleted = false
-      }
-      else {
+      } else {
         throw e
       }
     }
