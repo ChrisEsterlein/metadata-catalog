@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import spock.lang.Specification
-import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
@@ -51,15 +50,15 @@ class GranuleApiSpec extends Specification {
   }
 
   def postBody = [
-          "tracking_id"     : "abc123",
-          "filename"        : "granuleFace",
-          "granule_schema"  : "a granule schema",
-          "granule_size"    : 1024,
-          "geometry"        : "POLYGON()",
-          "access_protocol" : "FILE",
-          "type"            : "fos",
-          "granule_metadata": "{blah:blah}",
-          "collections"     : ["a", "list", "of", "collections"]
+      "tracking_id"    : "abc123",
+      "filename"       : "granuleFace",
+      "metadata_schema": "a granule metadata_schema",
+      "size_bytes"     : 1024,
+      "geometry"       : "POLYGON()",
+      "access_protocol": "FILE",
+      "type"           : "fos",
+      "metadata"       : "{blah:blah}",
+      "collections"    : ["a", "list", "of", "collections"]
   ]
 
   def 'create, read, update, delete granule metadata'() {
@@ -67,200 +66,200 @@ class GranuleApiSpec extends Specification {
 
     when: 'we post, a new record is created and returned in response'
     Map granuleMetadata = RestAssured.given()
-            .body(postBody)
-            .contentType(ContentType.JSON)
-            .when()
-            .post('/granules')
-            .then()
-            .assertThat()
-            .statusCode(201)
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
-            .body('data[0].attributes.filename', equalTo(postBody.filename))
-            .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
-            .body('data[0].attributes.type', equalTo(postBody.type))
-            .body('data[0].attributes.granule_metadata', equalTo(postBody.granule_metadata))
-            .body('data[0].attributes.collections', equalTo(postBody.collections))
-            .extract()
-            .path('data[0].attributes')
+        .body(postBody)
+        .contentType(ContentType.JSON)
+        .when()
+        .post('/granules')
+        .then()
+        .assertThat()
+        .statusCode(201)
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(postBody.metadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
+        .extract()
+        .path('data[0].attributes')
 
     then: 'we can get it by id'
     RestAssured.given()
-            .contentType(ContentType.JSON)
-            .when()
-            .get("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].id', equalTo(granuleMetadata.id))
-            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
-            .body('data[0].attributes.filename', equalTo(postBody.filename))
-            .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
-            .body('data[0].attributes.type', equalTo(postBody.type))
-            .body('data[0].attributes.granule_metadata', equalTo(postBody.granule_metadata))
-            .body('data[0].attributes.collections', equalTo(postBody.collections))
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].id', equalTo(granuleMetadata.id))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(postBody.metadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
 
     when: 'we update the postBody with the id and new metadata'
 
     String updatedMetadata = "different metadata"
     Map updatedPostBody = granuleMetadata.clone()
-    updatedPostBody.granule_metadata = updatedMetadata
+    updatedPostBody.metadata = updatedMetadata
 
     then: 'we can update the record (create a new version)'
 
     RestAssured.given()
-            .body(updatedPostBody)
-            .contentType(ContentType.JSON)
-            .when()
-            .put("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
+        .body(updatedPostBody)
+        .contentType(ContentType.JSON)
+        .when()
+        .put("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
 //            .statusCode(200)
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].id', equalTo(granuleMetadata.id))
-            .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
-            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
-            .body('data[0].attributes.filename', equalTo(postBody.filename))
-            .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
-            .body('data[0].attributes.type', equalTo(postBody.type))
-            .body('data[0].attributes.granule_metadata', equalTo(updatedMetadata))
-            .body('data[0].attributes.collections', equalTo(postBody.collections))
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].id', equalTo(granuleMetadata.id))
+        .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
 
     and: 'we can get both versions'
     Map updatedRecord = RestAssured.given()
-            .param('showVersions', true)
-            .when()
-            .get("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data.size', equalTo(2))
+        .param('showVersions', true)
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data.size', equalTo(2))
     //first one is the newest
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
-            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
-            .body('data[0].attributes.filename', equalTo(postBody.filename))
-            .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
-            .body('data[0].attributes.type', equalTo(postBody.type))
-            .body('data[0].attributes.granule_metadata', equalTo(updatedMetadata))
-            .body('data[0].attributes.collections', equalTo(postBody.collections))
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
 
     //second one is the original
-            .body('data[1].type', equalTo('granule'))
-            .body('data[1].attributes.last_update', equalTo(granuleMetadata.last_update))
-            .body('data[1].attributes.tracking_id', equalTo(postBody.tracking_id))
-            .body('data[1].attributes.filename', equalTo(postBody.filename))
-            .body('data[1].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[1].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[1].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[1].attributes.access_protocol', equalTo(postBody.access_protocol))
-            .body('data[1].attributes.type', equalTo(postBody.type))
-            .body('data[1].attributes.granule_metadata', equalTo(postBody.granule_metadata))
-            .body('data[1].attributes.collections', equalTo(postBody.collections))
-            .extract()
-            .path('data[0].attributes')
+        .body('data[1].type', equalTo('granule'))
+        .body('data[1].attributes.last_update', equalTo(granuleMetadata.last_update))
+        .body('data[1].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[1].attributes.filename', equalTo(postBody.filename))
+        .body('data[1].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[1].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[1].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[1].attributes.type', equalTo(postBody.type))
+        .body('data[1].attributes.metadata', equalTo(postBody.metadata))
+        .body('data[1].attributes.collections', equalTo(postBody.collections))
+        .extract()
+        .path('data[0].attributes')
 
     then: ' we can delete the granule by submitting it back with a delete method'
     //delete it
     RestAssured.given()
-            .body(updatedRecord)
-            .contentType(ContentType.JSON)
-            .when()
-            .delete("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data[0].meta.action', equalTo('delete'))
-            .body('data[0].id', equalTo(granuleMetadata.id as String))
+        .body(updatedRecord)
+        .contentType(ContentType.JSON)
+        .when()
+        .delete("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].meta.action', equalTo('delete'))
+        .body('data[0].id', equalTo(granuleMetadata.id as String))
 
     and: 'it is gone, but we can get it with a a flag- showDeleted'
     RestAssured.given()
-            .when()
-            .get("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
-            .contentType(ContentType.JSON)
-            .statusCode(404)  //should be a 404
-            .body('data', equalTo(null))
-            .body('errors[0]', equalTo('No results found.'))
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .contentType(ContentType.JSON)
+        .statusCode(404)  //should be a 404
+        .body('data', equalTo(null))
+        .body('errors[0]', equalTo('No results found.'))
 
     RestAssured.given()
-            .param('showDeleted', true)
-            .when()
-            .get("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data.size', equalTo(1))
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
-            .body('data[0].attributes.filename', equalTo(postBody.filename))
-            .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
-            .body('data[0].attributes.type', equalTo(postBody.type))
-            .body('data[0].attributes.granule_metadata', equalTo(updatedMetadata))
-            .body('data[0].attributes.collections', equalTo(postBody.collections))
-            .body('data[0].attributes.deleted', equalTo(true))
+        .param('showDeleted', true)
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data.size', equalTo(1))
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
+        .body('data[0].attributes.deleted', equalTo(true))
 
     and: 'we can get all 3 back with showDeleted AND showVersions'
     RestAssured.given()
-            .param('showDeleted', true)
-            .param('showVersions', true)
-            .when()
-            .get("/granules/${granuleMetadata.id}")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data.size', equalTo(3))
-            .body('data[0].type', equalTo('granule'))
-            .body('data[0].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[0].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[0].attributes.granule_metadata', equalTo(updatedMetadata))
-            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[0].attributes.type', equalTo(postBody.type))
-            .body('data[0].attributes.deleted', equalTo(true))
+        .param('showDeleted', true)
+        .param('showVersions', true)
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data.size', equalTo(3))
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.deleted', equalTo(true))
 
-            .body('data[1].type', equalTo('granule'))
-            .body('data[1].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[1].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[1].attributes.granule_metadata', equalTo(updatedMetadata))
-            .body('data[1].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[1].attributes.type', equalTo(postBody.type))
-            .body('data[1].attributes.deleted', equalTo(false))
+        .body('data[1].type', equalTo('granule'))
+        .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[1].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[1].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[1].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[1].attributes.type', equalTo(postBody.type))
+        .body('data[1].attributes.deleted', equalTo(false))
 
-            .body('data[2].type', equalTo('granule'))
-            .body('data[2].attributes.granule_schema', equalTo(postBody.granule_schema))
-            .body('data[2].attributes.granule_size', equalTo(postBody.granule_size))
-            .body('data[2].attributes.granule_metadata', equalTo(postBody.granule_metadata))
-            .body('data[2].attributes.geometry', equalTo(postBody.geometry))
-            .body('data[2].attributes.type', equalTo(postBody.type))
-            .body('data[2].attributes.deleted', equalTo(false))
+        .body('data[2].type', equalTo('granule'))
+        .body('data[2].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[2].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[2].attributes.metadata', equalTo(postBody.metadata))
+        .body('data[2].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[2].attributes.type', equalTo(postBody.type))
+        .body('data[2].attributes.deleted', equalTo(false))
 
     then: 'clean up the db, purge all 3 uniqueRecords by id'
     //delete all with that id
     RestAssured.given()
-            .body(updatedRecord) //id in here
-            .contentType(ContentType.JSON)
-            .when()
-            .delete('/granules/purge')
-            .then()
-            .assertThat()
-            .statusCode(200)
+        .body(updatedRecord) //id in here
+        .contentType(ContentType.JSON)
+        .when()
+        .delete('/granules/purge')
+        .then()
+        .assertThat()
+        .statusCode(200)
 
     and: 'finally, we should have sent 3 messages'
 
@@ -279,7 +278,7 @@ class GranuleApiSpec extends Specification {
   }
 
 
-  def 'trigger recovery - only latest version is sent'(){
+  def 'trigger recovery - only latest version is sent'() {
     setup:
 
     granuleMetadataRepository.deleteAll()
@@ -296,12 +295,12 @@ class GranuleApiSpec extends Specification {
     MetadataRecord latestVersion = granuleMetadataRepository.save(new GranuleMetadata(updatedPostBody))
 
     RestAssured.given()
-            .contentType(ContentType.JSON)
-            .when()
-            .put('/granules/recover')
-            .then()
-            .assertThat()
-            .statusCode(200)
+        .contentType(ContentType.JSON)
+        .when()
+        .put('/granules/recover')
+        .then()
+        .assertThat()
+        .statusCode(200)
 
     then:
     poller.eventually {
@@ -309,13 +308,13 @@ class GranuleApiSpec extends Specification {
       while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        assert (object.data[0] == record || object.data[0]== latestVersion) && !(object.data[0] == oldVersion)
+        assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
       }
     }
 
   }
 
-  def 'messages are sent with appropriate action'(){
+  def 'messages are sent with appropriate action'() {
     setup:
 
     granuleMetadataRepository.deleteAll()
@@ -330,12 +329,12 @@ class GranuleApiSpec extends Specification {
 
     when: 'we trigger the recovery process'
     RestAssured.given()
-            .contentType(ContentType.JSON)
-            .when()
-            .put('/granules/recover')
-            .then()
-            .assertThat()
-            .statusCode(200)
+        .contentType(ContentType.JSON)
+        .when()
+        .put('/granules/recover')
+        .then()
+        .assertThat()
+        .statusCode(200)
 
     then:
 
@@ -344,10 +343,10 @@ class GranuleApiSpec extends Specification {
       while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
-        if(object.data[0].meta.action == 'update'){
+        if (object.data[0].meta.action == 'update') {
           assert object.data[0].id == original.id
         }
-        if(object.data[0].meta.action == 'delete'){
+        if (object.data[0].meta.action == 'delete') {
           assert object.data[0].id == deleted.id
         }
       }

@@ -17,10 +17,10 @@ interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
   @Query("SELECT*FROM MetadataSchema WHERE metadata_schema=?0")
   Iterable<MetadataSchema> findBySchemaName(String metadata_schema)
 
-  @Query("SELECT*FROM MetadataSchema WHERE granule_schema=?0")
+  @Query("SELECT*FROM MetadataSchema WHERE metadata_schema=?0")
   Iterable<MetadataSchema> findBySchema(String schema)
 
-  @Query("SELECT*FROM MetadataSchema WHERE metadata_schema =?0 AND granule_schema=?1")
+  @Query("SELECT*FROM MetadataSchema WHERE metadata_schema =?0 AND metadata_schema=?1")
   Iterable<MetadataSchema> findBySchemaNameAndSchema(String metadata_schema, String schema)
 
   @Query("SELECT DISTINCT id FROM MetadataSchema WHERE metadata_schema=?0")
