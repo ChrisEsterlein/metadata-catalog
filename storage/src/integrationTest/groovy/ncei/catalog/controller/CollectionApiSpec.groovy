@@ -52,10 +52,10 @@ class CollectionApiSpec extends Specification {
   }
 
   def postBody = [
-      "collection_name"    : "collectionFace",
-      "collection_schema"  : "a collection schema",
+      "name"    : "collectionFace",
+      "metadata_schema"  : "a collection schema",
       "type"               : "fos",
-      "collection_metadata": "{blah:blah}",
+      "metadata": "{blah:blah}",
       "geometry" : "point()"
   ]
 
@@ -71,9 +71,9 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(201)  //should be a 201
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(postBody.metadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .extract()
@@ -87,9 +87,9 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(postBody.metadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
 
@@ -118,7 +118,7 @@ class CollectionApiSpec extends Specification {
 
     String updatedMetadata = "different metadata"
     Map updatedPostBody = collectionMetadata.asMap().clone() as Map
-    updatedPostBody.collection_metadata = updatedMetadata
+    updatedPostBody.metadata = updatedMetadata
 
     then: 'we can update the record (create a new version)'
 
@@ -134,9 +134,9 @@ class CollectionApiSpec extends Specification {
         .body('data[0].type', equalTo('collection'))
 
         .body('data[0].attributes.id', equalTo(collectionMetadata.id as String))
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(updatedPostBody.collection_metadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(updatedPostBody.metadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
 
@@ -147,9 +147,9 @@ class CollectionApiSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(200)
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
 
@@ -164,15 +164,15 @@ class CollectionApiSpec extends Specification {
         .body('data.size', equalTo(2))
 
     //first one is the newest
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
     //second one is the original
-        .body('data[1].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[1].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[1].attributes.collection_metadata', equalTo(postBody.collection_metadata))
+        .body('data[1].attributes.name', equalTo(postBody.name))
+        .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[1].attributes.metadata', equalTo(postBody.metadata))
         .body('data[1].attributes.geometry', equalTo(postBody.geometry))
         .body('data[1].attributes.type', equalTo(postBody.type))
 
@@ -232,9 +232,9 @@ class CollectionApiSpec extends Specification {
         .assertThat()
         .statusCode(200)
         .body('data.size', equalTo(1))
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(postBody.metadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.deleted', equalTo(true))
@@ -249,16 +249,16 @@ class CollectionApiSpec extends Specification {
         .assertThat()
         .statusCode(200)
         .body('data.size', equalTo(2))
-        .body('data[0].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[0].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[0].attributes.collection_metadata', equalTo(postBody.collection_metadata))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(postBody.metadata))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.deleted', equalTo(true))
 
-        .body('data[1].attributes.collection_name', equalTo(postBody.collection_name))
-        .body('data[1].attributes.collection_schema', equalTo(postBody.collection_schema))
-        .body('data[1].attributes.collection_metadata', equalTo(postBody.collection_metadata))
+        .body('data[1].attributes.name', equalTo(postBody.name))
+        .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[1].attributes.metadata', equalTo(postBody.metadata))
         .body('data[1].attributes.geometry', equalTo(postBody.geometry))
         .body('data[1].attributes.type', equalTo(postBody.type))
 
