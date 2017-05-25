@@ -5,6 +5,7 @@ import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import ncei.catalog.Application
+import ncei.catalog.config.TestRabbitConfig
 import ncei.catalog.domain.MetadataRecord
 import ncei.catalog.domain.MetadataSchema
 import ncei.catalog.domain.MetadataSchemaRepository
@@ -12,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.test.context.ActiveProfiles
 import spock.lang.Specification
 import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
@@ -19,7 +21,8 @@ import spock.util.concurrent.PollingConditions
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
-@SpringBootTest(classes = [Application], webEnvironment = RANDOM_PORT)
+@ActiveProfiles("test")
+@SpringBootTest(classes = [Application, TestRabbitConfig], webEnvironment = RANDOM_PORT)
 class SchemaApiSpec extends Specification {
 
   @Value('${local.server.port}')
@@ -27,6 +30,9 @@ class SchemaApiSpec extends Specification {
 
   @Value('${server.context-path:/}')
   private String contextPath
+
+  @Value('${rabbitmq.queue}')
+  String queueName
 
   @Autowired
   MetadataSchemaRepository metadataSchemaRepository
@@ -196,7 +202,7 @@ class SchemaApiSpec extends Specification {
     poller.eventually {
       String m
       List<String> expectedActions = ['insert', 'update', 'delete']
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         actions.add(object.data[0].meta.action)
@@ -232,7 +238,7 @@ class SchemaApiSpec extends Specification {
     then:
     poller.eventually {
       String m
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         assert (object.data[0] == record || object.data[0] == latestVersion) && !(object.data[0] == oldVersion)
@@ -267,7 +273,7 @@ class SchemaApiSpec extends Specification {
 
     poller.eventually {
       String m
-      while (m = (rabbitTemplate.receive('index-consumer'))?.getBodyContentAsString()) {
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(m)
         if(object.data[0].meta.action == 'update'){
