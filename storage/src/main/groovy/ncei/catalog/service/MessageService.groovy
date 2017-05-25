@@ -19,6 +19,7 @@ class MessageService {
   void notifyIndex(Map details) {
     try{
       log.info "Notifying index of action"
+      log.debug "Notifying index: Rabbit routingKey=$routingKey details=$details"
       rabbitTemplate.convertAndSend(routingKey, details)
     }catch(e){
       log.error('Failed to notify index with exception: ', e)
