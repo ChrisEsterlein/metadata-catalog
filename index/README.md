@@ -32,3 +32,6 @@ The parameter is a simple query string as a parameter as a URI search as defined
 ##Elasticsearch commands
 URI Search - simple query string as a parameter
 http://localhost:9200/search_index/_search?q=dataset:csb
+
+##Responses
+All responses should follow the JSON API standard, look online for documentation.
