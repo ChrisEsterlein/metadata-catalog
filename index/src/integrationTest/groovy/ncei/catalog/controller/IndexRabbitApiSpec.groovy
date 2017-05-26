@@ -43,7 +43,7 @@ class IndexRabbitApiSpec extends Specification {
 
     then:
     poller.eventually {
-      def searchResults = service.search([q:"name:one"])
+      def searchResults = service.search()
       assert searchResults.meta.totalResults == 1
       assert searchResults.data[0] == message.data.subMap(['id', 'type', 'attributes'])
     }
