@@ -30,25 +30,32 @@ class Service {
 
   /**
    * Build search parameters map.
-   * @param searchParams Map of search params to cherry pick from
+   * @param q String query to send to elasticsearch
+   * @param offset String of page offset to set 'from' to.
+   * @param max String of page max to set 'size' to.
    * @return Map of specific search params we wish to reference that weren't null.
    */
-  private static Map buildSearchParams(Map searchParams = [:]) {
-    return searchParams?.subMap(['q', 'from', 'size'])
+  private static Map<String, String> buildSearchParams(String q = null, String offset = null, String max = null) {
+    Map params = q ? [q: q] : [:]
+    offset ? params.from = offset : ''
+    max ? params.size = max : ''
+    return params
   }
 
   /**
    * Search elasticsearch with the parameters that are passed in, or none if none are passed in.
-   * @param Map searchParams the search will cherry pick from
-   * @return Map of JSON API formatted results
+   * @param q String query to send to elasticsearch; Ex: dataset:csb AND fileName:file1
+   * @param offset String page offset.
+   * @param max String max per page.
+   * @return Map of JSON API formatted result.
    */
-  Map search(Map searchParams = [:]) {
+  Map search(String q = null, String offset = null, String max = null) {
     String endpoint = "/$INDEX/_search"
 
-    Map reducedSearchParams = buildSearchParams(searchParams)
+    Map reducedSearchParams = buildSearchParams(q, offset, max)
 
-    log.debug("Search: endpoint=$endpoint params=$reducedSearchParams generated from=$searchParams")
-    def response = restClient.performRequest('GET', endpoint, reducedSearchParams as Map<String, String>)
+    log.debug("Search: endpoint=$endpoint search params=$reducedSearchParams from params: q=$q offset=$offset max=$max")
+    def response = restClient.performRequest('GET', endpoint, reducedSearchParams)
 
     log.debug("Search response: $response")
     def result = parseResponse(response)
@@ -128,8 +135,7 @@ class Service {
     catch (ResponseException e) {
       if (e.getResponse().statusLine.statusCode == 404) {
         result.meta.deleted = false
-      }
-      else {
+      } else {
         throw e
       }
     }
