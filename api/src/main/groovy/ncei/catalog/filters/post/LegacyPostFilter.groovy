@@ -16,7 +16,7 @@ import java.nio.charset.Charset
 @Slf4j
 class LegacyPostFilter extends ZuulFilter {
   @Autowired
-  RequestConversionUtil filterHelper
+  RequestConversionUtil requestConversionUtil
 
   @Override
   String filterType() {
@@ -34,7 +34,7 @@ class LegacyPostFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
-    return path == "/catalog-metadata/files"
+    return path.contains("/catalog-metadata/files") //contains because we want to filter GETs coming back from /granule/id
   }
 
   @Override
@@ -44,7 +44,7 @@ class LegacyPostFilter extends ZuulFilter {
     String body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
     JsonSlurper slurper = new JsonSlurper()
     Map responseBody = slurper.parseText(body)
-    String transformedPostBody = filterHelper.transformRecorderResponse(responseBody) as String
-    ctx.setResponseDataStream( new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
+    String transformedPostBody = requestConversionUtil.transformRecorderResponse(responseBody, ctx.getResponse().getStatus()) as String
+    ctx.setResponseDataStream(new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
   }
 }

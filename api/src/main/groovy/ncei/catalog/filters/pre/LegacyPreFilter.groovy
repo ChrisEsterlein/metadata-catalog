@@ -14,10 +14,10 @@ import java.nio.charset.Charset
 
 @Slf4j
 @Component
-class LegacyPreFilter extends ZuulFilter{
+class LegacyPreFilter extends ZuulFilter {
 
   @Autowired
-  RequestConversionUtil filterHelper
+  RequestConversionUtil requestConversionUtil
 
   @Override
   String filterType() {
@@ -34,7 +34,8 @@ class LegacyPreFilter extends ZuulFilter{
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
-    return path == "/catalog-metadata/files" && request.getMethod() == 'POST'
+    String method = request.getMethod()
+    return path == "/catalog-metadata/files" && (method == 'POST' || method == 'PUT')
   }
 
   @Override
@@ -43,11 +44,11 @@ class LegacyPreFilter extends ZuulFilter{
     HttpServletRequest request = ctx.getRequest()
     log.info(String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString()))
     InputStream input = (InputStream) ctx.get("requestEntity")
-    if (input == null) {input = ctx.getRequest().getInputStream()}
+    if (input == null) {input = request.getInputStream()}
     String body = StreamUtils.copyToString(input, Charset.forName("UTF-8"))
     JsonSlurper slurper = new JsonSlurper()
     Map postBody = slurper.parseText(body)
-    String transformedPostBody = filterHelper.transformRecorderPost(postBody) as String
+    String transformedPostBody = requestConversionUtil.transformRecorderPost(postBody) as String
     ctx.set("requestEntity", new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
   }
 }

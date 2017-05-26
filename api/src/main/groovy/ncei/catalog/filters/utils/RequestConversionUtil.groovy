@@ -6,84 +6,51 @@ import org.springframework.stereotype.Component
 @Component
 class RequestConversionUtil {
 
-  Map transformRecorderPost(Map postBody){
-    return convertToGranuleMetadata(postBody)
-  }
-
-  Map convertToGranuleMetadata(Map legacyPostBody){
+  JSONObject transformRecorderPost(Map legacyPostBody) {
 
     Map granulePostBody = [:]
 
-    legacyPostBody.each{key, value ->
-      switch (key){
-        case 'class':
-          break
+    legacyPostBody.each { key, value ->
+      switch (key) {
         case 'trackingId':
           granulePostBody.tracking_id = value
           break
         case 'fileSize':
-          granulePostBody.granule_size = value as Integer
+          granulePostBody.granule_size = value
           break
-        case 'legacyPostBody':
-          granulePostBody.granule_metadata = value as String
+        case 'fileMetadata':
+          granulePostBody.granule_metadata = value
           break
         default:
           granulePostBody."${key}" = value
           break
       }
     }
-    granulePostBody
+    granulePostBody as JSONObject
   }
 
-  JSONObject transformRecorderResponse(Map jsonApiResponseBody){
+  JSONObject transformRecorderResponse(Map jsonApiResponseBody, int code) {
     Map legacyResonse = [:]
-    legacyResonse.items =[]
-    jsonApiResponseBody.data.each{
+    legacyResonse.items = []
+    legacyResonse.code = code
+    legacyResonse.totalResultsUpdated = jsonApiResponseBody.data.size
+    jsonApiResponseBody.data.each {
       Map item = [:]
-      it.attributes.each{ key, value ->
-        switch (key){
-          case 'tracking_id':
-            item.trackingId = value
-            break
+      it.attributes.each { key, value ->
+        switch (key) {
           case 'granule_size':
             item.fileSize = value as Integer
             break
           case 'granule_metadata':
-            item.file_metadata = value as String
+            item.fileMetadata = value as String
             break
           default:
-            item."${key}" = value
+            item."${key.replaceAll(/_\w/) { it[1].toUpperCase() }}" = value
             break
         }
       }
       legacyResonse.items << item
     }
-    legacyResonse
+    legacyResonse as JSONObject
   }
-//
-//  static FileMetadata convertToFileMetadata(GranuleMetadata granuleMetadata){
-//    FileMetadata fileMetadata = new FileMetadata()
-//    List keysNotFileMetadata = ['granule_id', 'last_update', 'granule_schema', 'collection']
-//
-//    granuleMetadata.properties.each{key, value ->
-//      switch (key){
-//        case 'class':
-//          break
-//        case 'granule_metadata':
-//          fileMetadata.fileMetadata = value
-//          break
-//        case 'tracking_id':
-//          fileMetadata.trackingId = value
-//          break
-//        case 'granule_size':
-//          fileMetadata.file_size = value as Integer
-//          break
-//        case (!(key in keysNotFileMetadata) ):
-//          fileMetadata."${key}" = value
-//          break
-//      }
-//    }
-//
-//    fileMetadata
-//  }
 }
