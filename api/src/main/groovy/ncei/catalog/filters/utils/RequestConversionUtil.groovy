@@ -1,37 +1,64 @@
 package ncei.catalog.filters.utils
 
+import org.codehaus.jettison.json.JSONObject
 import org.springframework.stereotype.Component
 
 @Component
-class FilterHelper {
+class RequestConversionUtil {
 
   Map transformRecorderPost(Map postBody){
     return convertToGranuleMetadata(postBody)
   }
 
-  Map convertToGranuleMetadata(Map fileMetadata){
+  Map convertToGranuleMetadata(Map legacyPostBody){
 
-    Map granuleMetadata = [:]
+    Map granulePostBody = [:]
 
-    fileMetadata.each{key, value ->
+    legacyPostBody.each{key, value ->
       switch (key){
         case 'class':
           break
         case 'trackingId':
-          granuleMetadata.tracking_id = value
+          granulePostBody.tracking_id = value
           break
         case 'fileSize':
-          granuleMetadata.granule_size = value as Integer
+          granulePostBody.granule_size = value as Integer
           break
-        case 'fileMetadata':
-          granuleMetadata.granule_metadata = value as String
+        case 'legacyPostBody':
+          granulePostBody.granule_metadata = value as String
           break
         default:
-          granuleMetadata."${key}" = value
+          granulePostBody."${key}" = value
           break
       }
     }
-    granuleMetadata
+    granulePostBody
+  }
+
+  JSONObject transformRecorderResponse(Map jsonApiResponseBody){
+    Map legacyResonse = [:]
+    legacyResonse.items =[]
+    jsonApiResponseBody.data.each{
+      Map item = [:]
+      it.attributes.each{ key, value ->
+        switch (key){
+          case 'tracking_id':
+            item.trackingId = value
+            break
+          case 'granule_size':
+            item.fileSize = value as Integer
+            break
+          case 'granule_metadata':
+            item.file_metadata = value as String
+            break
+          default:
+            item."${key}" = value
+            break
+        }
+      }
+      legacyResonse.items << item
+    }
+    legacyResonse
   }
 //
 //  static FileMetadata convertToFileMetadata(GranuleMetadata granuleMetadata){

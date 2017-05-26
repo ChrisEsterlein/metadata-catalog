@@ -156,9 +156,9 @@ task integrationTest(
     group: 'verification',
 ) {
   mustRunAfter test
-//  dependsOn waitForStorage
-//  dependsOn waitForIndex
-//  finalizedBy dockerComposeDown
+  dependsOn waitForStorage
+  dependsOn waitForIndex
+  finalizedBy dockerComposeDown
 
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath

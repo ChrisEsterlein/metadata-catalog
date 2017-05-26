@@ -2,10 +2,9 @@ package ncei.catalog.filters.pre
 
 import com.netflix.zuul.ZuulFilter
 import com.netflix.zuul.context.RequestContext
-import com.netflix.zuul.http.HttpServletRequestWrapper
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import ncei.catalog.filters.utils.FilterHelper
+import ncei.catalog.filters.utils.RequestConversionUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.util.StreamUtils
@@ -18,7 +17,7 @@ import java.nio.charset.Charset
 class LegacyPreFilter extends ZuulFilter{
 
   @Autowired
-  FilterHelper filterHelper
+  RequestConversionUtil filterHelper
 
   @Override
   String filterType() {
@@ -35,7 +34,7 @@ class LegacyPreFilter extends ZuulFilter{
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
-    return path == "/catalog-metadata/files"
+    return path == "/catalog-metadata/files" && request.getMethod() == 'POST'
   }
 
   @Override

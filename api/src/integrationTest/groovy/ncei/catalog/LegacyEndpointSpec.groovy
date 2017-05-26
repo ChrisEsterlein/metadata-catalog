@@ -4,7 +4,6 @@ import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
@@ -41,7 +40,7 @@ class LegacyEndpointSpec extends Specification{
 
     expect:
     //save metadata - test for metadata-recorder
-    Map response = RestAssured.given()
+    RestAssured.given()
             .body(postBody)
             .contentType(ContentType.JSON)
             .when()
@@ -49,22 +48,18 @@ class LegacyEndpointSpec extends Specification{
             .then()
             .assertThat()
             .statusCode(201)
-            .extract().path('data[0]')
-    println "response: $response"
-
-
-//            .body('trackingId', equalTo(postBody.trackingId))
-//            .body('filename', equalTo(postBody.filename))
-//            .body('fileSize', equalTo(postBody.fileSize))
-//            .body('fileMetadata', equalTo(postBody.fileMetadata))
-//            .body('dataset', equalTo(postBody.dataset))
-//            .body('geometry', equalTo(postBody.geometry))
+//            .body('items[0].trackingId', equalTo(postBody.trackingId))
+//            .body('items[0].fileSize', equalTo(postBody.fileSize))
+//            .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
+            .body('items[0].filename', equalTo(postBody.filename))
+            .body('items[0].dataset', equalTo(postBody.dataset))
+            .body('items[0].geometry', equalTo(postBody.geometry))
 
 //    //get it using old endpoint - test for catalog-etl
 //    RestAssured.given()
 //            .param('dataset', 'test')
 //            .when()
-//            .get('/files')
+//            .get('catalog-metadata/files')
 //            .then()
 //            .assertThat()
 //            .statusCode(200)
