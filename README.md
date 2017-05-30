@@ -5,6 +5,10 @@ Metadata Catalog
 
 The intent of this project is to build a scalable system for storing canonical records of granule- and collection-level metadata to centralize metadata management and enable various ETL workflows.
 
+##Deployment
+./gradlew buildDeployment
+docker-compose -f build/docker-compose.yml -p metadata up -d
+
 ## Legal
 
 This software was developed by research faculty members of the
