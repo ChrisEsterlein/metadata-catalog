@@ -5,6 +5,24 @@ Metadata Catalog
 
 The intent of this project is to build a scalable system for storing canonical records of granule- and collection-level metadata to centralize metadata management and enable various ETL workflows.
 
+## Deployment
+The storage, index, and api modules are each running in their own container using spring's default port.  Only the api module has that port exposed externally.
+
+NOTE: Make sure to do a clean if you make any changes to docker or gradle files.
+
+* `./gradlew clean buildDeployment`
+* `docker-compose -f build/docker-compose.yml -p metadata up -d`
+
+### Verification of Containers Running
+#### Storage Container
+* `curl localhost:8081/collections`
+#### Index Container
+* `curl localhost:8082/search`
+#### API Container
+* `curl localhost:8083/index/search`
+* `curl -XPOST -H "Content-Type: application/json" -d '{"collection_name": "collectionFace", "collection_schema": "a collection schema", "type":"fos", "collection_metadata": "{blah:blah}", "geometry": "point()"}' localhost:8083/storage1/collections`
+* `curl localhost:8083/storage1/collections`
+
 ## Legal
 
 This software was developed by research faculty members of the
