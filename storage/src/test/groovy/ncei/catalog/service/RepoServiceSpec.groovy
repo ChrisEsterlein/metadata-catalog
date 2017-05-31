@@ -171,7 +171,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'entries since it was deleted for granule returned'
     result.data[0].meta.action == 'read'
-    result.data.size_bytes == 4
+    result.data.size == 4
     1 * response.setStatus(HttpServletResponse.SC_OK)
     result.data[0].attributes.metadata == "{fourth: true}"
     result.data[1].attributes.metadata == "{third: true}"
@@ -226,7 +226,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'entries since it was deleted for granule returned'
     result.data[0].meta.action == 'read'
-    result.data.size_bytes == 5
+    result.data.size == 5
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries since it was deleted for granule returned'
     result.data[0].attributes.id == uuid
@@ -288,7 +288,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'entries since it was deleted for granule returned'
     result.data[0].meta.action == 'read'
-    result.data.size_bytes == 2
+    result.data.size == 2
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries with the latest not deleted are returned'
     result.data[0].attributes.id == uuid
@@ -321,7 +321,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'no entries are excluded (limit 1 per id)'
     result.data[0].meta.action == 'read'
-    result.data.size_bytes == 2
+    result.data.size == 2
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries with the latest not deleted are returned'
     result.data[0].attributes.id == uuid
@@ -344,7 +344,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'one result is returned'
     result.data[0].meta.action == 'read'
-    result.data.size_bytes == 1
+    result.data.size == 1
     1 * response.setStatus(HttpServletResponse.SC_OK)
     and: 'entries with the latest not deleted are returned'
     result.data[0].attributes.id == uuid
@@ -400,7 +400,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'everything is returned'
     result.data[0].meta.action == 'read'
-    result.data.size_bytes == 7
+    result.data.size == 7
     1 * response.setStatus(HttpServletResponse.SC_OK)
   }
 
