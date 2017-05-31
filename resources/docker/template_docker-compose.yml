@@ -6,7 +6,10 @@ services:
     ports:
      - "${api_port}:8080"
     environment:
-     - rabbitmq_connectionfactory_host=${rabbit_service_name}
+     - index_host=${index_service_name}
+     - index_port=${index_port}
+     - storage_host=${storage_service_name}
+     - storage_port=${storage_port}
     networks:
       ${network}:
         aliases: []
@@ -14,7 +17,6 @@ services:
   ${rabbit_service_name}:
     image: rabbitmq:management
     ports:
-     - "${rabbit_port}:5672"
      - "${rabbit_admin_port}:15672"
     networks:
       ${network}:
@@ -25,16 +27,11 @@ services:
     environment:
      - xpack.security.enabled=false
      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "${elasticsearch_rest_port}:9200"
-      - "${elasticsearch_node_port}:9300"
     networks:
       ${network}:
         aliases: []
   ${index_service_name}:
     image: ${index_image}
-    ports:
-     - "${index_port}:8080"
     environment:
      - elasticsearch_host=${elasticsearch_service_name}
      - rabbitmq_connectionfactory_host=${rabbit_service_name}
@@ -47,8 +44,6 @@ services:
 
   ${cassandra_service_name}:
     image: cassandra
-    ports:
-      - "${cassandra_port}:9042"
     environment:
       - MAX_HEAP_SIZE=512M
       - HEAP_NEWSIZE=128M
@@ -57,8 +52,6 @@ services:
         aliases: []
   ${storage_service_name}:
     image: ${storage_image}
-    ports:
-     - "${storage_port}:8080"
     environment:
      - cassandra_contactPoints=${cassandra_service_name}
      - rabbitmq_connectionfactory_host=${rabbit_service_name}
