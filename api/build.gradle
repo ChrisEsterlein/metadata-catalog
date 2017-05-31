@@ -131,7 +131,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
 assemble.dependsOn dockerImage
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-  dependsOn ':storage:dockerImage', ':storage:dockerImage', ':index:dockerImage', copyCql, copyCqlScript, buildDockerTemplates
+  dependsOn ':storage:dockerImage', ':index:dockerImage', copyCql, copyCqlScript, buildDockerTemplates
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
 }
