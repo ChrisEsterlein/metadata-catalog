@@ -50,7 +50,7 @@ class SchemaApiSpec extends Specification {
   }
 
   def postBody = [
-          "schema_name": "schemaFace",
+          "metadata_schema": "schemaFace",
           "json_schema": "{blah:blah}"
   ]
 
@@ -66,7 +66,7 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(201)
-            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
             .extract()
             .path('data[0].attributes')
@@ -79,7 +79,7 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
 
 
@@ -99,7 +99,7 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
 
     and: 'we can get both versions'
@@ -113,10 +113,10 @@ class SchemaApiSpec extends Specification {
             .body('data.size', equalTo(2))
 
     //first one is the newest
-            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
     //second one is the original
-            .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[1].attributes.json_schema', equalTo(postBody.json_schema))
             .extract()
             .path('data[0].attributes')
@@ -152,7 +152,7 @@ class SchemaApiSpec extends Specification {
             .then()
             .assertThat()
             .statusCode(200)
-            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
 
@@ -166,14 +166,14 @@ class SchemaApiSpec extends Specification {
             .assertThat()
             .statusCode(200)
             .body('data.size', equalTo(3))
-            .body('data[0].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[0].attributes.json_schema', equalTo(updatedSchema))
             .body('data[0].attributes.deleted', equalTo(true))
 
-            .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[1].attributes.json_schema', equalTo(updatedSchema))
 
-            .body('data[2].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[2].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[2].attributes.json_schema', equalTo(postBody.json_schema))
 
     then: 'clean up the db, purge all 3 records by id'
@@ -189,10 +189,10 @@ class SchemaApiSpec extends Specification {
             .body('data.size', equalTo(3))
 
 
-            .body('data[1].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[1].attributes.json_schema', equalTo(updatedSchema))
 
-            .body('data[2].attributes.schema_name', equalTo(postBody.schema_name))
+            .body('data[2].attributes.metadata_schema', equalTo(postBody.metadata_schema))
             .body('data[2].attributes.json_schema', equalTo(postBody.json_schema))
 
     and: 'finally, we should have sent 3 messages'

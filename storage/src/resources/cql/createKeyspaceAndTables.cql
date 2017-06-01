@@ -14,10 +14,10 @@ filename text,
 dataset text,
 type text,
 access_protocol text,
-granule_size int,
-granule_metadata text,
+size_bytes int,
+metadata text,
 geometry text,
-granule_schema text,
+metadata_schema text,
 collections list < text >,
 deleted boolean,
 PRIMARY KEY ((id), last_update)
@@ -28,16 +28,16 @@ WITH CLUSTERING
 ;
 
 CREATE INDEX IF NOT exists DatasetIndex ON GranuleMetadata (dataset);
-CREATE INDEX IF NOT exists GranuleSchemaIndex ON GranuleMetadata (granule_schema);
+CREATE INDEX IF NOT exists GranuleSchemaIndex ON GranuleMetadata (metadata_schema);
 
 DROP TABLE IF exists CollectionMetadata;
 CREATE TABLE IF NOT exists CollectionMetadata (
 id timeuuid,
 last_update timestamp,
-collection_name text,
-collection_schema text,
+name text,
+metadata_schema text,
 type text,
-collection_metadata text,
+metadata text,
 geometry text,
 deleted boolean,
 submission_id text,
@@ -48,8 +48,8 @@ WITH CLUSTERING
 
 ;
 
-CREATE INDEX IF NOT exists CollectionIndex ON CollectionMetadata (collection_name);
-CREATE INDEX IF NOT exists CollectionSchemaIndex ON CollectionMetadata (collection_schema);
+CREATE INDEX IF NOT exists CollectionIndex ON CollectionMetadata (name);
+CREATE INDEX IF NOT exists CollectionSchemaIndex ON CollectionMetadata (metadata_schema);
 
 DROP TABLE IF exists ServicesMetadata;
 CREATE TABLE IF NOT exists ServicesMetadata (
@@ -69,7 +69,7 @@ DROP TABLE IF exists MetadataSchema;
 CREATE TABLE IF NOT exists MetadataSchema (
 id timeuuid,
 last_update timestamp,
-schema_name text,
+metadata_schema text,
 json_schema text,
 deleted boolean,
 PRIMARY KEY (id, last_update)
@@ -79,5 +79,5 @@ WITH CLUSTERING
 
 ;
 
-CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (schema_name);
+CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (name);
 

@@ -17,14 +17,14 @@ class CollectionMetadata extends MetadataRecord {
   Date last_update
 
   @Indexed
-  String collection_name
+  String name
 
   @Indexed
-  String collection_schema
+  String metadata_schema
 
   String submission_id
   String type
-  String collection_metadata
+  String metadata
   String geometry
   Boolean deleted
 
@@ -39,7 +39,7 @@ class CollectionMetadata extends MetadataRecord {
   }
 
   String toString() {
-    "id: $id, last_update: $last_update, metadata: $collection_metadata"
+    "id: $id, last_update: $last_update, metadata: $metadata"
   }
 
 }
