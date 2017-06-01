@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.bind.annotation.RestController
 
-import javax.servlet.http.HttpServletResponse
-
 import static org.springframework.web.bind.annotation.RequestMethod.GET
 
 @Slf4j
@@ -22,8 +20,10 @@ class Controller {
 
   @RequestMapping(value = "/search", method = [GET])
   @ResponseBody
-  Map search(@RequestParam(required = false) Map searchParams, HttpServletResponse response) {
-      log.info "Received search request: $searchParams"
-      return service.search(searchParams)
+  Map search(@RequestParam(required = false) String q,
+             @RequestParam(required = false) String offset,
+             @RequestParam(required = false) String max) {
+    log.info "Received search request: q=$q offset=$offset max=$max"
+    return service.search(q, offset, max)
   }
 }

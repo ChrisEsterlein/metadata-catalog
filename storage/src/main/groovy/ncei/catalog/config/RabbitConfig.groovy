@@ -31,8 +31,8 @@ class RabbitConfig {
   @Value('${rabbitmq.connectionfactory.password}')
   String password
 
-  @Value('${rabbitmq.queue}')
-  String queueName
+  @Value('${rabbitmq.routingKey}')
+  String routingKey
 
   @Autowired
   MessageService messageService
@@ -52,13 +52,6 @@ class RabbitConfig {
   }
 
   @Bean
-  MessageConverter jsonMessageConverter() {
-    final Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter()
-    converter.setClassMapper(classMapper())
-    converter
-  }
-
-  @Bean
   DefaultClassMapper classMapper() {
     DefaultClassMapper typeMapper = new DefaultClassMapper()
     typeMapper.setDefaultType(Map.class)
@@ -66,22 +59,18 @@ class RabbitConfig {
   }
 
   @Bean
+  MessageConverter jsonMessageConverter() {
+    final Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter()
+    converter.setClassMapper(classMapper())
+    converter
+  }
+
+  @Bean
   RabbitTemplate rabbitTemplate() {
     RabbitTemplate template = new RabbitTemplate(connectionFactory())
-    template.setRoutingKey(queueName)
-    template.setQueue(queueName)
     template.setMessageConverter(jsonMessageConverter())
+    template.setRoutingKey(routingKey)
     template
-  }
-
-  @Bean
-  Queue indexQueue() {
-    new Queue(queueName, true, false, true)
-  }
-
-  @Bean
-  MessageListenerAdapter messageListenerAdapter() {
-    new MessageListenerAdapter(messageService, jsonMessageConverter())
   }
 
 }

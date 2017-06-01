@@ -60,12 +60,12 @@ sourceSets {
   }
 }
 
-task copyCql(type:Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
+task copyCql(type: Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
   from '../storage/src/resources/cql'
   into "$buildDir/cql"
 }
 
-task copyCqlScript(type:Copy, description: 'Copies cql init script to build for use in docker-compose wait.', group: 'docker') {
+task copyCqlScript(type: Copy, description: 'Copies cql init script to build for use in docker-compose wait.', group: 'docker') {
   from '../storage/src/resources/docker/scripts'
   into "$buildDir/scripts"
   rename { fileName ->
@@ -76,14 +76,13 @@ task copyCqlScript(type:Copy, description: 'Copies cql init script to build for 
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
       cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-      )
+  )
 }
 
 task buildDockerTemplates(
-    type:Copy,
+    type: Copy,
     description: 'Copies docker files and scripts, substituting properties for consistency.',
-    group: 'docker',
-    dependsOn: [':storage:dockerImage', ':index:dockerImage', 'copyCql', 'copyCqlScript']
+    group: 'docker'
 ) {
   from 'src/resources/docker'
   into "$buildDir"
@@ -108,11 +107,31 @@ task buildDockerTemplates(
       index_image: "ncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
       storage_image: "ncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
       storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
-      index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar")
+      index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar",
+      jar_dir: 'libs',
+      jar: "${project.name}-${project.version}.jar")
 }
 
-task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+static def getDateTime() {
+  return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
+}
+
+task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
   dependsOn buildDockerTemplates
+  dependsOn bootRepackage
+  executable "bash"
+  args "-c", "docker build --no-cache \
+    --label ncei.${rootProject.name}-version=${project.version} \
+    --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
+    --label ncei.${rootProject.name}-name=${project.name}Module \
+    --label ncei.${rootProject.name}-vendor=NCEI \
+    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+}
+
+assemble.dependsOn dockerImage
+
+task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
+  dependsOn ':storage:dockerImage', ':index:dockerImage', copyCql, copyCqlScript, buildDockerTemplates
   executable "bash"
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
 }
@@ -123,7 +142,7 @@ task dockerComposeDown(type: Exec, description: 'Stops the system using docker-c
 }
 
 task waitForStorage(
-    type:Exec,
+    type: Exec,
     description: 'Waits for storage to be available.',
     group: 'docker',
 ) {
@@ -137,7 +156,7 @@ task waitForStorage(
 }
 
 task waitForIndex(
-    type:Exec,
+    type: Exec,
     description: 'Waits for index to be available.',
     group: 'docker',
 ) {

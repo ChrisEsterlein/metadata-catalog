@@ -38,7 +38,7 @@ class RabbitConfig {
 
   @Bean
   Queue listenerQueue() {
-    new Queue(queueName, true, false, true)
+    new Queue(queueName, true, false, false)
   }
 
   @Bean
