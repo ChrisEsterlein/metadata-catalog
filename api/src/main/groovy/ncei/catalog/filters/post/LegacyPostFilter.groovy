@@ -34,7 +34,7 @@ class LegacyPostFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
-    return path.contains("/catalog-metadata/files") //contains because we want to filter GETs coming back from /granule/id
+    return path.contains("/catalog-metadata/files") //contains because we want to filter GETs coming back from /granule/id=
   }
 
   @Override
@@ -42,8 +42,8 @@ class LegacyPostFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     InputStream stream = ctx.getResponseDataStream()
     String body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
-    JsonSlurper slurper = new JsonSlurper()
-    Map responseBody = slurper.parseText(body)
+
+    Map responseBody = new JsonSlurper().parseText(body)
     String transformedPostBody = requestConversionUtil.transformRecorderResponse(responseBody, ctx.getResponse().getStatus()) as String
     ctx.setResponseDataStream(new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
   }

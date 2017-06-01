@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @SpringBootTest(classes = [ApiApplication], webEnvironment = RANDOM_PORT)
-class LegacyEndpointSpec extends Specification{
+class LegacyEndpointSpec extends Specification {
 
   @Value('${local.server.port}')
   private String port
@@ -26,69 +26,34 @@ class LegacyEndpointSpec extends Specification{
   }
 
   def postBody = [
-          trackingId  : 'ABCD',
-          filename    : 'myfile',
-          dataset     : 'test',
-          fileSize    : 42,
-          geometry    : 'POLYGON((0 0) (0 1) (1 1) (1 0))',
-          fileMetadata: 'this is some raw scraped metadata from a header or whatever'
+      trackingId  : 'ABCD',
+      filename    : 'myfile',
+      dataset     : 'test',
+      fileSize    : 42,
+      geometry    : 'POLYGON((0 0) (0 1) (1 1) (1 0))',
+      fileMetadata: 'this is some raw scraped metadata from a header or whatever'
   ]
 
-  def 'test old interfaces for metadata-recorder and etl'() {
+  def 'test old interfaces for metadata-recorder inserting and etl for retrieving that record'() {
 
-    expect: 'pre and post filter POSTs'
-    //save metadata - test for metadata-recorder
+    expect: 'metadata-recorder save gets response representing data sent which uses pre and post filter POSTs'
     Map granule = RestAssured.given()
-            .body(postBody)
-            .contentType(ContentType.JSON)
-            .when()
-            .post('catalog-metadata/files')
-            .then()
-            .assertThat()
-            .statusCode(201)
-            .body('code', equalTo(201))
-            .body('totalResultsUpdated', equalTo(1))
-//todo: figure out why these arent coming through -- verified the post body is transformed correctly, but tracking_id, granule_metadata, and granule_size is not save in storage
-//            .body('items[0].trackingId', equalTo(postBody.trackingId))
-//            .body('items[0].fileSize', equalTo(postBody.fileSize))
-//            .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
-            .body('items[0].filename', equalTo(postBody.filename))
-            .body('items[0].dataset', equalTo(postBody.dataset))
-            .body('items[0].geometry', equalTo(postBody.geometry))
-            .extract().path('items[0]')
-
-    and: 'filter GET response'
-    RestAssured.given()
-            .contentType(ContentType.JSON)
-            .when()
-            .get("catalog-metadata/files/${granule.id}")
-            .then()
-            .assertThat()
-            .statusCode(200)
-//todo: get these to save in storage
-//            .body('items[0].trackingId', equalTo(postBody.trackingId))
-//            .body('items[0].fileSize', equalTo(postBody.fileSize))
-//            .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
-            .body('items[0].filename', equalTo(postBody.filename))
-            .body('items[0].dataset', equalTo(postBody.dataset))
-            .body('items[0].geometry', equalTo(postBody.geometry))
-
-
-//todo: support search by dataset?
-//    //get it using old endpoint - test for catalog-etl
-//    RestAssured.given()
-//            .param('dataset', 'test')
-//            .when()
-//            .get('catalog-metadata/files')
-//            .then()
-//            .assertThat()
-//            .statusCode(200)
-//            .body('items[0].trackingId', equalTo(postBody.trackingId))
-//            .body('items[0].filename', equalTo(postBody.filename))
-//            .body('items[0].fileSize', equalTo(postBody.fileSize))
-//            .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
-//            .body('items[0].dataset', equalTo(postBody.dataset))
-//            .body('items[0].geometry', equalTo(postBody.geometry))
+        .body(postBody)
+        .contentType(ContentType.JSON)
+        .when()
+        .post('catalog-metadata/files')
+        .then()
+        .assertThat()
+        .statusCode(201)
+        .body('code', equalTo(201))
+        .body('totalResultsUpdated', equalTo(1))
+        .body('items[0].trackingId', equalTo(postBody.trackingId))
+        .body('items[0].filename', equalTo(postBody.filename))
+        .body('items[0].dataset', equalTo(postBody.dataset))
+        .body('items[0].fileSize', equalTo(postBody.fileSize))
+        .body('items[0].geometry', equalTo(postBody.geometry))
+        .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
+        .extract().path('items[0]')
   }
 
 }
