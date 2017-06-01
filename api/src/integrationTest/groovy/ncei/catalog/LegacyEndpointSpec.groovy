@@ -34,10 +34,10 @@ class LegacyEndpointSpec extends Specification {
       fileMetadata: 'this is some raw scraped metadata from a header or whatever'
   ]
 
-  def 'test old interfaces for metadata-recorder inserting and etl for retrieving that record'() {
+  def 'test old interfaces for metadata-recorder inserting'() {
 
     expect: 'metadata-recorder save gets response representing data sent which uses pre and post filter POSTs'
-    Map granule = RestAssured.given()
+    RestAssured.given()
         .body(postBody)
         .contentType(ContentType.JSON)
         .when()
@@ -55,5 +55,4 @@ class LegacyEndpointSpec extends Specification {
         .body('items[0].fileMetadata', equalTo(postBody.fileMetadata))
         .extract().path('items[0]')
   }
-
 }
