@@ -20,13 +20,13 @@ class GranuleMetadata extends MetadataRecord {
   String dataset
 
   @Indexed
-  String granule_schema
+  String metadata_schema
   String tracking_id
   String filename
   String type
   String access_protocol
-  Integer granule_size
-  String granule_metadata
+  Integer size_bytes
+  String metadata
   String geometry
   List collections
   Boolean deleted
@@ -42,6 +42,6 @@ class GranuleMetadata extends MetadataRecord {
   }
 
   String toString() {
-    "id: $id, last_update: $last_update, metadata: $granule_metadata"
+    "id: $id, last_update: $last_update, metadata: $metadata"
   }
 }

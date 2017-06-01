@@ -17,7 +17,7 @@ class MetadataSchema extends MetadataRecord {
   Date last_update
 
   @Indexed
-  String schema_name
+  String metadata_schema
 
   String json_schema
   Boolean deleted
