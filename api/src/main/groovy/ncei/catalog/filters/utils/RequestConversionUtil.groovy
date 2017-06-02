@@ -16,10 +16,10 @@ class RequestConversionUtil {
           granulePostBody.tracking_id = value
           break
         case 'fileSize':
-          granulePostBody.granule_size = value
+          granulePostBody.size_bytes = value
           break
         case 'fileMetadata':
-          granulePostBody.granule_metadata = value
+          granulePostBody.metadata = value
           break
         default:
           granulePostBody."${key}" = value
@@ -38,10 +38,10 @@ class RequestConversionUtil {
       Map item = [:]
       it.attributes.each { key, value ->
         switch (key) {
-          case 'granule_size':
+          case 'size_bytes':
             item.fileSize = value as Integer
             break
-          case 'granule_metadata':
+          case 'metadata':
             item.fileMetadata = value as String
             break
           default:
