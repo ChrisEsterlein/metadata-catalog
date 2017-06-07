@@ -49,10 +49,9 @@ class LegacyPreFilter extends ZuulFilter {
   @Override
   Object run() {
     RequestContext ctx = RequestContext.getCurrentContext()
-    HttpServletRequest request = ctx.getRequest()
-    log.info(String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString()))
+    log.info(String.format("%s request to %s", ctx.getRequest().getMethod(), ctx.getRequest().getRequestURL().toString()))
 
-    if (request.getMethod() == 'GET') {
+    if (ctx.getRequest().getMethod() == 'GET') {
       Map<String, List<String>> params = ctx.getRequestQueryParams()
 
       def newParams = RequestConversionUtil.transformParams(params)
@@ -61,29 +60,33 @@ class LegacyPreFilter extends ZuulFilter {
     } else {
       InputStream input = (InputStream) ctx.get("requestEntity")
       if (input == null) {
-        input = request.getInputStream()
+        input = ctx.getRequest().getInputStream()
       }
 
       String body = StreamUtils.copyToString(input, Charset.forName("UTF-8"))
       Map postBody = body ? new JsonSlurper().parseText(body) : null
-      String transformedPostBody = RequestConversionUtil.transformLegacyMetadataRecorderPostBody(postBody) as String
+      String transformedPostBody = RequestConversionUtil.transformLegacyMetadataRecorderPostBody(postBody)
       byte[] bytes = transformedPostBody.getBytes("UTF-8")
-      ctx.setRequest(new HttpServletRequestWrapper(request) {
-        @Override
-        ServletInputStream getInputStream() throws IOException {
-          return new ServletInputStreamWrapper(bytes)
-        }
-
-        @Override
-        int getContentLength() {
-          return bytes.length
-        }
-
-        @Override
-        long getContentLengthLong() {
-          return bytes.length
-        }
-      })
+      setRequestPostBody(ctx, bytes)
     }
+  }
+
+  static setRequestPostBody(RequestContext ctx, byte[] bytes) {
+    ctx.setRequest(new HttpServletRequestWrapper(ctx.getRequest()) {
+      @Override
+      ServletInputStream getInputStream() throws IOException {
+        return new ServletInputStreamWrapper(bytes)
+      }
+
+      @Override
+      int getContentLength() {
+        return bytes.length
+      }
+
+      @Override
+      long getContentLengthLong() {
+        return bytes.length
+      }
+    })
   }
 }

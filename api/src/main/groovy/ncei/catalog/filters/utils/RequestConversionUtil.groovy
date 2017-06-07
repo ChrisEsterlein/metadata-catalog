@@ -4,7 +4,7 @@ import org.codehaus.jettison.json.JSONObject
 
 class RequestConversionUtil {
 
-  static JSONObject transformLegacyMetadataRecorderPostBody(Map legacyPostBody) {
+  static String transformLegacyMetadataRecorderPostBody(Map legacyPostBody) {
 
     Map granulePostBody = [:]
 
@@ -24,10 +24,10 @@ class RequestConversionUtil {
           break
       }
     }
-    granulePostBody as JSONObject
+    return (granulePostBody as JSONObject) as String
   }
 
-  static JSONObject transformResponse(Map jsonApiResponseBody, int code) {
+  static String transformResponse(Map jsonApiResponseBody, int code) {
     Map legacyResonse = [:]
     legacyResonse.items = []
     legacyResonse.code = code
@@ -49,7 +49,7 @@ class RequestConversionUtil {
       }
       legacyResonse.items << item
     }
-    legacyResonse as JSONObject
+    return (legacyResonse as JSONObject) as String
   }
 
   static Map<String, List<String>> transformParams(Map<String, List<String>> params = [:]) {
