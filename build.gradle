@@ -67,7 +67,7 @@ publishing {
     main(MavenPublication) {
       artifact "${buildDir}/docker-compose.yml"
 
-      groupId 'ncei.catalog'
+      groupId 'edu.colorado.cires.metadata-catalog'
       artifactId "${rootProject.name}"
       version "${project.version}-SNAPSHOT"
     }
