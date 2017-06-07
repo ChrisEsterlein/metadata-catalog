@@ -21,10 +21,12 @@ storage:
 
 zuul:
   routes:
-    catalog-metadata:
-      path: /catalog-metadata/files/**
-      url: http://${storage.host}:${storage.port}/granules
-      stripPrefix: true
+    metadata-catalog-granules:
+      path: /metadata-catalog/granules/**
+      url: http://${storage.host}:${storage.port}/granules/
+    metadata-catalog-search:
+      path: /metadata-catalog/search/**
+      url: http://${index.host}:${index.port}/search/
     storage1:
       path: /storage1/**
       url: http://${storage.host}:${storage.port}

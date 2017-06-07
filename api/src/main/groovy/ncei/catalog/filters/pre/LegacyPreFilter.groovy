@@ -6,8 +6,9 @@ import com.netflix.zuul.http.ServletInputStreamWrapper
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import ncei.catalog.filters.utils.RequestConversionUtil
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.util.AntPathMatcher
 import org.springframework.util.StreamUtils
 
 import javax.servlet.ServletInputStream
@@ -19,8 +20,11 @@ import java.nio.charset.Charset
 @Component
 class LegacyPreFilter extends ZuulFilter {
 
-  @Autowired
-  RequestConversionUtil requestConversionUtil
+  @Value('${zuul.routes.metadata-catalog-granules.path}')
+  String METADATA_CATALOG_GRANULES_ENDPOINT
+
+  @Value('${zuul.routes.metadata-catalog-search.path}')
+  String METADATA_CATALOG_SEARCH_ENDPOINT
 
   @Override
   String filterType() {
@@ -37,8 +41,9 @@ class LegacyPreFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
-    String method = request.getMethod()
-    return path == "/catalog-metadata/files" && (method == 'POST' || method == 'PUT')
+    AntPathMatcher matcher = new AntPathMatcher()
+    return (request.getMethod().equals('POST') && matcher.match(METADATA_CATALOG_GRANULES_ENDPOINT, path)) ||
+        (request.getMethod().equals('GET') && matcher.match(METADATA_CATALOG_SEARCH_ENDPOINT, path))
   }
 
   @Override
@@ -46,29 +51,39 @@ class LegacyPreFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     log.info(String.format("%s request to %s", request.getMethod(), request.getRequestURL().toString()))
-    InputStream input = (InputStream) ctx.get("requestEntity")
-    if (input == null) {
-      input = request.getInputStream()
+
+    if (request.getMethod() == 'GET') {
+      Map<String, List<String>> params = ctx.getRequestQueryParams()
+
+      def newParams = RequestConversionUtil.transformParams(params)
+      ctx.setRequestQueryParams(newParams)
+
+    } else {
+      InputStream input = (InputStream) ctx.get("requestEntity")
+      if (input == null) {
+        input = request.getInputStream()
+      }
+
+      String body = StreamUtils.copyToString(input, Charset.forName("UTF-8"))
+      Map postBody = body ? new JsonSlurper().parseText(body) : null
+      String transformedPostBody = RequestConversionUtil.transformLegacyMetadataRecorderPostBody(postBody) as String
+      byte[] bytes = transformedPostBody.getBytes("UTF-8")
+      ctx.setRequest(new HttpServletRequestWrapper(request) {
+        @Override
+        ServletInputStream getInputStream() throws IOException {
+          return new ServletInputStreamWrapper(bytes)
+        }
+
+        @Override
+        int getContentLength() {
+          return bytes.length
+        }
+
+        @Override
+        long getContentLengthLong() {
+          return bytes.length
+        }
+      })
     }
-    String body = StreamUtils.copyToString(input, Charset.forName("UTF-8"))
-    Map postBody = new JsonSlurper().parseText(body)
-    String transformedPostBody = requestConversionUtil.transformRecorderPost(postBody) as String
-    byte[] bytes = transformedPostBody.getBytes("UTF-8")
-    ctx.setRequest(new HttpServletRequestWrapper(request) {
-      @Override
-      ServletInputStream getInputStream() throws IOException {
-        return new ServletInputStreamWrapper(bytes)
-      }
-
-      @Override
-      int getContentLength() {
-        return bytes.length
-      }
-
-      @Override
-      long getContentLengthLong() {
-        return bytes.length
-      }
-    })
   }
 }

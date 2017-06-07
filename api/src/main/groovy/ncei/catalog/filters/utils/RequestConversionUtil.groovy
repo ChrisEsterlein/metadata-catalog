@@ -1,12 +1,10 @@
 package ncei.catalog.filters.utils
 
 import org.codehaus.jettison.json.JSONObject
-import org.springframework.stereotype.Component
 
-@Component
 class RequestConversionUtil {
 
-  JSONObject transformRecorderPost(Map legacyPostBody) {
+  static JSONObject transformLegacyMetadataRecorderPostBody(Map legacyPostBody) {
 
     Map granulePostBody = [:]
 
@@ -29,11 +27,11 @@ class RequestConversionUtil {
     granulePostBody as JSONObject
   }
 
-  JSONObject transformRecorderResponse(Map jsonApiResponseBody, int code) {
+  static JSONObject transformResponse(Map jsonApiResponseBody, int code) {
     Map legacyResonse = [:]
     legacyResonse.items = []
     legacyResonse.code = code
-    legacyResonse.totalResultsUpdated = jsonApiResponseBody.data.size
+    legacyResonse.totalResultsUpdated = jsonApiResponseBody?.data?.size
     jsonApiResponseBody.data.each {
       Map item = [:]
       it.attributes.each { key, value ->
@@ -52,5 +50,15 @@ class RequestConversionUtil {
       legacyResonse.items << item
     }
     legacyResonse as JSONObject
+  }
+
+  static Map<String, List<String>> transformParams(Map<String, List<String>> params = [:]) {
+    Map newParams = params ? params.subMap(['max', 'offset']) : [:]
+    params ? params -= newParams : ''
+    List<String> qValue = params ? [params.collect({ k, v -> "$k:${v[0]}" }).join(' AND ')].toList() : null
+
+    qValue ? newParams.q = qValue : ''
+
+    return newParams
   }
 }
