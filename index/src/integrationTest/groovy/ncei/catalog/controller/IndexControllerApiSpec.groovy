@@ -102,10 +102,12 @@ class IndexControllerApiSpec extends Specification {
         .body(pathMatch, matcher)
 
     where:
-    searchParams                                  | expCount | pathMatch                 | matcher
-    [q: "dataset:${metadata.attributes.dataset}"] | 2        | "data.id"                 | hasItems(metadata.id, metadata2.id)
-    [max: "1"]                                    | 1        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
-    [page: "0"]                                   | 2        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
+    searchParams                                                       | expCount | pathMatch                 | matcher
+    [q: "dataset:${metadata.attributes.dataset}"]                      | 2        | "data.id"                 | hasItems(metadata.id, metadata2.id)
+    [max: "1"]                                                         | 1        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
+    [page: "0"]                                                        | 2        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
+    [page: "1", max: "1"]                                              | 1        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
+    [q: "dataset:${metadata.attributes.dataset}", page: "0", max: "1"] | 1        | "data.attributes.dataset" | hasItems(metadata.attributes.dataset)
   }
 
   def 'Search results from page 0 does not equal results from page 1'() {
