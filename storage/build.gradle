@@ -68,24 +68,36 @@ task buildDockerTemplates(type: Copy, description: 'Copies docker files and scri
           rabbit_admin_port: "$rabbit_admin_port",
           jar_dir: 'libs',
           jar: "${project.name}-${project.version}.jar",
-          image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+          image: "ciresncei/${rootProject.name}-${project.name}:${project.version}")
 }
 
 static def getDateTime() {
   return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
 }
 
-task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
+task cassandraDockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
   dependsOn copyCql
   dependsOn buildDockerTemplates
+  executable "bash"
+  args "-c", "docker build --no-cache \
+    --label ncei.${rootProject.name}-version=${project.version} \
+    --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
+    --label ncei.${rootProject.name}-name=${project.name}-cassandra \
+    --label ncei.${rootProject.name}-vendor=NCEI \
+    -t ciresncei/${rootProject.name}-cassandra-init:${project.version} -f ${buildDir}/cassandraDockerfile ${buildDir}"
+}
+
+task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
+  dependsOn buildDockerTemplates
   dependsOn bootRepackage
+  dependsOn cassandraDockerImage
   executable "bash"
   args "-c", "docker build --no-cache \
     --label ncei.${rootProject.name}-version=${project.version} \
     --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
     --label ncei.${rootProject.name}-name=${project.name}Module \
     --label ncei.${rootProject.name}-vendor=NCEI \
-    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    -t ciresncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
 assemble.dependsOn dockerImage
@@ -132,3 +144,21 @@ task integrationTest(type: Test, description: 'Runs the integration tests', grou
 }
 
 check.dependsOn integrationTest
+
+ext {
+  bintrayUser = System.getenv('DOCKER_USER')
+  bintrayKey = System.getenv('DOCKER_PASSWORD')
+}
+
+task publishCassandraImage(type: Exec, description: 'Publishes the cassandra docker image', group: 'publish') {
+  dependsOn cassandraDockerImage
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-cassandra-init:${project.version} && docker logout"
+}
+
+task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
+  dependsOn "dockerImage"
+  dependsOn publishCassandraImage
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-${project.name}:${project.version} && docker logout"
+}

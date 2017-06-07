@@ -61,7 +61,7 @@ task buildDockerTemplates(type: Copy, description: 'Copies docker files and scri
       rabbit_admin_port: "$rabbit_admin_port",
       jar_dir: 'libs',
       jar: "${project.name}-${project.version}.jar",
-      image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+      image: "ciresncei/${rootProject.name}-${project.name}:${project.version}")
 }
 
 static def getDateTime() {
@@ -77,7 +77,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
     --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
     --label ncei.${rootProject.name}-name=${project.name}Module \
     --label ncei.${rootProject.name}-vendor=NCEI \
-    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    -t ciresncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
 assemble.dependsOn dockerImage
@@ -129,3 +129,14 @@ task integrationTest(type: Test, description: 'Runs the integration tests', grou
 }
 
 check.dependsOn integrationTest
+
+ext {
+  bintrayUser = System.getenv('DOCKER_USER')
+  bintrayKey = System.getenv('DOCKER_PASSWORD')
+}
+
+task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
+  dependsOn "dockerImage"
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-${project.name}:${project.version} && docker logout"
+}

@@ -104,8 +104,8 @@ task buildDockerTemplates(
       elasticsearch_node_port: "$elasticsearch_node_port",
       index_port: "$index_port",
       index_service_name: "$index_service_name",
-      index_image: "ncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
-      storage_image: "ncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
+      index_image: "ciresncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
+      storage_image: "ciresncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
       storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
       index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar",
       jar_dir: 'libs',
@@ -125,7 +125,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
     --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
     --label ncei.${rootProject.name}-name=${project.name}Module \
     --label ncei.${rootProject.name}-vendor=NCEI \
-    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    -t ciresncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
 assemble.dependsOn dockerImage
@@ -186,3 +186,14 @@ task integrationTest(
 }
 
 check.dependsOn integrationTest
+
+ext {
+  bintrayUser = System.getenv('DOCKER_USER')
+  bintrayKey = System.getenv('DOCKER_PASSWORD')
+}
+
+task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
+  dependsOn "dockerImage"
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-${project.name}:${project.version} && docker logout"
+}

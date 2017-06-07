@@ -1,0 +1,7 @@
+FROM cassandra:3.10
+RUN mkdir /tmp/cql
+WORKDIR /usr/src/app
+COPY cql/createKeyspaceAndTables.cql /tmp/cql
+COPY scripts/initialize_cassandra.sh /usr/src/app
+
+CMD ["bash", "/usr/src/app/initialize_cassandra.sh"]
