@@ -33,6 +33,6 @@ after_failure:
 deploy:
   # publish build to artifactory when the repo is tagged
   provider: script
-  script: ./gradlew clean buildDeployment artifactoryPublish publishImage
+  script: ./gradlew clean buildDeployment publishImage artifactoryPublish
   on:
     tags: true

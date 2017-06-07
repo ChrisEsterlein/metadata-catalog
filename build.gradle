@@ -59,14 +59,19 @@ task buildDeploymentDockerTemplates(
 }
 
 task buildDeployment() {
-  dependsOn clean, 'api:dockerImage', 'index:dockerImage', 'storage:dockerImage', buildDeploymentDockerTemplates
+  dependsOn 'api:dockerImage', 'index:dockerImage', 'storage:dockerImage', buildDeploymentDockerTemplates
 }
 
 publishing {
   publications {
     main(MavenPublication) {
       artifact "${buildDir}/docker-compose.yml"
-      artifactId "${rootProject.name}-${project.name}-${project.version}"
+
+      groupId 'ncei.catalog'
+      artifactId "${rootProject.name}"
+      version "${project.version}-SNAPSHOT"
     }
   }
 }
+
+artifactoryPublish.dependsOn buildDeployment
