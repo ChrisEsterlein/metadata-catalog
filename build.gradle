@@ -11,7 +11,7 @@ buildscript {
   }
 }
 
-// apply from: "${rootDir}/gradle/publishing.gradle"
+apply from: "${rootDir}/gradle/publishing.gradle"
 
 task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images.', group: 'docker') {
   executable "sh"
@@ -21,9 +21,7 @@ task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images
   //docker rmi \$(docker images -aq --filter "label=ncei.metadata-catalog-vendor")
 }
 
-task clean {
-  dependsOn cleanDockerImages
-}
+clean.dependsOn cleanDockerImages
 
 task debugDockerLogs(type: Exec, description: 'Print the docker logs before removing the containers.', group: 'docker') {
   executable "bash"
@@ -63,12 +61,12 @@ task buildDeploymentDockerTemplates(
 task buildDeployment() {
   dependsOn clean, 'api:dockerImage', 'index:dockerImage', 'storage:dockerImage', buildDeploymentDockerTemplates
 }
-//
-// publishing {
-//   publications {
-//     main(MavenPublication) {
-//       artifact "${buildDir}/my-file-name.jar"
-//       artifactId "${rootProject.name}-${project.name}-${project.version}"
-//     }
-//   }
-// }
+
+publishing {
+  publications {
+    main(MavenPublication) {
+      artifact "${buildDir}/docker-compose.yml"
+      artifactId "${rootProject.name}-${project.name}-${project.version}"
+    }
+  }
+}
