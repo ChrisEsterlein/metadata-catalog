@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+
+  api:
+    image: ciresncei/metadata-catalog-api:0.1.2-SNAPSHOT
+    ports:
+     - "8083:8080"
+    environment:
+     - index_host=index
+     - index_port=8080
+     - storage_host=storage
+     - storage_port=8080
+
+  rabbit:
+    image: rabbitmq:management
+    ports:
+     - "15672:15672"
+
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.4.0
+    environment:
+     - xpack.security.enabled=false
+
+  index:
+    image: ciresncei/metadata-catalog-index:0.1.2-SNAPSHOT
+    environment:
+     - elasticsearch_host=es
+     - rabbitmq_connectionfactory_host=rabbit
+
+  cassandra:
+    image: cassandra:3.10
+
+  wait:
+    image: ciresncei/metadata-catalog-cassandra-init:0.1.2-SNAPSHOT
+    depends_on:
+     - cassandra
+    deploy:
+     restart_policy:
+       condition: on-failure
+
+  storage:
+    image: ciresncei/metadata-catalog-storage:0.1.2-SNAPSHOT
+    environment:
+     - cassandra_contactPoints=cassandra
+     - rabbitmq_connectionfactory_host=rabbit
+    depends_on:
+     - wait
