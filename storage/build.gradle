@@ -164,3 +164,15 @@ task publishImage(type: Exec, description: 'Publishes the docker image', group: 
   executable "bash"
   args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-${project.name}:${project.version} && docker logout"
 }
+
+publishing {
+  publications {
+    main(MavenPublication) {
+      artifact jar
+
+      groupId 'edu.colorado.cires.metadata-catalog'
+      artifactId "${rootProject.name}"
+      version "${project.version}"
+    }
+  }
+}
