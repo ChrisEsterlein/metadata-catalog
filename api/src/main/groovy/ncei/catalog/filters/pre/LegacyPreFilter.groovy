@@ -64,8 +64,8 @@ class LegacyPreFilter extends ZuulFilter {
       }
 
       String body = StreamUtils.copyToString(input, Charset.forName("UTF-8"))
-      Map postBody = body ? new JsonSlurper().parseText(body) : null
-      String transformedPostBody = RequestConversionUtil.transformLegacyMetadataRecorderPostBody(postBody)
+      Map postBody = body ? (Map) new JsonSlurper().parseText(body) : null
+      String transformedPostBody = RequestConversionUtil.transformLegacyPostBody(postBody)
       byte[] bytes = transformedPostBody.getBytes("UTF-8")
       setRequestPostBody(ctx, bytes)
     }

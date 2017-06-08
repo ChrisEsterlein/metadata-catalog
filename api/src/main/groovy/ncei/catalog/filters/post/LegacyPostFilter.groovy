@@ -50,8 +50,8 @@ class LegacyPostFilter extends ZuulFilter {
     InputStream stream = ctx.getResponseDataStream()
     String body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
 
-    Map responseBody = (Map) new JsonSlurper().parseText(body)
-    String transformedPostBody = RequestConversionUtil.transformResponse(responseBody, ctx.getResponse().getStatus())
+    Map responseBody = body ? (Map) new JsonSlurper().parseText(body) : null
+    String transformedPostBody = RequestConversionUtil.transformLegacyGetResponse(responseBody, ctx.getResponse().getStatus())
     ctx.setResponseDataStream(new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
   }
 }

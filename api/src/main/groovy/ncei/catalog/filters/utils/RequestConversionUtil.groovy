@@ -4,7 +4,7 @@ import org.codehaus.jettison.json.JSONObject
 
 class RequestConversionUtil {
 
-  static String transformLegacyMetadataRecorderPostBody(Map legacyPostBody) {
+  static String transformLegacyPostBody(Map legacyPostBody) {
 
     Map granulePostBody = [:]
 
@@ -27,12 +27,15 @@ class RequestConversionUtil {
     return (granulePostBody as JSONObject) as String
   }
 
-  static String transformResponse(Map jsonApiResponseBody, int code) {
-    Map legacyResonse = [:]
-    legacyResonse.items = []
-    legacyResonse.code = code
-    legacyResonse.totalResultsUpdated = jsonApiResponseBody?.data?.size
-    jsonApiResponseBody.data.each {
+  static String transformLegacyGetResponse(Map jsonApiResponseBody, int code) {
+    Map legacyResponse = [:]
+    legacyResponse.dataset = getDatasetFromQueryString(jsonApiResponseBody?.meta?.searchTerms?.q)
+    legacyResponse.items = []
+    legacyResponse.totalResults = jsonApiResponseBody?.meta?.totalResults
+    legacyResponse.searchTerms = jsonApiResponseBody?.meta?.searchTerms
+    legacyResponse.code = code
+
+    jsonApiResponseBody?.data?.each {
       Map item = [:]
       it.attributes.each { key, value ->
         switch (key) {
@@ -47,9 +50,9 @@ class RequestConversionUtil {
             break
         }
       }
-      legacyResonse.items << item
+      legacyResponse.items << item
     }
-    return (legacyResonse as JSONObject) as String
+    return (legacyResponse as JSONObject) as String
   }
 
   static Map<String, List<String>> transformParams(Map<String, List<String>> params = [:]) {
@@ -60,5 +63,16 @@ class RequestConversionUtil {
     qValue ? newParams.q = qValue : ''
 
     return newParams
+  }
+
+  /**
+   * Only supported format for queryString via legacy endpoint is "dataset:blah" (with spaces inserted is ok) or no dataset.
+   * @param queryString
+   * @return Dataset found in query params.
+   */
+  static String getDatasetFromQueryString(String queryString) {
+    String[] querySplit = queryString ? queryString.trim().split('dataset[\\s]*:[\\s]*') : []
+    querySplit.each { System.out.println('value:' + it) }
+    return querySplit.length > 1 ? querySplit[1] : "null"
   }
 }

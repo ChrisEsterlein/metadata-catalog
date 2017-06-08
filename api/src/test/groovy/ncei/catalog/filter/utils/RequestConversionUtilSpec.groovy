@@ -10,18 +10,18 @@ class RequestConversionUtilSpec extends Specification {
   def 'legacy transform of null post body works'() {
 
     expect:
-    RequestConversionUtil.transformLegacyMetadataRecorderPostBody(null) == "{}"
+    RequestConversionUtil.transformLegacyPostBody(null) == "{}"
   }
 
   def 'legacy transform of response body #description works'() {
 
     expect:
-    RequestConversionUtil.transformResponse((Map) responseBody, code) == expResponse
+    RequestConversionUtil.transformLegacyGetResponse((Map) responseBody, code) == expResponse
 
     where:
-    description       | responseBody | code | expResponse
-    "missing data"    | [:]          | 1    | '{"items":[],"code":1,"totalResultsUpdated":null}'
-    "with empty data" | [data: []]   | 1    | '{"items":[],"code":1,"totalResultsUpdated":0}'
+    description                                   | responseBody | code | expResponse
+    "that's empty"                                | [:]          | 1    | '{"dataset":"null","items":[],"totalResults":null,"searchTerms":null,"code":1}'
+    "that's missing totalResults and searchTerms" | [meta: [:]]  | 1    | '{"dataset":"null","items":[],"totalResults":null,"searchTerms":null,"code":1}'
   }
 
   def 'legacy transform of GET params #params transforms as expected'() {
@@ -33,10 +33,18 @@ class RequestConversionUtilSpec extends Specification {
     params                                        | expTransformedParams
     null                                          | [:]
     [:]                                           | [:]
-    [dataset: ["csb"], filename: ["test"]]        | [q: ["dataset:csb AND filename:test"]]
-    [offset: ["0"]]                               | [offset: ["0"]]
-    [max: ["0"]]                                  | [max: ["0"]]
-    [max: ["0"], offset: ["0"]]                   | [max: ["0"], offset: ["0"]]
-    [dataset: ["csb"], max: ["0"], offset: ["0"]] | [q: ["dataset:csb"], max: ["0"], offset: ["0"]]
+    [dataset: ["csb"], max: ["0"], offset: ["0"]] | [q: ["dataset:csb"], max: ["0"], offset: ["0"]] // This is the only supported format
+  }
+
+  def 'legacy acquiring of dataset from query string of "#queryString" works'() {
+
+    expect:
+    RequestConversionUtil.getDatasetFromQueryString(queryString) == expDataset
+    where:
+    queryString                      | expDataset
+    null                             | "null"
+    'dataset: csb'                   | 'csb'
+    'dataset:csb'                    | 'csb'
+    ' dataset: csb'                  | 'csb' // Unsure possible via elasticsearch simple query
   }
 }
