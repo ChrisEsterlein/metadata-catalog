@@ -25,6 +25,7 @@ class GranuleMetadata extends MetadataRecord {
   String filename
   String type
   String access_protocol
+  String file_path
   Integer size_bytes
   String metadata
   String geometry
