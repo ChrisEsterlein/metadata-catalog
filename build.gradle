@@ -28,50 +28,21 @@ task debugDockerLogs(type: Exec, description: 'Print the docker logs before remo
   args "-c", "docker ps -aq | xargs -n 1 docker logs || true"
 }
 
-task buildDeploymentDockerTemplates(
-    type: Copy,
-    description: 'Copies docker files and scripts, substituting properties for consistency.',
-    group: 'docker'
-) {
-  from 'resources/docker'
-  into "$buildDir"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
-  }
-
-  expand(
-      cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-      storage_service_name: "$storage_service_name",
-      storage_port: "$storage_port",
-      rabbit_service_name: "$rabbit_service_name",
-      rabbit_admin_port: "$rabbit_admin_port",
-      elasticsearch_service_name: "$elasticsearch_service_name",
-      index_port: "$index_port",
-      index_service_name: "$index_service_name",
-      api_service_name: "$api_service_name",
-      api_port: "$api_port",
-      index_image: "ciresncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
-      storage_image: "ciresncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
-      api_image: "ciresncei/${rootProject.name}-${rootProject.childProjects.api.name}:${project.version}",
-      cassandra_image: "ciresncei/${rootProject.name}-cassandra-init:${project.version}"
-    )
-}
-
-task buildDeployment() {
-  dependsOn 'api:dockerImage', 'index:dockerImage', 'storage:dockerImage', buildDeploymentDockerTemplates
+task promote(type: Exec, description: 'Promotes artifactory snapshot', group: 'publish') {
+  executable "bash"
+  args "-c", "curl -X POST -u \"$bintrayUser:$bintrayKey\" -H \"Content-Length: 0\"\
+    \"http://oss.jfrog.org/api/plugins/build/promote/snapshotsToBintray/${rootProject.name}/$System.env.TRAVIS_BUILD_NUMBER?params=releaseVersion=$baseVersion\""
 }
 
 publishing {
   publications {
     main(MavenPublication) {
-      artifact "${buildDir}/docker-compose.yml"
+      artifact "docker-compose.yml"
 
       groupId 'edu.colorado.cires.metadata-catalog'
       artifactId "${rootProject.name}"
       version "${project.version}"
     }
   }
+  clientConfig.info.setBuildNumber("$System.env.TRAVIS_BUILD_NUMBER")
 }
-
-artifactoryPublish.dependsOn buildDeployment

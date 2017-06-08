@@ -165,6 +165,16 @@ task publishImage(type: Exec, description: 'Publishes the docker image', group: 
   args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-${project.name}:${project.version} && docker logout"
 }
 
+task promote(type: Exec, description: 'Publishes the promoted docker image', group: 'publish') {
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && \
+    docker tag ciresncei/${rootProject.name}-${project.name}:${project.version} ciresncei/${rootProject.name}-${project.name}:$baseVersion && \
+    docker tag ciresncei/${rootProject.name}-${project.name}:${project.version} ciresncei/${rootProject.name}-${project.name} &&\
+    docker push ciresncei/${rootProject.name}-${project.name}:$baseVersion &&\
+    ciresncei/${rootProject.name}-${project.name} && \
+    docker logout"
+}
+
 publishing {
   publications {
     main(MavenPublication) {
@@ -175,4 +185,6 @@ publishing {
       version "${project.version}"
     }
   }
+
+  clientConfig.info.setBuildNumber("$System.env.TRAVIS_BUILD_NUMBER")
 }
