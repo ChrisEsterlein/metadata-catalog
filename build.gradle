@@ -69,7 +69,7 @@ publishing {
 
       groupId 'edu.colorado.cires.metadata-catalog'
       artifactId "${rootProject.name}"
-      version "${project.version}-SNAPSHOT"
+      version "${project.version}"
     }
   }
 }
