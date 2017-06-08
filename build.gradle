@@ -44,5 +44,4 @@ publishing {
       version "${project.version}"
     }
   }
-  clientConfig.info.setBuildNumber("$System.env.TRAVIS_BUILD_NUMBER")
 }
