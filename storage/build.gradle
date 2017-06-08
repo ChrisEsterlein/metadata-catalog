@@ -181,7 +181,7 @@ publishing {
       artifact jar
 
       groupId 'edu.colorado.cires.metadata-catalog'
-      artifactId "${rootProject.name}-${rootProject.name}"
+      artifactId "${rootProject.name}-${project.name}"
       version "${project.version}"
     }
   }
