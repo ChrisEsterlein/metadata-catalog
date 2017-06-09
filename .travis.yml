@@ -35,10 +35,12 @@ deploy:
   - provider: script
     script: ./gradlew publishImage artifactoryPublish
     on:
-      all_branches: true
+      branch: master
 
   # run promote if the commit was tagged with a version
   - provider: script
     script: bash -c "if [[ $(git tag -l --points-at HEAD) == v* ]]; then ./gradlew promote; fi"
     on:
       tags: true
+      all_branches: false
+      branch: master
