@@ -9,9 +9,9 @@ The intent of this project is to build a scalable system for storing canonical r
 
 The travis build with automatically create snapshots of the images and full system docker-compose file (on Docker hub and JFrog Artifactory respectively).
 
-To build and promote a set of snapshot artifacts, run ```bash promote.sh <version> <next version>```. This will make several commits: one to update the versions in the docker-compose and gradle.properties, one to tag the commit with the version (which triggers the build), and another to update the versions in the files again to reduce the likelihood of accidentally leaving versions the same and stepping on them later.
+To build and promote a set of snapshot artifacts, run ```bash promote.sh <version> <next version>```. Do not include the leading 'v' required by the tag in ```<version>``` - the script will add it automatically. This will make several commits: one to update the versions in the docker-compose and gradle.properties, one to tag the commit with the version (which triggers the build), and another to update the versions in the files again to reduce the likelihood of accidentally leaving versions the same and stepping on them later.
 
-Any tag that begins with 'v' (case sensitive) is treated as a version and triggers the promotion part of the build. Manual promotion of artifacts can be accomplished by creating such a tag. 
+Any tag that begins with 'v' (case sensitive) is treated as a version and triggers the promotion part of the build. Manual promotion of artifacts can be accomplished by creating such a tag.
 
 ## Deployment
 
