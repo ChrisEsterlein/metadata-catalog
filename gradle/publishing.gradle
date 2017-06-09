@@ -22,11 +22,6 @@ ext {
 // only publish snapshot versions
 version = version += '-SNAPSHOT'
 
-task debugTravisEnv(type:Exec) {
-  executable "bash"
-  args "-c", "echo buildNumber:$travisBuildNumber baseVersion:$baseVersion version:$version"
-}
-
 artifactory {
   contextUrl = 'https://oss.jfrog.org'
   publish {

@@ -31,7 +31,7 @@ task debugDockerLogs(type: Exec, description: 'Print the docker logs before remo
 task promote(type: Exec, description: 'Promotes artifactory snapshot', group: 'publish') {
   executable "bash"
   args "-c", "curl -X POST -u \"$bintrayUser:$bintrayKey\" -H \"Content-Length: 0\"\
-    \"http://oss.jfrog.org/api/plugins/build/promote/snapshotsToBintray/${rootProject.name}/$System.env.TRAVIS_BUILD_NUMBER?params=releaseVersion=$baseVersion\""
+    \"http://oss.jfrog.org/api/plugins/build/promote/snapshotsToBintray/${rootProject.name}/$travisBuildNumber?params=releaseVersion=$baseVersion\""
 }
 
 publishing {
