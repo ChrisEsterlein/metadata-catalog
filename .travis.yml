@@ -27,18 +27,18 @@ before_install:
   - sudo sysctl -w vm.max_map_count=262144
 install: true
 script:
-  - ./gradlew clean build publishImage artifactoryPublish -Dscan
+  - ./gradlew clean build -Dscan
 after_failure:
   - ./gradlew debugDockerLogs dockerComposeDown
 deploy:
   # publish SNAPSHOT build and images to artifactory for everything on master
-  #provider: script
-  #script: ./gradlew publishImage artifactoryPublish
-  #on:
-  #  branch: master
+  provider: script
+  script: ./gradlew publishImage artifactoryPublish
+  on:
+    branch: master
   # run promote if the commit was tagged with a version
   provider: script
   script: bash -c "if [[ $(git tag -l --points-at HEAD) == v* ]]; then ./gradlew promote; fi"
   on:
     tags: true
-  #  branch: master # I think it may ignore this value, but if snapshots don't exist on branches what happens?
+    branch: master # I think it may ignore this value, but if snapshots don't exist on branches what happens?

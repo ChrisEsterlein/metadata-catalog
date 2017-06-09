@@ -13,6 +13,26 @@ To build and promote a set of snapshot artifacts, run ```bash promote.sh <versio
 
 Any tag that begins with 'v' (case sensitive) is treated as a version and triggers the promotion part of the build. Manual promotion of artifacts can be accomplished by creating such a tag.
 
+### Manual promotion
+
+Prefer automatic promotion of artifacts over manual, but if more control is needed of which artifacts to promote or how to label the versions, these commands will allow that.
+
+Command to manually promote an existing file:
+
+curl -X POST -u "$bintrayUser:$bintrayKey" -H "Content-Length: 0\
+  "http://oss.jfrog.org/api/plugins/build/promote/snapshotsToBintray/metadata-catalog/$travisBuildNumber?params=releaseVersion=$baseVersion"
+
+Note that the snapshot build number is the same as the travis build number, which should make it easier to identify which build to promote. However, not all builds create snapshots - be sure the build of interest actually produced a snapshot or look in the snapshot repository.
+
+To manually promote docker images, make sure the image of interest has been downloaded to your machine. Then run:
+
+docker login
+docker tag imagename:oldversion imagename:newversion
+docker push imagename:newversion
+docker logout
+
+If you want the 'latest' tag on the image to reference the new version, repeat the above set of commands with 'latest' as the newversion.
+
 ## Deployment
 
 The storage, index, and api modules are each running in their own container using spring's default port.  Only the api module has that port exposed externally.

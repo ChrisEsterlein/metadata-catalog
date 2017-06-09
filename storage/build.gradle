@@ -172,7 +172,7 @@ task promote(type: Exec, description: 'Publishes the promoted docker image', gro
     docker tag ciresncei/${rootProject.name}-${project.name}:${project.version} ciresncei/${rootProject.name}-${project.name}:latest &&\
     docker push ciresncei/${rootProject.name}-${project.name}:$baseVersion &&\
     docker push ciresncei/${rootProject.name}-${project.name}:latest && \
-    docker tag ciresncei/${rootProject.name}-cassandra-init:${project.version} ciresncei/${rootProject.name}-cassandra-init:$baseVersion&&\
+    docker tag ciresncei/${rootProject.name}-cassandra-init:${project.version} ciresncei/${rootProject.name}-cassandra-init:$baseVersion &&\
     docker tag ciresncei/${rootProject.name}-cassandra-init:${project.version} ciresncei/${rootProject.name}-cassandra-init:latest &&\
     docker push ciresncei/${rootProject.name}-cassandra-init:$baseVersion &&\
     docker push ciresncei/${rootProject.name}-cassandra-init:latest &&\
