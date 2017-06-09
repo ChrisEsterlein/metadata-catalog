@@ -41,4 +41,3 @@ deploy:
   script: bash -c "if [[ $(git tag -l --points-at HEAD) == v* ]]; then ./gradlew promote; fi"
   on:
     tags: true
-    branch: master # I think it may ignore this value, but if snapshots don't exist on branches what happens?

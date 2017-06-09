@@ -13,6 +13,8 @@ To build and promote a set of snapshot artifacts, run ```bash promote.sh <versio
 
 Any tag that begins with 'v' (case sensitive) is treated as a version and triggers the promotion part of the build. Manual promotion of artifacts can be accomplished by creating such a tag.
 
+Note that publishing artifacts by using git tags will only produce snapshots if the tag is on master. On a branch it will run promotion without running snapshots first, which will cause it to push a tagged docker image with the version but will not produce the jar or docker-file artifacts.
+
 ### Manual promotion
 
 Prefer automatic promotion of artifacts over manual, but if more control is needed of which artifacts to promote or how to label the versions, these commands will allow that.
