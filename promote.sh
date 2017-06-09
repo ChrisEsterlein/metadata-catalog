@@ -31,7 +31,7 @@ updateVersions() {
 updateAndCommit() {
   updateVersions $1
   git add gradle.properties docker-compose.yml
-  git commit -m "Promoting as version $1"
+  git commit -m "Updating version to $1"
   git push
 }
 
