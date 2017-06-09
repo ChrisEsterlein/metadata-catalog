@@ -7,11 +7,19 @@ The intent of this project is to build a scalable system for storing canonical r
 
 ## Artifacts
 
-The travis build with automatically create snapshots of the images and full system docker-compose file (on Docker hub and JFrog Artifactory respectively).
+The travis build will automatically create snapshots of the images and full system docker-compose.yml (on Docker hub and JFrog Artifactory respectively).
 
-To build and promote a set of snapshot artifacts, run ```bash promote.sh <version> <next version>```. Do not include the leading 'v' required by the tag in ```<version>``` - the script will add it automatically. This will make several commits: one to update the versions in the docker-compose and gradle.properties, one to tag the commit with the version (which triggers the build), and another to update the versions in the files again to reduce the likelihood of accidentally leaving versions the same and stepping on them later.
+To build and promote a set of snapshot artifacts, checkout the master branch and run ```bash promote.sh <version> <next version>```. Do not include the leading 'v' required by the tag in ```<version>``` - the script will add it automatically. This will make several commits: one to update the versions in the docker-compose and gradle.properties, one to tag the commit with the version (which triggers the build), and another to update the versions in the files again to reduce the likelihood of accidentally leaving versions the same and stepping on them later. CAUTION: It will push these commits right away.
 
-Any tag that begins with 'v' (case sensitive) is treated as a version and triggers the promotion part of the build. Manual promotion of artifacts can be accomplished by creating such a tag.
+The builds that result from using the promote script will produce snapshot artifacts for `<version>` and `<next version>`, as well as promoting the artifacts for `<version>`. The docker image tag 'latest' will also be switched to point to these artifacts.
+
+Any tag that begins with 'v' (case sensitive) is treated as a version and triggers the promotion part of the build. The promote script will handle prepending the tag with 'v' for you. Manual promotion of artifacts can also be accomplished by creating such a tag.
+
+Examples:
+
+`bash promote.sh 0.1.1 0.1.2`
+
+`bash promote.sh 0.1.1-RC 0.1.2`
 
 ### Manual promotion
 
@@ -19,7 +27,7 @@ Prefer automatic promotion of artifacts over manual, but if more control is need
 
 Command to manually promote an existing file:
 
-`curl -X POST -u "$bintrayUser:$bintrayKey" -H "Content-Length: 0\
+`curl -X POST -u "$bintrayUser:$bintrayKey" -H "Content-Length: 0"
   "http://oss.jfrog.org/api/plugins/build/promote/snapshotsToBintray/metadata-catalog/$travisBuildNumber?params=releaseVersion=$baseVersion"`
 
 Note that the snapshot build number is the same as the travis build number, which should make it easier to identify which build to promote. However, not all builds create snapshots - be sure the build of interest actually produced a snapshot or look in the snapshot repository.

@@ -147,11 +147,6 @@ task integrationTest(type: Test, description: 'Runs the integration tests', grou
 
 check.dependsOn integrationTest
 
-ext {
-  bintrayUser = System.getenv('DOCKER_USER')
-  bintrayKey = System.getenv('DOCKER_PASSWORD')
-}
-
 task publishCassandraImage(type: Exec, description: 'Publishes the cassandra docker image', group: 'publish') {
   dependsOn cassandraDockerImage
   executable "bash"

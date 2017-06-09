@@ -189,11 +189,6 @@ task integrationTest(
 
 check.dependsOn integrationTest
 
-ext {
-  bintrayUser = System.getenv('DOCKER_USER')
-  bintrayKey = System.getenv('DOCKER_PASSWORD')
-}
-
 task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
   dependsOn "dockerImage"
   executable "bash"
