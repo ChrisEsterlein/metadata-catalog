@@ -17,6 +17,7 @@ ext {
   bintrayKey = System.getenv('BINTRAY_KEY')
   travisBuildNumber = System.getenv('TRAVIS_BUILD_NUMBER')
   baseVersion = version
+  gitBranch = "git rev-parse --abbrev-ref HEAD".execute().text
 }
 
 // only publish snapshot versions
@@ -36,6 +37,8 @@ artifactory {
     }
   }
   clientConfig.info.setBuildNumber("$travisBuildNumber")
+  clientConfig.info.addEnvironmentProperty('module-name', "${project.name}")
+  clientConfig.info.addEnvironmentProperty('git-branch', "${gitBranch}")
 }
 
 artifactoryPublish {
