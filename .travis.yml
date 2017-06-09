@@ -38,7 +38,7 @@ deploy:
   #  branch: master
   # run promote if the commit was tagged with a version
   provider: script
-  script: if [[ $(git tag -l --points-at HEAD) == v* ]]; then ./gradelw promote; fi
+  script: bash autoPromoteTagged.sh
   on:
     tags: true
   #  branch: master # I think it may ignore this value, but if snapshots don't exist on branches what happens?
