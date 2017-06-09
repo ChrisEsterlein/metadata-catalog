@@ -34,6 +34,6 @@ deploy:
   # publish SNAPSHOT build and images to artifactory
   # run promote if the commit was tagged with a version
   - provider: script
-    script: bash -c "./gradlew publishImage artifactoryPublish; if [[ $(git tag -l --points-at HEAD) == v* ]]; then ./gradlew promote; fi"
+    script: bash -c "./gradlew publishImage artifactoryPublish; tag=$(git tag -l --points-at HEAD); if [[ ! -z "$tag" ]] || [[ "$tag" == v* ]]; then ./gradlew promote; fi"
     on:
       branch: 89-publish-artifacts
