@@ -17,7 +17,6 @@ ext {
   bintrayKey = System.getenv('BINTRAY_KEY')
   travisBuildNumber = System.getenv('TRAVIS_BUILD_NUMBER')
   baseVersion = version
-  gitBranch = "git rev-parse --abbrev-ref HEAD".execute().text
 }
 
 // only publish snapshot versions
@@ -40,7 +39,6 @@ artifactory {
 }
 
 artifactoryPublish {
-  properties = ['module-name': "${project.name}", 'git-branch': "${gitBranch}"]
   mustRunAfter 'build'
   dependsOn 'generatePomFileForMainPublication'
 }
