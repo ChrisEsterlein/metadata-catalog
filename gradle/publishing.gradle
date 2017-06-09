@@ -37,11 +37,10 @@ artifactory {
     }
   }
   clientConfig.info.setBuildNumber("$travisBuildNumber")
-  clientConfig.info.addEnvironmentProperty('module-name', "${project.name}")
-  clientConfig.info.addEnvironmentProperty('git-branch', "${gitBranch}")
 }
 
 artifactoryPublish {
+  properties = ['module-name': "${project.name}", 'git-branch': "${gitBranch}"]
   mustRunAfter 'build'
   dependsOn 'generatePomFileForMainPublication'
 }
