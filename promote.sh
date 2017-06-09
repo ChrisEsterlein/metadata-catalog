@@ -7,7 +7,7 @@ if [[ $# != 2 ]]; then
 fi
 
 releaseAsVersion=$1
-incrementToVersion=$1
+incrementToVersion=$2
 
 # do not continue if there are staged changes which might accidentally be included in the build
 if ! git diff --cached --quiet; then
