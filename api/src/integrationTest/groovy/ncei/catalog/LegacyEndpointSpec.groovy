@@ -29,7 +29,7 @@ class LegacyEndpointSpec extends Specification {
     RestAssured.basePath = contextPath
   }
 
-  def 'metadata-recorder POST gets expected response and etl is able to search for results via paging'() {
+  def 'HAPPY PATH: metadata-recorder POST gets expected response and etl is able to search for results via paging'() {
     setup:
     def poller = new PollingConditions(timeout: 5)
     def fileUri = 'FILE:///tmp/one.tif'
@@ -62,14 +62,15 @@ class LegacyEndpointSpec extends Specification {
         .assertThat()
         .statusCode(201)
         .body('code', equalTo(201))
-        .body('items.size', equalTo(1))
+        .body('totalResultsUpdated', equalTo(1))
+        .body('items[0].dataset', equalTo(postBody0.dataset))
         .body('items[0].trackingId', equalTo(postBody0.trackingId))
         .body('items[0].filename', equalTo(postBody0.filename))
-        .body('items[0].dataset', equalTo(postBody0.dataset))
         .body('items[0].fileSize', equalTo(postBody0.fileSize))
         .body('items[0].geometry', equalTo(postBody0.geometry))
         .body('items[0].fileMetadata', equalTo(postBody0.fileMetadata))
-// TODO: when update save response      .body('totalResultsUpdated', equalTo(1))
+        .body('items[0].accessProtocol', equalTo(postBody0.access_protocol))
+        .body('items[0].filePath', equalTo(postBody0.file_path))
 
     and: 'SEARCH: etl can search for the 1 saved result and the response is formatted properly'
     Map responsePage0

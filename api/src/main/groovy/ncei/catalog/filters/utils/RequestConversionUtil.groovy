@@ -1,7 +1,9 @@
 package ncei.catalog.filters.utils
 
+import groovy.util.logging.Slf4j
 import org.codehaus.jettison.json.JSONObject
 
+@Slf4j
 class RequestConversionUtil {
 
   static String transformLegacyPostBody(Map legacyPostBody) {
@@ -27,13 +29,18 @@ class RequestConversionUtil {
     return (granulePostBody as JSONObject) as String
   }
 
-  static String transformLegacyGetResponse(Map jsonApiResponseBody, int code) {
+  static String transformLegacyResponse(Map jsonApiResponseBody, int code, String method) {
     Map legacyResponse = [:]
     legacyResponse.dataset = getDatasetFromQueryString(jsonApiResponseBody?.meta?.searchTerms?.q)
     legacyResponse.items = []
-    legacyResponse.totalResults = jsonApiResponseBody?.meta?.totalResults
     legacyResponse.searchTerms = jsonApiResponseBody?.meta?.searchTerms
     legacyResponse.code = code
+
+    if (method.equals('GET')) {
+      legacyResponse.totalResults = jsonApiResponseBody?.meta?.totalResults
+    } else {
+      legacyResponse.totalResultsUpdated = jsonApiResponseBody?.data?.size
+    }
 
     jsonApiResponseBody?.data?.each {
       Map item = [:]
