@@ -19,18 +19,20 @@ class DeleteDataAPISpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
+  static final String STORAGE_GRANULES_ENDPOINT = '/storage/granules'
+
   def poller = new PollingConditions(timeout: 5)
 
   def postBody = [
-          "tracking_id"     : "abc123",
-          "filename"        : "granuleFace",
-          "granule_schema"  : "a granule schema",
-          "granule_size"    : 1024,
-          "geometry"        : "POLYGON()",
-          "access_protocol" : "FILE",
-          "type"            : "fos",
-          "granule_metadata": "{blah:blah}",
-          "collections"     : ["a", "list", "of", "collections"]
+      "tracking_id"     : "abc123",
+      "filename"        : "granuleFace",
+      "granule_schema"  : "a granule schema",
+      "granule_size"    : 1024,
+      "geometry"        : "POLYGON()",
+      "access_protocol" : "FILE",
+      "type"            : "fos",
+      "granule_metadata": "{blah:blah}",
+      "collections"     : ["a", "list", "of", "collections"]
   ]
 
   def setup() {
@@ -39,52 +41,52 @@ class DeleteDataAPISpec extends Specification {
     RestAssured.basePath = contextPath
   }
 
-  def 'delete granules'(){
+  def 'delete granules'() {
     setup: 'save some data'
     Map granuleMetadata = RestAssured.given()
-            .body(postBody)
-            .contentType(ContentType.JSON)
-            .when()
-            .post("storage1/granules")
-            .then()
-            .assertThat()
-            .statusCode(201)
-            .extract()
-            .path('data[0].attributes')
+        .body(postBody)
+        .contentType(ContentType.JSON)
+        .when()
+        .post(STORAGE_GRANULES_ENDPOINT)
+        .then()
+        .assertThat()
+        .statusCode(201)
+        .extract()
+        .path('data[0].attributes')
 
     when: 'we delete the granule'
     RestAssured.given()
-            .body(granuleMetadata)
-            .contentType(ContentType.JSON)
-            .when()
-            .delete("storage1/granules/$granuleMetadata.id")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data[0].id', equalTo(granuleMetadata.id))
-            .body('data[0].attributes.deleted', equalTo(true))
+        .body(granuleMetadata)
+        .contentType(ContentType.JSON)
+        .when()
+        .delete("$STORAGE_GRANULES_ENDPOINT/$granuleMetadata.id")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].id', equalTo(granuleMetadata.id))
+        .body('data[0].attributes.deleted', equalTo(true))
 
     then: 'it is deleted from storage'
     RestAssured.given()
-            .body(granuleMetadata)
-            .contentType(ContentType.JSON)
-            .when()
-            .get("storage1/granules/$granuleMetadata.id")
-            .then()
-            .assertThat()
-            .statusCode(404)
+        .body(granuleMetadata)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("$STORAGE_GRANULES_ENDPOINT/$granuleMetadata.id")
+        .then()
+        .assertThat()
+        .statusCode(404)
 
     and: 'it is deleted in the index'
     poller.eventually {
       RestAssured.given()
-              .contentType(ContentType.JSON)
-              .params([q: "_id:$granuleMetadata.id"])
-              .when()
-              .get("index/search")
-              .then()
-              .assertThat()
-              .statusCode(200)
-              .body("data.size", equalTo(0))
+          .contentType(ContentType.JSON)
+          .params([q: "_id:$granuleMetadata.id"])
+          .when()
+          .get("index/search")
+          .then()
+          .assertThat()
+          .statusCode(200)
+          .body("data.size", equalTo(0))
     }
   }
 

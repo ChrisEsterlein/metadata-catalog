@@ -27,14 +27,9 @@ zuul:
     metadata-catalog-search:
       path: /metadata-catalog/search/**
       url: http://${index.host}:${index.port}/search/
-    storage1:
-      path: /storage1/**
+    storage:
+      path: /storage/**
       url: http://${storage.host}:${storage.port}
-      stripPrefix: true
-    storage2:
-      path: /storage2/**
-      url: http://${storage.host}:${storage.port}/collections
-      stripPrefix: true
     index:
       path: /index/**
       url: http://${index.host}:${index.port}

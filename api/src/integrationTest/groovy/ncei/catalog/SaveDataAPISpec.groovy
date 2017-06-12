@@ -8,8 +8,8 @@ import spock.lang.Specification
 import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
-import static org.hamcrest.Matchers.hasItems
 import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.hasItems
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @SpringBootTest(classes = [ApiApplication], webEnvironment = RANDOM_PORT)
@@ -20,6 +20,8 @@ class SaveDataAPISpec extends Specification {
 
   @Value('${server.context-path:/}')
   private String contextPath
+
+  static final String STORAGE_GRANULES_ENDPOINT = '/storage/granules'
 
   def poller = new PollingConditions(timeout: 5)
 
@@ -35,12 +37,12 @@ class SaveDataAPISpec extends Specification {
     when: 'posting a new granule to the storage'
     String id = RestAssured.given()
         .body([
-          "tracking_id": trackingId,
-          "filename": filename
-        ])
+        "tracking_id": trackingId,
+        "filename"   : filename
+    ])
         .contentType(ContentType.JSON)
         .when()
-        .post("storage1/granules")
+        .post(STORAGE_GRANULES_ENDPOINT)
         .then()
         .assertThat()
         .statusCode(201)
@@ -66,8 +68,8 @@ class SaveDataAPISpec extends Specification {
 
     where:
     trackingId | filename
-    "abc123" | "some_granule.txt"
-    "xyz789" | "a_granule.zip"
+    "abc123"   | "some_granule.txt"
+    "xyz789"   | "a_granule.zip"
   }
 
 }
