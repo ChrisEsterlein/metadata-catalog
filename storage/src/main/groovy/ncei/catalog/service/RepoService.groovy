@@ -95,7 +95,8 @@ class RepoService {
     Map listDetails = [:]
     Boolean showVersions = params?.showVersions
     Boolean showDeleted = params?.showDeleted
-    UUID metadataId = params?.id ? UUID.fromString(params.id) : null
+    String paramId = params.id
+    UUID metadataId = paramId ? UUID.fromString(paramId) : null
 
     //the iterable returned from the repository class
     Iterable<MetadataRecord> allResults
@@ -126,11 +127,11 @@ class RepoService {
     }
 
     //build response
-    if(listDetails.data){
+    if (listDetails.data){
       response.status = HttpServletResponse.SC_OK
-    }else{
+    } else if (paramId) {
       listDetails.remove('data')
-      listDetails.errors = ['No results found.']
+      listDetails.errors = ["No results found for specified params"]
       response.status = HttpServletResponse.SC_NOT_FOUND
     }
     listDetails
