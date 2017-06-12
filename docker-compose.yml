@@ -5,7 +5,10 @@ services:
   api:
     image: ciresncei/metadata-catalog-api:0.2.0
     ports:
-     - "8083:8080"
+     - target: 8080
+       published: 8081
+       protocol: tcp
+       mode: ingress
     environment:
      - index_host=index
      - index_port=8080
