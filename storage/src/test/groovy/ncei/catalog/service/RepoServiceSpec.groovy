@@ -90,7 +90,8 @@ class RepoServiceSpec extends Specification {
 
   def 'list by id, show versions (soft deleted)'() {
     setup: 'multiple versions of the granule returned'
-    UUID uuid = UUID.fromString("10686c20-27cc-11e7-9fdf-ef7bfecc6123")
+    String id = "10686c20-27cc-11e7-9fdf-ef7bfecc6123"
+    UUID uuid = UUID.fromString(id)
     when: 'list granules for id with showVersions'
     Map result = repoService.list(response, granuleMetadataRepository, [id: uuid.toString(), showVersions: true])
     then: 'findByMetadataId returns all the rows'
@@ -111,7 +112,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'granule not found'
     result.errors != null
-    result.errors == ['No results found.']
+    result.errors == ['No records exist with id: ' + id]
 //    1 * response.setStatus(HttpServletResponse.SC_NOT_FOUND)
   }
 

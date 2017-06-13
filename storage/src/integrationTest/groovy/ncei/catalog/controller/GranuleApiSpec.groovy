@@ -200,7 +200,7 @@ class GranuleApiSpec extends Specification {
         .contentType(ContentType.JSON)
         .statusCode(404)  //should be a 404
         .body('data', equalTo(null))
-        .body('errors[0]', equalTo('No results found.'))
+        .body('errors[0]', equalTo('No records exist with id: ' + granuleMetadata.id.toString()))
 
     RestAssured.given()
         .param('showDeleted', true)

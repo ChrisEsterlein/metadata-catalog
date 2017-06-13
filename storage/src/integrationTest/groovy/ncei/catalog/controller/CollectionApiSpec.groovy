@@ -222,7 +222,7 @@ class CollectionApiSpec extends Specification {
         .contentType(ContentType.JSON)
         .statusCode(404)
         .body('data', equalTo(null))
-        .body('errors', equalTo(['No results found.']))
+        .body('errors', equalTo(['No records exist with id: ' + collectionMetadata.id.toString()]))
 
     RestAssured.given()
         .param('showDeleted', true)
