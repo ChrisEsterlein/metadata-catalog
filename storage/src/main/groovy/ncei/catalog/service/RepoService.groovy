@@ -95,7 +95,7 @@ class RepoService {
     Map listDetails = [:]
     Boolean showVersions = params?.showVersions
     Boolean showDeleted = params?.showDeleted
-    String paramId = params.id
+    String paramId = params?.id
     UUID metadataId = paramId ? UUID.fromString(paramId) : null
 
     //the iterable returned from the repository class
