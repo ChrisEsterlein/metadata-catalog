@@ -1,7 +1,7 @@
 Metadata Catalog
 ===
 
-[![Build Status](https://travis-ci.org/cires-ncei/metadata-catalog.svg?branch=master)](https://travis-ci.org/cires-ncei/metadata-catalog)
+[![Build Status](https://travis-ci.org/cedardevs/metadata-catalog.svg?branch=master)](https://travis-ci.org/cedardevs/metadata-catalog)
 
 The intent of this project is to build a scalable system for storing canonical records of granule- and collection-level metadata to centralize metadata management and enable various ETL workflows.
 
