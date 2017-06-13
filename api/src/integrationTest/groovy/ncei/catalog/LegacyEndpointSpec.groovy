@@ -20,8 +20,8 @@ class LegacyEndpointSpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
-  String metadata_recorder_post_endpoint = '/metadata-catalog/granules/'
-  String catalog_etl_get_endpoint = '/metadata-catalog/search/'
+  static final String METADATA_RECORDER_POST_ENDPOINT = '/metadata-catalog/granules/'
+  static final String CATALOG_ETL_GET_ENDPOINT = '/metadata-catalog/search/'
 
   def setup() {
     RestAssured.baseURI = "http://localhost"
@@ -57,7 +57,7 @@ class LegacyEndpointSpec extends Specification {
         .body(postBody0)
         .contentType(ContentType.JSON)
         .when()
-        .post(metadata_recorder_post_endpoint)
+        .post(METADATA_RECORDER_POST_ENDPOINT)
         .then()
         .assertThat()
         .statusCode(201)
@@ -79,7 +79,7 @@ class LegacyEndpointSpec extends Specification {
           .contentType(ContentType.JSON)
           .params(pagingParams0)
           .when()
-          .get(catalog_etl_get_endpoint)
+          .get(CATALOG_ETL_GET_ENDPOINT)
           .then()
           .assertThat()
           .statusCode(200)
@@ -94,6 +94,7 @@ class LegacyEndpointSpec extends Specification {
       assert responsePage0.items[0].filePath == fileUriParts[1]
       assert responsePage0.items[0].geometry == postBody0.geometry
       assert responsePage0.items[0].fileMetadata == postBody0.fileMetadata
+      assert responsePage0.items.size == 1
       assert responsePage0.totalResults == 1
       assert responsePage0.searchTerms == expSearchTerms0
       assert responsePage0.code == 200
@@ -104,7 +105,7 @@ class LegacyEndpointSpec extends Specification {
         .body(postBody1)
         .contentType(ContentType.JSON)
         .when()
-        .post(metadata_recorder_post_endpoint)
+        .post(METADATA_RECORDER_POST_ENDPOINT)
         .then()
         .assertThat()
         .statusCode(201)
@@ -115,7 +116,7 @@ class LegacyEndpointSpec extends Specification {
           .contentType(ContentType.JSON)
           .params(pagingParams1)
           .when()
-          .get(catalog_etl_get_endpoint)
+          .get(CATALOG_ETL_GET_ENDPOINT)
           .then()
           .assertThat()
           .statusCode(200)
