@@ -1,12 +1,12 @@
 package ncei.catalog.filters.utils
 
+import groovy.util.logging.Slf4j
 import org.codehaus.jettison.json.JSONObject
-import org.springframework.stereotype.Component
 
-@Component
+@Slf4j
 class RequestConversionUtil {
 
-  JSONObject transformRecorderPost(Map legacyPostBody) {
+  static String transformLegacyPostBody(Map legacyPostBody) {
 
     Map granulePostBody = [:]
 
@@ -26,15 +26,23 @@ class RequestConversionUtil {
           break
       }
     }
-    granulePostBody as JSONObject
+    return (granulePostBody as JSONObject) as String
   }
 
-  JSONObject transformRecorderResponse(Map jsonApiResponseBody, int code) {
-    Map legacyResonse = [:]
-    legacyResonse.items = []
-    legacyResonse.code = code
-    legacyResonse.totalResultsUpdated = jsonApiResponseBody.data.size
-    jsonApiResponseBody.data.each {
+  static String transformLegacyResponse(Map jsonApiResponseBody, int code, String method) {
+    Map legacyResponse = [:]
+    legacyResponse.dataset = getDatasetFromQueryString(jsonApiResponseBody?.meta?.searchTerms?.q)
+    legacyResponse.items = []
+    legacyResponse.searchTerms = jsonApiResponseBody?.meta?.searchTerms
+    legacyResponse.code = code
+
+    if (method.equals('GET')) {
+      legacyResponse.totalResults = jsonApiResponseBody?.meta?.totalResults
+    } else {
+      legacyResponse.totalResultsUpdated = jsonApiResponseBody?.data?.size
+    }
+
+    jsonApiResponseBody?.data?.each {
       Map item = [:]
       it.attributes.each { key, value ->
         switch (key) {
@@ -49,8 +57,29 @@ class RequestConversionUtil {
             break
         }
       }
-      legacyResonse.items << item
+      legacyResponse.items << item
     }
-    legacyResonse as JSONObject
+    return (legacyResponse as JSONObject) as String
+  }
+
+  static Map<String, List<String>> transformParams(Map<String, List<String>> params = [:]) {
+    Map newParams = params ? params.subMap(['max', 'offset']) : [:]
+    params ? params -= newParams : ''
+    List<String> qValue = params ? [params.collect({ k, v -> "$k:${v[0]}" }).join(' AND ')].toList() : null
+
+    qValue ? newParams.q = qValue : ''
+
+    return newParams
+  }
+
+  /**
+   * Only supported format for queryString via legacy endpoint is "dataset:blah" (with spaces inserted is ok) or no dataset.
+   * @param queryString
+   * @return Dataset found in query params.
+   */
+  static String getDatasetFromQueryString(String queryString) {
+    String[] querySplit = queryString ? queryString.trim().split('dataset[\\s]*:[\\s]*') : []
+    querySplit.each { System.out.println('value:' + it) }
+    return querySplit.length > 1 ? querySplit[1] : "null"
   }
 }

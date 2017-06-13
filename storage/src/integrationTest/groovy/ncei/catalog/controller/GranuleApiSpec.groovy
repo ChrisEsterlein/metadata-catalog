@@ -56,6 +56,7 @@ class GranuleApiSpec extends Specification {
       "size_bytes"     : 1024,
       "geometry"       : "POLYGON()",
       "access_protocol": "FILE",
+      "file_path"      : "/tmp/one.tif",
       "type"           : "fos",
       "metadata"       : "{blah:blah}",
       "collections"    : ["a", "list", "of", "collections"]
@@ -80,6 +81,7 @@ class GranuleApiSpec extends Specification {
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.metadata', equalTo(postBody.metadata))
         .body('data[0].attributes.collections', equalTo(postBody.collections))
@@ -102,6 +104,7 @@ class GranuleApiSpec extends Specification {
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.metadata', equalTo(postBody.metadata))
         .body('data[0].attributes.collections', equalTo(postBody.collections))
@@ -131,6 +134,7 @@ class GranuleApiSpec extends Specification {
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.metadata', equalTo(updatedMetadata))
         .body('data[0].attributes.collections', equalTo(postBody.collections))
@@ -153,6 +157,7 @@ class GranuleApiSpec extends Specification {
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.metadata', equalTo(updatedMetadata))
         .body('data[0].attributes.collections', equalTo(postBody.collections))
@@ -166,6 +171,7 @@ class GranuleApiSpec extends Specification {
         .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
         .body('data[1].attributes.geometry', equalTo(postBody.geometry))
         .body('data[1].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
         .body('data[1].attributes.type', equalTo(postBody.type))
         .body('data[1].attributes.metadata', equalTo(postBody.metadata))
         .body('data[1].attributes.collections', equalTo(postBody.collections))
@@ -211,6 +217,7 @@ class GranuleApiSpec extends Specification {
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
         .body('data[0].attributes.geometry', equalTo(postBody.geometry))
         .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
         .body('data[0].attributes.type', equalTo(postBody.type))
         .body('data[0].attributes.metadata', equalTo(updatedMetadata))
         .body('data[0].attributes.collections', equalTo(postBody.collections))

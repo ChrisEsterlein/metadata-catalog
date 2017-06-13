@@ -5,8 +5,9 @@ import com.netflix.zuul.context.RequestContext
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import ncei.catalog.filters.utils.RequestConversionUtil
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import org.springframework.util.AntPathMatcher
 import org.springframework.util.StreamUtils
 
 import javax.servlet.http.HttpServletRequest
@@ -15,8 +16,12 @@ import java.nio.charset.Charset
 @Component
 @Slf4j
 class LegacyPostFilter extends ZuulFilter {
-  @Autowired
-  RequestConversionUtil requestConversionUtil
+
+  @Value('${zuul.routes.metadata-catalog-granules.path}')
+  String METADATA_CATALOG_GRANULES_ENDPOINT
+
+  @Value('${zuul.routes.metadata-catalog-search.path}')
+  String METADATA_CATALOG_SEARCH_ENDPOINT
 
   @Override
   String filterType() {
@@ -34,7 +39,9 @@ class LegacyPostFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
-    return path.contains("/catalog-metadata/files") //contains because we want to filter GETs coming back from /granule/id=
+    AntPathMatcher matcher = new AntPathMatcher()
+    return (request.getMethod().equals('POST') && matcher.match(METADATA_CATALOG_GRANULES_ENDPOINT, path)) ||
+        (request.getMethod().equals('GET') && matcher.match(METADATA_CATALOG_SEARCH_ENDPOINT, path))
   }
 
   @Override
@@ -42,9 +49,8 @@ class LegacyPostFilter extends ZuulFilter {
     RequestContext ctx = RequestContext.getCurrentContext()
     InputStream stream = ctx.getResponseDataStream()
     String body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
-
-    Map responseBody = new JsonSlurper().parseText(body)
-    String transformedPostBody = requestConversionUtil.transformRecorderResponse(responseBody, ctx.getResponse().getStatus()) as String
+    Map jsonApiResponseBody = body ? (Map) new JsonSlurper().parseText(body) : null
+    String transformedPostBody = RequestConversionUtil.transformLegacyResponse(jsonApiResponseBody, ctx.getResponse().getStatus(), ctx.getRequest().getMethod())
     ctx.setResponseDataStream(new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
   }
 }

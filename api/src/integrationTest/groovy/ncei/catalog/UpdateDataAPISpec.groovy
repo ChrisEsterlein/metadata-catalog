@@ -20,18 +20,20 @@ class UpdateDataAPISpec extends Specification {
   @Value('${server.context-path:/}')
   private String contextPath
 
+  static final String STORAGE_GRANULES_ENDPOINT = '/storage/granules'
+
   def poller = new PollingConditions(timeout: 5)
 
   def postBody = [
-          "tracking_id"     : "abc123",
-          "filename"        : "granuleFace",
-          "granule_schema"  : "a granule schema",
-          "granule_size"    : 1024,
-          "geometry"        : "POLYGON()",
-          "access_protocol" : "FILE",
-          "type"            : "fos",
-          "granule_metadata": "{blah:blah}",
-          "collections"     : ["a", "list", "of", "collections"]
+      "tracking_id"     : "abc123",
+      "filename"        : "granuleFace",
+      "granule_schema"  : "a granule schema",
+      "granule_size"    : 1024,
+      "geometry"        : "POLYGON()",
+      "access_protocol" : "FILE",
+      "type"            : "fos",
+      "granule_metadata": "{blah:blah}",
+      "collections"     : ["a", "list", "of", "collections"]
   ]
 
   def setup() {
@@ -43,15 +45,15 @@ class UpdateDataAPISpec extends Specification {
   def 'update granules'() {
     setup: 'save some data'
     Map granuleMetadata = RestAssured.given()
-            .body(postBody)
-            .contentType(ContentType.JSON)
-            .when()
-            .post("storage1/granules")
-            .then()
-            .assertThat()
-            .statusCode(201)
-            .extract()
-            .path('data[0].attributes')
+        .body(postBody)
+        .contentType(ContentType.JSON)
+        .when()
+        .post(STORAGE_GRANULES_ENDPOINT)
+        .then()
+        .assertThat()
+        .statusCode(201)
+        .extract()
+        .path('data[0].attributes')
 
     assert granuleMetadata.tracking_id == postBody.tracking_id
     String updatedFilename = 'a different filename'
@@ -59,41 +61,41 @@ class UpdateDataAPISpec extends Specification {
 
     when: 'we update the granule'
     RestAssured.given()
-            .body(granuleMetadata)
-            .contentType(ContentType.JSON)
-            .when()
-            .put("storage1/granules/$granuleMetadata.id")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data[0].id', equalTo(granuleMetadata.id))
-            .body('data[0].attributes.filename', equalTo(updatedFilename))
+        .body(granuleMetadata)
+        .contentType(ContentType.JSON)
+        .when()
+        .put("$STORAGE_GRANULES_ENDPOINT/$granuleMetadata.id")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].id', equalTo(granuleMetadata.id))
+        .body('data[0].attributes.filename', equalTo(updatedFilename))
 
     then: 'we can get the updated record from storage'
     RestAssured.given()
-            .body(granuleMetadata)
-            .contentType(ContentType.JSON)
-            .when()
-            .get("storage1/granules/$granuleMetadata.id")
-            .then()
-            .assertThat()
-            .statusCode(200)
-            .body('data[0].id', equalTo(granuleMetadata.id))
-            .body('data[0].attributes.filename', equalTo(updatedFilename))
+        .body(granuleMetadata)
+        .contentType(ContentType.JSON)
+        .when()
+        .get("$STORAGE_GRANULES_ENDPOINT/$granuleMetadata.id")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].id', equalTo(granuleMetadata.id))
+        .body('data[0].attributes.filename', equalTo(updatedFilename))
 
     and: 'index got the update'
     poller.eventually {
       RestAssured.given()
-              .contentType(ContentType.JSON)
-              .params([q: "_id:$granuleMetadata.id"])
-              .when()
-              .get("index/search")
-              .then()
-              .assertThat()
-              .statusCode(200)
-              .body("data.size", equalTo(1))
-              .body("data.id", hasItems(granuleMetadata.id))
-              .body("data[0].attributes.filename", equalTo(updatedFilename))
+          .contentType(ContentType.JSON)
+          .params([q: "_id:$granuleMetadata.id"])
+          .when()
+          .get("index/search")
+          .then()
+          .assertThat()
+          .statusCode(200)
+          .body("data.size", equalTo(1))
+          .body("data.id", hasItems(granuleMetadata.id))
+          .body("data[0].attributes.filename", equalTo(updatedFilename))
     }
 
   }
