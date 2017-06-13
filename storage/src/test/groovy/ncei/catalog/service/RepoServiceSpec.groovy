@@ -112,7 +112,7 @@ class RepoServiceSpec extends Specification {
     ]
     and: 'granule not found'
     result.errors != null
-    result.errors == ["No results found for specified id=$id"]
+    result.errors == ['No records exist with id: ' + id]
 //    1 * response.setStatus(HttpServletResponse.SC_NOT_FOUND)
   }
 

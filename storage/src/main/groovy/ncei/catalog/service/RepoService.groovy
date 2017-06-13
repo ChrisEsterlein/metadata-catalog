@@ -131,7 +131,7 @@ class RepoService {
       response.status = HttpServletResponse.SC_OK
     } else if (paramId) {
       listDetails.remove('data')
-      listDetails.errors = ["No results found for specified id=$paramId"]
+      listDetails.errors = ['No records exist with id: ' + paramId]
       response.status = HttpServletResponse.SC_NOT_FOUND
     }
     listDetails

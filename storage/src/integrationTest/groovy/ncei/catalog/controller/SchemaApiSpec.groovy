@@ -143,7 +143,7 @@ class SchemaApiSpec extends Specification {
             .contentType(ContentType.JSON)
             .statusCode(404)  //should be a 404
             .body('data', equalTo(null))
-            .body('errors', equalTo(['No results found.']))
+            .body('errors', equalTo(['No records exist with id: ' + schemaMetadata.id.toString()]))
 
     RestAssured.given()
             .param('showDeleted', true)
