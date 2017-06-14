@@ -5,9 +5,9 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler
 
 //import org.springframework.security.accessAccessDeniedException
-import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.NoHandlerFoundException
@@ -39,7 +39,13 @@ class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
   @ExceptionHandler(Exception.class)
   @ResponseBody
   def handleError(HttpServletRequest request, Exception ex) {
-    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occured.", request.getContextPath(), ex), HttpStatus.INTERNAL_SERVER_ERROR)
+    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", request.getContextPath(), ex), HttpStatus.INTERNAL_SERVER_ERROR)
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  @ResponseBody
+  def handleIllegalArgumentException(HttpServletRequest request, Exception ex) {
+    return new ResponseEntity<Object>(buildErrorMap(HttpStatus.BAD_REQUEST, "An IllegalArgumentException error occurred.", request.getContextPath(), ex), HttpStatus.BAD_REQUEST)
   }
 
 //  @ExceptionHandler(AccessDeniedException.class )
