@@ -7,7 +7,7 @@ USE metacat
 ;
 DROP TABLE IF exists GranuleMetadata;
 CREATE TABLE IF NOT exists GranuleMetadata (
-id timeuuid,
+id uuid,
 last_update timestamp,
 tracking_id text,
 filename text,

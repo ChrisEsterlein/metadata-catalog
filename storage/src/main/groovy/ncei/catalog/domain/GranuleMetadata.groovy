@@ -1,6 +1,5 @@
 package ncei.catalog.domain
 
-import com.datastax.driver.core.utils.UUIDs
 import org.springframework.cassandra.core.Ordering
 import org.springframework.cassandra.core.PrimaryKeyType
 import org.springframework.data.cassandra.mapping.Indexed
@@ -33,7 +32,7 @@ class GranuleMetadata extends MetadataRecord {
   Boolean deleted
 
   GranuleMetadata() {
-    this.id = UUIDs.timeBased()
+    this.id = UUID.randomUUID()
     this.last_update = new Date()
     this.deleted = false
   }
