@@ -22,8 +22,10 @@ class GranuleController {
 
   @RequestMapping(method = RequestMethod.POST)
   @ResponseBody
-  Map save(@RequestBody GranuleMetadata metadataObject, HttpServletResponse response) {
-    repoService.save(response, granuleMetadataRepository, metadataObject)
+  Map save(@RequestBody Map metadataObject, HttpServletResponse response) {
+    metadataObject.id = metadataObject?.id ? UUID.fromString(metadataObject.id) : UUID.randomUUID()
+
+    repoService.save(response, granuleMetadataRepository, new GranuleMetadata(metadataObject))
   }
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
@@ -32,7 +34,7 @@ class GranuleController {
     if (!metadataObject.last_update) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
       return [errors: ['To update a record, you must provide the record\'s id and last_update field, ' +
-                               'as well as any other fields you do not want to update to null']]
+                           'as well as any other fields you do not want to update to null']]
     }
     metadataObject.id = UUID.fromString(metadataObject.id)
     metadataObject.last_update = new Date(metadataObject.last_update as Long)
