@@ -40,8 +40,8 @@ publishing {
     main(MavenPublication) {
       artifact "docker-compose.yml"
 
-      groupId 'edu.colorado.cires.metadata-catalog'
-      artifactId "${rootProject.name}"
+      groupId 'org.cedar.metadata'
+      artifactId "${rootProject.name}-stack"
       version "${project.version}"
     }
   }

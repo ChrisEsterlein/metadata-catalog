@@ -179,7 +179,7 @@ publishing {
     main(MavenPublication) {
       artifact jar
 
-      groupId 'edu.colorado.cires.metadata-catalog'
+      groupId 'org.cedar.metadata'
       artifactId "${rootProject.name}-${project.name}"
       version "${project.version}"
     }
