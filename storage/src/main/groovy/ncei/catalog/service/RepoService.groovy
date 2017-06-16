@@ -60,14 +60,14 @@ class RepoService {
     saveDetails
   }
 
-  Map update(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
+  Map update(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord, Date previousUpdate = null) {
     log.info("Attempting to update ${metadataRecord.class} with id: ${metadataRecord.id}")
     Map updateDetails = [:]
     UUID metadataId = metadataRecord.id
     //get existing row
-    Iterable result = repositoryObject.findByMetadataIdLimitOne(metadataId)
-    if (result) {
-      if (optimisticLockIsBlocking(result, metadataRecord.last_update)) {
+    def existingRecord = repositoryObject.findByMetadataIdLimitOne(metadataId)?.first()
+    if (existingRecord) {
+      if (optimisticLockIsBlocking(existingRecord, previousUpdate)) {
         log.info("Failing update for out-of-date version: $metadataId")
         updateDetails.errors = ['You are not editing the most recent version.']
         response.status = HttpServletResponse.SC_CONFLICT
@@ -186,18 +186,17 @@ class RepoService {
   Map softDelete(HttpServletResponse response, CassandraRepository repositoryObject, UUID id, Date timestamp) {
     log.info("Attempting soft delete record with id: $id, timestamp: $timestamp")
     Map deleteDetails = [:]
-    Iterable rowToBeDeleted = repositoryObject.findByMetadataIdLimitOne(id)
-    if (rowToBeDeleted) {
-      def record = rowToBeDeleted.first()
-      if (optimisticLockIsBlocking(rowToBeDeleted, timestamp)) {
+    def recordToDelete = repositoryObject.findByMetadataIdLimitOne(id)?.first()
+    if (recordToDelete) {
+      if (optimisticLockIsBlocking(recordToDelete, timestamp)) {
         log.info("Failing soft delete on out-of-date record with id: $id, timestamp: $timestamp")
         deleteDetails.errors = ['You are not deleting the most recent version.']
         response.status = HttpServletResponse.SC_CONFLICT
       } else {
-        record.last_update = new Date()
-        record.deleted = true
+        recordToDelete.last_update = new Date()
+        recordToDelete.deleted = true
         log.info("Soft delete successful for record with id: $id")
-        MetadataRecord newRecord = repositoryObject.save(record)
+        MetadataRecord newRecord = repositoryObject.save(recordToDelete)
         deleteDetails.data = [createDataItem(newRecord, DELETE)]
         response.status = HttpServletResponse.SC_OK
         messageService.notifyIndex(deleteDetails)
@@ -211,12 +210,12 @@ class RepoService {
     }
   }
 
-  private Map createDataItem(MetadataRecord metadataRecord, String action) {
+  private static Map createDataItem(MetadataRecord metadataRecord, String action) {
     [id: metadataRecord.id, type: metadataRecord.recordTable(), attributes: metadataRecord, meta: [action: action]]
   }
 
-  private boolean optimisticLockIsBlocking(Iterable result, Date timestamp) {
-    return result && result.first().last_update != timestamp
+  private static boolean optimisticLockIsBlocking(def record, Date previousUpdate) {
+    return record && previousUpdate && record.last_update != previousUpdate
   }
 
 }

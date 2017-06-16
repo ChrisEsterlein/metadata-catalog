@@ -28,15 +28,13 @@ class SchemaController {
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
-  Map update(@PathVariable id, @RequestBody Map metadataObject, HttpServletResponse response) {
-    if (!metadataObject.last_update) {
-      response.status = HttpServletResponse.SC_BAD_REQUEST
-      return [errors: ['To update a record, you must provide the record\'s id and last_update field, ' +
-                               'as well as any other fields you do not want to update to null']]
-    }
-    metadataObject.id = UUID.fromString(metadataObject.id)
-    metadataObject.last_update = new Date(metadataObject.last_update as Long)
-    repoService.update(response, schemaRepository, new MetadataSchema(metadataObject))
+  Map update(@PathVariable String id, @RequestParam(required=false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+    // coerce id to a UUID and remove client-provided last_update
+    metadataObject.id = UUID.fromString(id)
+    metadataObject.last_update = null
+
+    def previousUpdate = version ? new Date(version) : null
+    repoService.update(response, schemaRepository, new MetadataSchema(metadataObject), previousUpdate)
   }
 
   @RequestMapping(method = RequestMethod.GET)
