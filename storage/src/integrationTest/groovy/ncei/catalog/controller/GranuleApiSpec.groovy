@@ -18,6 +18,7 @@ import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.isA
 import static org.hamcrest.Matchers.not
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
@@ -358,5 +359,123 @@ class GranuleApiSpec extends Specification {
         }
       }
     }
+  }
+
+  def 'update with locking'() {
+    when: 'define a collection metadata record'
+
+    Map record = RestAssured.given()
+            .body(postBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .post("/granules")
+            .then()
+            .assertThat()
+            .statusCode(201)
+            .body('data[0].type', equalTo('granule'))
+            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+            .body('data[0].attributes.filename', equalTo(postBody.filename))
+            .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+            .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+            .body('data[0].attributes.type', equalTo(postBody.type))
+            .body('data[0].attributes.metadata', equalTo(postBody.metadata))
+            .body('data[0].attributes.collections', equalTo(postBody.collections))
+            .extract()
+            .path('data[0].attributes')
+
+    Long wrongDate =  record.last_update - 1000
+    Long correctDate = record.last_update
+
+    then: 'submit the it back with last_update as request param'
+
+    RestAssured.given()
+            .param('version', wrongDate)
+            .body(record)
+            .contentType(ContentType.JSON)
+            .when()
+            .put("/granules/${record.id}")
+            .then()
+            .assertThat()
+            .statusCode(409)
+            .body('errors', isA(List))
+
+
+    RestAssured.given()
+            .param('version', correctDate)
+            .body(postBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .put("/granules/${record.id}")
+            .then()
+            .assertThat()
+            .statusCode(200)
+            .body('data[0].id', equalTo(record.id as String))
+            .body('data[0].type', equalTo('granule'))
+            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+            .body('data[0].attributes.filename', equalTo(postBody.filename))
+            .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+            .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+            .body('data[0].attributes.type', equalTo(postBody.type))
+            .body('data[0].attributes.metadata', equalTo(postBody.metadata))
+            .body('data[0].attributes.collections', equalTo(postBody.collections))
+  }
+
+  def 'update without locking'() {
+    when: 'define a collection metadata record'
+
+    Map record = RestAssured.given()
+            .body(postBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .post("/granules")
+            .then()
+            .assertThat()
+            .statusCode(201)
+            .body('data[0].type', equalTo('granule'))
+            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+            .body('data[0].attributes.filename', equalTo(postBody.filename))
+            .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+            .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+            .body('data[0].attributes.type', equalTo(postBody.type))
+            .body('data[0].attributes.metadata', equalTo(postBody.metadata))
+            .body('data[0].attributes.collections', equalTo(postBody.collections))
+            .extract()
+            .path('data[0].attributes')
+
+    Map updatedRecord = record.clone()
+    updatedRecord.metadata = "New metadata"
+
+    then: 'submit it back without version request param '
+
+    RestAssured.given()
+            .body(updatedRecord)
+            .contentType(ContentType.JSON)
+            .when()
+            .put("/granules/${record.id}")
+            .then()
+            .assertThat()
+            .statusCode(200)
+            .body('data[0].id', equalTo(record.id as String))
+            .body('data[0].type', equalTo('granule'))
+            .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+            .body('data[0].attributes.filename', equalTo(postBody.filename))
+            .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+            .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+            .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+            .body('data[0].attributes.type', equalTo(postBody.type))
+            .body('data[0].attributes.metadata', equalTo(updatedRecord.metadata))
+            .body('data[0].attributes.collections', equalTo(postBody.collections))
+
   }
 }

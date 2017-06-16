@@ -27,6 +27,7 @@ class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
     responseBody.meta.put('status', status)
     responseBody.meta.put('message', message)
     responseBody.put('errors', [ex as String])
+    log.error "Sending error response: $responseBody"
     responseBody
   }
 

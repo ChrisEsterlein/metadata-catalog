@@ -19,6 +19,7 @@ import spock.lang.Unroll
 import spock.util.concurrent.PollingConditions
 
 import static org.hamcrest.Matchers.equalTo
+import static org.hamcrest.Matchers.isA
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
 @ActiveProfiles("test")
@@ -284,5 +285,89 @@ class SchemaApiSpec extends Specification {
         }
       }
     }
+  }
+
+  def 'update with locking'() {
+    when: 'define a collection metadata record'
+
+    Map record = RestAssured.given()
+            .body(postBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .post("/schemas")
+            .then()
+            .assertThat()
+            .statusCode(201)
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
+            .extract()
+            .path('data[0].attributes')
+
+    Long wrongDate =  record.last_update - 1000
+    Long correctDate = record.last_update
+
+    then: 'submit the it back with last_update as request param'
+
+    RestAssured.given()
+            .param('version', wrongDate)
+            .body(record)
+            .contentType(ContentType.JSON)
+            .when()
+            .put("/schemas/${record.id}")
+            .then()
+            .assertThat()
+            .statusCode(409)
+            .body('errors', isA(List))
+
+
+    RestAssured.given()
+            .param('version', correctDate)
+            .body(postBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .put("/schemas/${record.id}")
+            .then()
+            .assertThat()
+            .statusCode(200)
+            .body('data[0].id', equalTo(record.id as String))
+            .body('data[0].type', equalTo('schema'))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
+  }
+
+  def 'update without locking'() {
+    when: 'define a collection metadata record'
+
+    Map record = RestAssured.given()
+            .body(postBody)
+            .contentType(ContentType.JSON)
+            .when()
+            .post("/schemas")
+            .then()
+            .assertThat()
+            .statusCode(201)
+            .body('data[0].type', equalTo('schema'))
+            .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+            .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
+            .extract()
+            .path('data[0].attributes')
+
+    Map updatedRecord = record.clone()
+    updatedRecord.metadata_schema = "New metadata schema"
+
+    then: 'submit it back without version request param '
+
+    RestAssured.given()
+            .body(updatedRecord)
+            .contentType(ContentType.JSON)
+            .when()
+            .put("/schemas/${record.id}")
+            .then()
+            .assertThat()
+            .statusCode(200)
+            .body('data[0].type', equalTo('schema'))
+            .body('data[0].attributes.metadata_schema', equalTo(updatedRecord.metadata_schema))
+            .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
+
   }
 }
