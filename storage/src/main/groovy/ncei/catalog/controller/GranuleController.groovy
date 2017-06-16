@@ -28,14 +28,11 @@ class GranuleController {
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
-  Map update(@PathVariable id, @RequestBody Map metadataObject, HttpServletResponse response) {
-    if (!metadataObject.last_update) {
-      response.status = HttpServletResponse.SC_BAD_REQUEST
-      return [errors: ['To update a record, you must provide the record\'s id and last_update field, ' +
-                               'as well as any other fields you do not want to update to null']]
-    }
-    metadataObject.id = UUID.fromString(metadataObject.id)
-    metadataObject.last_update = new Date(metadataObject.last_update as Long)
+  Map update(@PathVariable id, @RequestParam(required = false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+    metadataObject.id = UUID.fromString(id)
+    //relaxed optimistic locking- remove their timestamp, set with [version] if specified
+    metadataObject.last_update = null //reset last_update
+    if(version){ metadataObject.put('last_update',  new Date(version) )}
     repoService.update(response, granuleMetadataRepository, new GranuleMetadata(metadataObject))
   }
 

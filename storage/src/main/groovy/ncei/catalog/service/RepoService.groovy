@@ -67,7 +67,7 @@ class RepoService {
     //get existing row
     Iterable result = repositoryObject.findByMetadataIdLimitOne(metadataId)
     if (result) {
-      if (optimisticLockIsBlocking(result, metadataRecord.last_update)) {
+      if (metadataRecord?.last_update && optimisticLockIsBlocking(result, metadataRecord.last_update)) {
         log.info("Failing update for out-of-date version: $metadataId")
         updateDetails.errors = ['You are not editing the most recent version.']
         response.status = HttpServletResponse.SC_CONFLICT
