@@ -21,8 +21,6 @@ class ServiceSpec extends Specification {
   def setup() {
     mockIndexAdminService.createIndex('search_index') >> true
     service = new Service(mockRestClient, mockIndexAdminService)
-    service.restClient = mockRestClient
-    service.indexAdminService = mockIndexAdminService
   }
 
   private buildMockResponse(Map payload, int statusCode, String method = 'GET') {
