@@ -1,4 +1,4 @@
-package ncei.catalog
+package org.cedar.metadata.api
 
 import groovy.json.JsonOutput
 import io.restassured.RestAssured

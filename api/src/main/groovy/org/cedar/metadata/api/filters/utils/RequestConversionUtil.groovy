@@ -1,4 +1,4 @@
-package ncei.catalog.filters.utils
+package org.cedar.metadata.api.filters.utils
 
 import groovy.util.logging.Slf4j
 import org.codehaus.jettison.json.JSONObject

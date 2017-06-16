@@ -1,10 +1,10 @@
-package ncei.catalog.filters.post
+package org.cedar.metadata.api.filters.post
 
 import com.netflix.zuul.ZuulFilter
 import com.netflix.zuul.context.RequestContext
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import ncei.catalog.filters.utils.RequestConversionUtil
+import org.cedar.metadata.api.filters.utils.RequestConversionUtil
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import org.springframework.util.AntPathMatcher

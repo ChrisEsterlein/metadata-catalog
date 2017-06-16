@@ -1,4 +1,4 @@
-package ncei.catalog
+package org.cedar.metadata.api
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication

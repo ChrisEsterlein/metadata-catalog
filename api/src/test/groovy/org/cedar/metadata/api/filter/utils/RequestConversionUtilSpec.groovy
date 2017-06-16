@@ -1,6 +1,6 @@
-package ncei.catalog.filter.utils
+package org.cedar.metadata.api.filter.utils
 
-import ncei.catalog.filters.utils.RequestConversionUtil
+import org.cedar.metadata.api.filters.utils.RequestConversionUtil
 import spock.lang.Specification
 import spock.lang.Unroll
 

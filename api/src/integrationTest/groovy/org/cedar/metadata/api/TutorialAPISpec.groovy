@@ -1,4 +1,4 @@
-package ncei.catalog
+package org.cedar.metadata.api
 
 import io.restassured.RestAssured
 import io.restassured.response.Response
