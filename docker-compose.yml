@@ -3,7 +3,7 @@ version: '3'
 services:
 
   api:
-    image: ciresncei/metadata-catalog-api:0.2.0
+    image: cedardevs/metadata-catalog-api:0.2.0
     ports:
      - "8081:8080"
     environment:
@@ -23,7 +23,7 @@ services:
      - xpack.security.enabled=false
 
   index:
-    image: ciresncei/metadata-catalog-index:0.2.0
+    image: cedardevs/metadata-catalog-index:0.2.0
     environment:
      - elasticsearch_host=es
      - rabbitmq_connectionfactory_host=rabbit
@@ -32,7 +32,7 @@ services:
     image: cassandra:3.10
 
   wait:
-    image: ciresncei/metadata-catalog-cassandra-init:0.2.0
+    image: cedardevs/metadata-catalog-cassandra-init:0.2.0
     depends_on:
      - cassandra
     deploy:
@@ -40,7 +40,7 @@ services:
        condition: on-failure
 
   storage:
-    image: ciresncei/metadata-catalog-storage:0.2.0
+    image: cedardevs/metadata-catalog-storage:0.2.0
     environment:
      - cassandra_contactPoints=cassandra
      - rabbitmq_connectionfactory_host=rabbit

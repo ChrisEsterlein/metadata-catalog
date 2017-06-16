@@ -19,7 +19,7 @@ task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images
   args "-c", "docker rmi \$(docker images -aq --filter dangling=true) || true"
 
   // to clean up all our custom images:
-  //docker rmi \$(docker images -aq --filter "label=ncei.metadata-catalog-vendor")
+  //docker rmi \$(docker images -aq --filter "label=cedardevs.metadata-catalog-vendor")
 }
 
 clean.dependsOn cleanDockerImages
