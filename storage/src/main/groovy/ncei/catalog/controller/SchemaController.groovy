@@ -28,12 +28,13 @@ class SchemaController {
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
-  Map update(@PathVariable id, @RequestParam(required=false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+  Map update(@PathVariable String id, @RequestParam(required=false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+    // coerce id to a UUID and remove client-provided last_update
     metadataObject.id = UUID.fromString(id)
-    //relaxed optimistic locking- remove their timestamp, set with [version] if specified
-    metadataObject.last_update = null //reset last_update
-    if(version){ metadataObject.put('last_update',  new Date(version) )}
-    repoService.update(response, schemaRepository, new MetadataSchema(metadataObject))
+    metadataObject.last_update = null
+
+    def previousUpdate = version ? new Date(version) : null
+    repoService.update(response, schemaRepository, new MetadataSchema(metadataObject), previousUpdate)
   }
 
   @RequestMapping(method = RequestMethod.GET)
