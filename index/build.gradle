@@ -19,6 +19,8 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
+apply from: "${rootDir}/gradle/publishing.gradle"
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -61,7 +63,7 @@ task buildDockerTemplates(type: Copy, description: 'Copies docker files and scri
       rabbit_admin_port: "$rabbit_admin_port",
       jar_dir: 'libs',
       jar: "${project.name}-${project.version}.jar",
-      image: "ncei/${rootProject.name}-${project.name}:${project.version}")
+      image: "ciresncei/${rootProject.name}-${project.name}:${project.version}")
 }
 
 static def getDateTime() {
@@ -77,7 +79,7 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
     --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
     --label ncei.${rootProject.name}-name=${project.name}Module \
     --label ncei.${rootProject.name}-vendor=NCEI \
-    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    -t ciresncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
 assemble.dependsOn dockerImage
@@ -129,3 +131,31 @@ task integrationTest(type: Test, description: 'Runs the integration tests', grou
 }
 
 check.dependsOn integrationTest
+
+task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
+  dependsOn "dockerImage"
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push ciresncei/${rootProject.name}-${project.name}:${project.version} && docker logout"
+}
+
+task promote(type: Exec, description: 'Publishes the promoted docker image', group: 'publish') {
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && \
+    docker tag ciresncei/${rootProject.name}-${project.name}:${project.version} ciresncei/${rootProject.name}-${project.name}:$baseVersion && \
+    docker tag ciresncei/${rootProject.name}-${project.name}:${project.version} ciresncei/${rootProject.name}-${project.name}:latest &&\
+    docker push ciresncei/${rootProject.name}-${project.name}:$baseVersion &&\
+    docker push ciresncei/${rootProject.name}-${project.name}:latest && \
+    docker logout"
+}
+
+publishing {
+  publications {
+    main(MavenPublication) {
+      artifact jar
+
+      groupId 'edu.colorado.cires.metadata-catalog'
+      artifactId "${rootProject.name}-${project.name}"
+      version "${project.version}"
+    }
+  }
+}
