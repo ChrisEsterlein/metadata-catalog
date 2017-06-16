@@ -1,4 +1,4 @@
-package ncei.catalog.service
+package org.cedar.metadata.index.service
 
 import groovy.json.JsonOutput
 import org.apache.http.HttpEntity

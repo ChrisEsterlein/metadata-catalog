@@ -1,4 +1,4 @@
-package ncei.catalog.config
+package org.cedar.metadata.index.config
 
 import groovy.util.logging.Slf4j
 import org.apache.http.HttpHost

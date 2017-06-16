@@ -1,9 +1,9 @@
-package ncei.catalog.controller
+package org.cedar.metadata.index.controller
 
-import ncei.catalog.Application
-import ncei.catalog.config.RabbitConfig
-import ncei.catalog.service.IndexAdminService
-import ncei.catalog.service.Service
+import org.cedar.metadata.index.Application
+import org.cedar.metadata.index.config.RabbitConfig
+import org.cedar.metadata.index.service.IndexAdminService
+import org.cedar.metadata.index.service.Service
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest

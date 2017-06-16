@@ -1,4 +1,4 @@
-package ncei.catalog.controller
+package org.cedar.metadata.index.controller
 
 import groovy.util.logging.Slf4j
 import org.springframework.http.HttpHeaders

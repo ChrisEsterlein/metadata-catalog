@@ -1,11 +1,11 @@
-package ncei.catalog.controller
+package org.cedar.metadata.index.controller
 
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import io.restassured.response.Response
-import ncei.catalog.Application
-import ncei.catalog.service.IndexAdminService
-import ncei.catalog.service.Service
+import org.cedar.metadata.index.Application
+import org.cedar.metadata.index.service.IndexAdminService
+import org.cedar.metadata.index.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest

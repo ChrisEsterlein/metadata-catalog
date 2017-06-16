@@ -1,6 +1,6 @@
-package ncei.catalog.config
+package org.cedar.metadata.index.config
 
-import ncei.catalog.service.MessageService
+import org.cedar.metadata.index.service.MessageService
 import org.springframework.amqp.core.AmqpAdmin
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory

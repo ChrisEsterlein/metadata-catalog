@@ -1,4 +1,4 @@
-package ncei.catalog.service
+package org.cedar.metadata.index.service
 
 import groovy.util.logging.Slf4j
 import org.elasticsearch.client.Response

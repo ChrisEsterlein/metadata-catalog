@@ -1,7 +1,7 @@
-package ncei.catalog.controller
+package org.cedar.metadata.index.controller
 
 import groovy.util.logging.Slf4j
-import ncei.catalog.service.Service
+import org.cedar.metadata.index.service.Service
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
