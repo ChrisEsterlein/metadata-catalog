@@ -24,7 +24,9 @@ class Service {
     this.restClient = restClient
     this.indexAdminService = indexAdminService
     if (!indexAdminService.indexExists(INDEX)) {
-      indexAdminService.createIndex(INDEX)
+      if(!indexAdminService.createIndex(INDEX)){
+        throw new Exception('Failed to create index.')
+      }
     }
   }
 

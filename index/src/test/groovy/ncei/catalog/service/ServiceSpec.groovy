@@ -16,7 +16,12 @@ class ServiceSpec extends Specification {
 
   RestClient mockRestClient = Mock(RestClient)
   IndexAdminService mockIndexAdminService = Mock(IndexAdminService)
-  Service service = Spy(Service, constructorArgs: [mockRestClient, mockIndexAdminService])
+  Service service
+
+  def setup() {
+    mockIndexAdminService.createIndex('search_index') >> true
+    service = new Service(mockRestClient, mockIndexAdminService)
+  }
 
   private buildMockResponse(Map payload, int statusCode, String method = 'GET') {
     def mockEntity = Mock(HttpEntity)
@@ -37,6 +42,16 @@ class ServiceSpec extends Specification {
     mockResponse.getHost() >> new HttpHost('testhost', 1234)
 
     return mockResponse
+  }
+
+  def 'failure to create index throws exception'(){
+    when:
+    IndexAdminService mockAdminService = Mock(IndexAdminService)
+    mockAdminService.createIndex('search_index') >> false
+    new Service(mockRestClient, mockAdminService)
+
+    then:
+    thrown Exception
   }
 
   def 'Insert: returns JSON API formatted information when created is #created'() {
