@@ -40,8 +40,8 @@ class LegacyPostFilter extends ZuulFilter {
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
     AntPathMatcher matcher = new AntPathMatcher()
-    return (request.getMethod().equals('POST') && matcher.match(METADATA_CATALOG_GRANULES_ENDPOINT, path)) ||
-        (request.getMethod().equals('GET') && matcher.match(METADATA_CATALOG_SEARCH_ENDPOINT, path))
+    return (request.getMethod().equals('POST') && matcher.match(METADATA_CATALOG_GRANULES_ENDPOINT, path))
+    // Don't do for a Get since we want to pass back the unchanged response.
   }
 
   @Override
@@ -50,7 +50,7 @@ class LegacyPostFilter extends ZuulFilter {
     InputStream stream = ctx.getResponseDataStream()
     String body = StreamUtils.copyToString(stream, Charset.forName("UTF-8"))
     Map jsonApiResponseBody = body ? (Map) new JsonSlurper().parseText(body) : null
-    String transformedPostBody = RequestConversionUtil.transformLegacyResponse(jsonApiResponseBody, ctx.getResponse().getStatus(), ctx.getRequest().getMethod())
+    String transformedPostBody = RequestConversionUtil.transformLegacyGetResponse(jsonApiResponseBody, ctx.getResponse().getStatus())
     ctx.setResponseDataStream(new ByteArrayInputStream(transformedPostBody.getBytes("UTF-8")))
   }
 }
