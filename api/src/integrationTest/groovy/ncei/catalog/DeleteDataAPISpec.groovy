@@ -24,7 +24,6 @@ class DeleteDataAPISpec extends Specification {
   def poller = new PollingConditions(timeout: 5)
 
   def postBody = [
-      "tracking_id"     : "abc123",
       "filename"        : "granuleFace",
       "granule_schema"  : "a granule schema",
       "granule_size"    : 1024,

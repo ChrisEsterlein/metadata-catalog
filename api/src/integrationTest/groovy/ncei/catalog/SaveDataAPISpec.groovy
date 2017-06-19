@@ -32,13 +32,12 @@ class SaveDataAPISpec extends Specification {
   }
 
   @Unroll
-  def 'save new granules with #trackingId and #filename'() {
+  def 'save new granules'() {
 
     when: 'posting a new granule to the storage'
     String id = RestAssured.given()
         .body([
-        "tracking_id": trackingId,
-        "filename"   : filename
+        "filename"   : "some_granule.txt"
     ])
         .contentType(ContentType.JSON)
         .when()
@@ -65,11 +64,5 @@ class SaveDataAPISpec extends Specification {
           .body("data.size", equalTo(1))
           .body("data.id", hasItems(id))
     }
-
-    where:
-    trackingId | filename
-    "abc123"   | "some_granule.txt"
-    "xyz789"   | "a_granule.zip"
   }
-
 }
