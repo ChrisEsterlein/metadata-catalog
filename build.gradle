@@ -1,109 +1,48 @@
+
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    // depenencies required by publishing.gradle
+    classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1'
+    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'
+  }
+}
+
+apply from: "${rootDir}/gradle/publishing.gradle"
+
 task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images.', group: 'docker') {
   executable "sh"
   args "-c", "docker rmi \$(docker images -aq --filter dangling=true) || true"
 
   // to clean up all our custom images:
-  //docker rmi \$(docker images -aq --filter "label=ncei.metadata-catalog-vendor")
+  //docker rmi \$(docker images -aq --filter "label=cedardevs.metadata-catalog-vendor")
 }
 
-task clean {
-  dependsOn cleanDockerImages
-}
+clean.dependsOn cleanDockerImages
 
 task debugDockerLogs(type: Exec, description: 'Print the docker logs before removing the containers.', group: 'docker') {
   executable "bash"
   args "-c", "docker ps -aq | xargs -n 1 docker logs || true"
 }
 
-task buildDeploymentDockerTemplates(
-    type: Copy,
-    description: 'Copies docker files and scripts, substituting properties for consistency.',
-    group: 'docker'
-) {
-  from 'resources/docker'
-  into "$buildDir"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
+task promote(type: Exec, description: 'Promotes artifactory snapshot', group: 'publish') {
+  executable "bash"
+  args "-c", "curl -X POST -u \"$bintrayUser:$bintrayKey\" -H \"Content-Length: 0\"\
+    \"http://oss.jfrog.org/api/plugins/build/promote/snapshotsToBintray/${rootProject.name}/$travisBuildNumber?params=releaseVersion=$baseVersion\""
+}
+
+publishing {
+  publications {
+    main(MavenPublication) {
+      artifact "docker-compose.yml"
+
+      groupId 'org.cedar.metadata'
+      artifactId "${rootProject.name}-stack"
+      version "${project.version}"
+    }
   }
-
-  expand(network: "$network",
-      cassandra_port: "$cassandra_port",
-      cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-      storage_service_name: "$storage_service_name",
-      storage_port: "$storage_port",
-      rabbit_service_name: "$rabbit_service_name",
-      rabbit_port: "$rabbit_port",
-      rabbit_admin_port: "$rabbit_admin_port",
-      elasticsearch_service_name: "$elasticsearch_service_name",
-      elasticsearch_rest_port: "$elasticsearch_rest_port",
-      elasticsearch_node_port: "$elasticsearch_node_port",
-      index_port: "$index_port",
-      index_service_name: "$index_service_name",
-      api_service_name: "$api_service_name",
-      api_port: "$api_port",
-      index_image: "ncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
-      storage_image: "ncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
-      api_image: "ncei/${rootProject.name}-${rootProject.childProjects.api.name}:${project.version}",
-      storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
-      index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar",
-      api_jar: "${rootProject.childProjects.api.name}-${project.version}.jar",
-      jar_dir: 'libs',
-      jar: "${project.name}-${project.version}.jar")
-}
-
-task copyCql(type: Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
-  from 'storage/src/resources/cql'
-  into "$buildDir/cql"
-}
-
-task copyCqlScript(type: Copy, description: 'Copies cql init script to build for use in docker-compose wait.', group: 'docker') {
-  from 'storage/src/resources/docker/scripts'
-  into "$buildDir/scripts"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
-  }
-
-  expand(
-      cassandra_port: "$cassandra_port",
-      cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-  )
-}
-
-task copyDockerScripts(type: Copy, description: 'Copies docker init script to build for use in docker-compose wait.', group: 'docker') {
-  from 'api/src/resources/docker/scripts'
-  into "$buildDir/scripts"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
-  }
-
-  expand(network: "$network",
-      cassandra_port: "$cassandra_port",
-      cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
-      storage_service_name: "$storage_service_name",
-      storage_port: "$storage_port",
-      rabbit_service_name: "$rabbit_service_name",
-      rabbit_port: "$rabbit_port",
-      rabbit_admin_port: "$rabbit_admin_port",
-      elasticsearch_service_name: "$elasticsearch_service_name",
-      elasticsearch_rest_port: "$elasticsearch_rest_port",
-      elasticsearch_node_port: "$elasticsearch_node_port",
-      index_port: "$index_port",
-      index_service_name: "$index_service_name",
-      api_service_name: "$api_service_name",
-      api_port: "$api_port",
-      index_image: "ncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
-      storage_image: "ncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
-      api_image: "ncei/${rootProject.name}-${rootProject.childProjects.api.name}:${project.version}",
-      storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
-      index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar",
-      api_jar: "${rootProject.childProjects.api.name}-${project.version}.jar",
-      jar_dir: 'libs',
-      jar: "${project.name}-${project.version}.jar")
-}
-
-task buildDeployment() {
-  dependsOn clean, 'api:dockerImage', 'index:dockerImage', 'storage:dockerImage', buildDeploymentDockerTemplates, copyCql, copyCqlScript, copyDockerScripts
 }

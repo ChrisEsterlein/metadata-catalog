@@ -79,5 +79,4 @@ WITH CLUSTERING
 
 ;
 
-CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (name);
-
+CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (metadata_schema);

@@ -16,6 +16,8 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'groovy'
 apply plugin: 'idea'
 
+apply from: "${rootDir}/gradle/publishing.gradle"
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -104,8 +106,8 @@ task buildDockerTemplates(
       elasticsearch_node_port: "$elasticsearch_node_port",
       index_port: "$index_port",
       index_service_name: "$index_service_name",
-      index_image: "ncei/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
-      storage_image: "ncei/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
+      index_image: "cedardevs/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
+      storage_image: "cedardevs/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
       storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
       index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar",
       jar_dir: 'libs',
@@ -121,11 +123,11 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
   dependsOn bootRepackage
   executable "bash"
   args "-c", "docker build --no-cache \
-    --label ncei.${rootProject.name}-version=${project.version} \
-    --label ncei.${rootProject.name}-build-date=" + getDateTime() + " \
-    --label ncei.${rootProject.name}-name=${project.name}Module \
-    --label ncei.${rootProject.name}-vendor=NCEI \
-    -t ncei/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    --label org.cedar.metadata.${project.name}-version=${project.version} \
+    --label org.cedar.metadata.${project.name}-build-date=" + getDateTime() + " \
+    --label org.cedar.metadata.${project.name}-name=${project.name}Module \
+    --label org.cedar.metadata.${project.name}-vendor=CEDAR \
+    -t cedardevs/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
 }
 
 assemble.dependsOn dockerImage
@@ -186,3 +188,31 @@ task integrationTest(
 }
 
 check.dependsOn integrationTest
+
+task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
+  dependsOn "dockerImage"
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push cedardevs/${rootProject.name}-${project.name}:${project.version} && docker logout"
+}
+
+task promote(type: Exec, description: 'Publishes the promoted docker image', group: 'publish') {
+  executable "bash"
+  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && \
+    docker tag cedardevs/${rootProject.name}-${project.name}:${project.version} cedardevs/${rootProject.name}-${project.name}:$baseVersion && \
+    docker tag cedardevs/${rootProject.name}-${project.name}:${project.version} cedardevs/${rootProject.name}-${project.name}:latest &&\
+    docker push cedardevs/${rootProject.name}-${project.name}:$baseVersion &&\
+    docker push cedardevs/${rootProject.name}-${project.name}:latest && \
+    docker logout"
+}
+
+publishing {
+  publications {
+    main(MavenPublication) {
+      artifact jar
+
+      groupId 'org.cedar.metadata'
+      artifactId "${rootProject.name}-${project.name}"
+      version "${project.version}"
+    }
+  }
+}
