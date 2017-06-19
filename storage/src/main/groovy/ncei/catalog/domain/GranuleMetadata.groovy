@@ -20,7 +20,6 @@ class GranuleMetadata extends MetadataRecord {
 
   @Indexed
   String metadata_schema
-  String tracking_id
   String filename
   String type
   String access_protocol

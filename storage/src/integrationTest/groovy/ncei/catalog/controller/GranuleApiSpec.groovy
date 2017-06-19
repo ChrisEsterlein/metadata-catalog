@@ -49,7 +49,6 @@ class GranuleApiSpec extends Specification {
   }
 
   def postBody = [
-      "tracking_id"    : "abc123",
       "filename"       : "granuleFace",
       "metadata_schema": "a granule metadata_schema",
       "size_bytes"     : 1024,
@@ -76,7 +75,6 @@ class GranuleApiSpec extends Specification {
         .body('data[0].type', equalTo('granule'))
         .body('data[0].id', notNullValue())
         .body('data[0].attributes.id', notNullValue())
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -99,7 +97,6 @@ class GranuleApiSpec extends Specification {
         .statusCode(200)
         .body('data[0].type', equalTo('granule'))
         .body('data[0].id', equalTo(granuleMetadata.id))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -125,11 +122,9 @@ class GranuleApiSpec extends Specification {
         .put("/granules/${granuleMetadata.id}")
         .then()
         .assertThat()
-//            .statusCode(200)
         .body('data[0].type', equalTo('granule'))
         .body('data[0].id', equalTo(granuleMetadata.id))
         .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -152,7 +147,6 @@ class GranuleApiSpec extends Specification {
     //first one is the newest
         .body('data[0].type', equalTo('granule'))
         .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -166,7 +160,6 @@ class GranuleApiSpec extends Specification {
     //second one is the original
         .body('data[1].type', equalTo('granule'))
         .body('data[1].attributes.last_update', equalTo(granuleMetadata.last_update))
-        .body('data[1].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[1].attributes.filename', equalTo(postBody.filename))
         .body('data[1].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -212,7 +205,6 @@ class GranuleApiSpec extends Specification {
         .statusCode(200)
         .body('data.size', equalTo(1))
         .body('data[0].type', equalTo('granule'))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -378,7 +370,6 @@ class GranuleApiSpec extends Specification {
         .body('data[0].id', equalTo(postBodyWId.id))
         .body('data[0].attributes.id', equalTo(postBodyWId.id))
         .body('data[0].attributes.last_update', notNullValue())
-        .body('data[0].attributes.tracking_id', equalTo(postBodyWId.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBodyWId.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBodyWId.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBodyWId.metadata_schema))
@@ -402,7 +393,6 @@ class GranuleApiSpec extends Specification {
         .body('data[0].type', equalTo('granule'))
         .body('data[0].id', equalTo(granuleMetadata.id))
         .body('data[0].attributes.id', equalTo(postBodyWId.id))
-        .body('data[0].attributes.tracking_id', equalTo(postBodyWId.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBodyWId.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBodyWId.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBodyWId.metadata_schema))
