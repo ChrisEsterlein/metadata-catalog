@@ -17,9 +17,6 @@ import java.nio.charset.Charset
 @Slf4j
 class LegacyPostFilter extends ZuulFilter {
 
-  @Value('${zuul.routes.metadata-catalog-granules.path}')
-  String METADATA_CATALOG_GRANULES_ENDPOINT
-
   @Value('${zuul.routes.metadata-catalog-search.path}')
   String METADATA_CATALOG_SEARCH_ENDPOINT
 
@@ -40,8 +37,8 @@ class LegacyPostFilter extends ZuulFilter {
     HttpServletRequest request = ctx.getRequest()
     String path = request.getServletPath()
     AntPathMatcher matcher = new AntPathMatcher()
-    return (request.getMethod().equals('POST') && matcher.match(METADATA_CATALOG_GRANULES_ENDPOINT, path))
-    // Don't do for a Get since we want to pass back the unchanged response.
+    return (request.getMethod().equals('GET') && matcher.match(METADATA_CATALOG_SEARCH_ENDPOINT, path))
+    // Don't do for a POST since we want to pass back the unchanged response.
   }
 
   @Override
