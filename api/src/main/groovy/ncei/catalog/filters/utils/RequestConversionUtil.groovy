@@ -13,7 +13,7 @@ class RequestConversionUtil {
     legacyPostBody.each { key, value ->
       switch (key) {
         case 'trackingId':
-          granulePostBody.tracking_id = value
+          granulePostBody.id = value
           break
         case 'fileSize':
           granulePostBody.size_bytes = value
@@ -26,26 +26,24 @@ class RequestConversionUtil {
           break
       }
     }
-    return (granulePostBody as JSONObject) as String
+    return (granulePostBody.sort() as JSONObject) as String
   }
 
-  static String transformLegacyResponse(Map jsonApiResponseBody, int code, String method) {
+  static String transformLegacyGetResponse(Map jsonApiResponseBody, int code) {
     Map legacyResponse = [:]
-    legacyResponse.dataset = getDatasetFromQueryString(jsonApiResponseBody?.meta?.searchTerms?.q)
     legacyResponse.items = []
-    legacyResponse.searchTerms = jsonApiResponseBody?.meta?.searchTerms
     legacyResponse.code = code
 
-    if (method.equals('GET')) {
-      legacyResponse.totalResults = jsonApiResponseBody?.meta?.totalResults
-    } else {
-      legacyResponse.totalResultsUpdated = jsonApiResponseBody?.data?.size
-    }
+    legacyResponse.dataset = getDatasetFromQueryString(jsonApiResponseBody?.meta?.searchTerms?.q)
+    legacyResponse.searchTerms = getSearchTerms(jsonApiResponseBody?.meta?.searchTerms, legacyResponse.dataset)
 
     jsonApiResponseBody?.data?.each {
       Map item = [:]
-      it.attributes.each { key, value ->
+      it?.attributes?.each { key, value ->
         switch (key) {
+          case 'id':
+            item.trackingId = value as String
+            break
           case 'size_bytes':
             item.fileSize = value as Integer
             break
@@ -57,9 +55,11 @@ class RequestConversionUtil {
             break
         }
       }
-      legacyResponse.items << item
+      item ? legacyResponse.items << item.sort() : ''
     }
-    return (legacyResponse as JSONObject) as String
+    legacyResponse.totalResults = legacyResponse?.items?.size
+
+    return (legacyResponse.sort() as JSONObject) as String
   }
 
   static Map<String, List<String>> transformParams(Map<String, List<String>> params = [:]) {
@@ -79,7 +79,15 @@ class RequestConversionUtil {
    */
   static String getDatasetFromQueryString(String queryString) {
     String[] querySplit = queryString ? queryString.trim().split('dataset[\\s]*:[\\s]*') : []
-    querySplit.each { System.out.println('value:' + it) }
     return querySplit.length > 1 ? querySplit[1] : "null"
+  }
+
+  static def getSearchTerms(Map responseSearchTerms, def dataset) {
+    Map searchTerms = [:]
+    responseSearchTerms ? searchTerms = responseSearchTerms : ''
+    responseSearchTerms?.from != null ? searchTerms.offset = searchTerms.remove('from') : ''
+    responseSearchTerms?.size != null ? searchTerms.max = searchTerms.remove('size') : ''
+    dataset != 'null' ? searchTerms.dataset = dataset : ''
+    return searchTerms
   }
 }
