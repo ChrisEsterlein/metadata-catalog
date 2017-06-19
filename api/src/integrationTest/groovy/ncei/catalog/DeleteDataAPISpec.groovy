@@ -25,12 +25,12 @@ class DeleteDataAPISpec extends Specification {
 
   def postBody = [
       "filename"        : "granuleFace",
-      "granule_schema"  : "a granule schema",
+      "metadata_schema"  : "a granule schema",
       "granule_size"    : 1024,
       "geometry"        : "POLYGON()",
       "access_protocol" : "FILE",
       "type"            : "fos",
-      "granule_metadata": "{blah:blah}",
+      "metadata": "{blah:blah}",
       "collections"     : ["a", "list", "of", "collections"]
   ]
 

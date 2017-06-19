@@ -26,12 +26,12 @@ class UpdateDataAPISpec extends Specification {
 
   def postBody = [
       "filename"        : "granuleFace",
-      "granule_schema"  : "a granule schema",
+      "metadata_schema"  : "a granule schema",
       "granule_size"    : 1024,
       "geometry"        : "POLYGON()",
       "access_protocol" : "FILE",
       "type"            : "fos",
-      "granule_metadata": "{blah:blah}",
+      "metadata": "{blah:blah}",
       "collections"     : ["a", "list", "of", "collections"]
   ]
 
@@ -54,7 +54,6 @@ class UpdateDataAPISpec extends Specification {
         .extract()
         .path('data[0].attributes')
 
-    assert granuleMetadata.tracking_id == postBody.tracking_id
     String updatedFilename = 'a different filename'
     granuleMetadata.filename = updatedFilename
 
