@@ -30,8 +30,8 @@ class GranuleController {
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
   @ResponseBody
-  Map update(@PathVariable Stringid, @RequestParam(required = false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
-    // coerce id to a UUIDand remove client-providedlast_update
+  Map update(@PathVariable String id, @RequestParam(required = false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+    // coerce id to a UUID and remove client-provided last_update
     metadataObject.id = UUID.fromString(id)
     metadataObject.last_update = null
 

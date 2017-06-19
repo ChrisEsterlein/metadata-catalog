@@ -1,7 +1,8 @@
-package ncei.catalog
+package org.cedar.metadata.api
 
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
+
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import spock.lang.Specification
