@@ -24,7 +24,7 @@ fi
 # update the two files
 updateVersions() {
   sed -i -- "s/version=.*/version=$1/g" gradle.properties
-  sed -i -- "s/\(.* image: ciresncei.*:\).*/\1$1/g" docker-compose.yml
+  sed -i -- "s/\(.* image: cedardevs.*:\).*/\1$1/g" docker-compose.yml
 }
 
 # commit and push

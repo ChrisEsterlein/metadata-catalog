@@ -19,7 +19,7 @@ task cleanDockerImages(type: Exec, description: 'Clean up dangling docker images
   args "-c", "docker rmi \$(docker images -aq --filter dangling=true) || true"
 
   // to clean up all our custom images:
-  //docker rmi \$(docker images -aq --filter "label=ncei.metadata-catalog-vendor")
+  //docker rmi \$(docker images -aq --filter "label=cedardevs.metadata-catalog-vendor")
 }
 
 clean.dependsOn cleanDockerImages
@@ -40,8 +40,8 @@ publishing {
     main(MavenPublication) {
       artifact "docker-compose.yml"
 
-      groupId 'edu.colorado.cires.metadata-catalog'
-      artifactId "${rootProject.name}"
+      groupId 'org.cedar.metadata'
+      artifactId "${rootProject.name}-stack"
       version "${project.version}"
     }
   }
