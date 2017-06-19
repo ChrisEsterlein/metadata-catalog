@@ -23,10 +23,6 @@ interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
   @Query("SELECT*FROM MetadataSchema WHERE metadata_schema =?0 AND metadata_schema=?1")
   Iterable<MetadataSchema> findBySchemaNameAndSchema(String metadata_schema, String schema)
 
-  @Query("SELECT DISTINCT id FROM MetadataSchema WHERE metadata_schema=?0")
-  Iterable<MetadataSchema> findDistinctTrackingIdsBySchemaName(String metadata_schema)
-
-
   @Query("SELECT id FROM MetadataSchema WHERE id=?0 LIMIT 1")
   Iterable<MetadataSchema> findLatestByMetadataId(UUID id)
 
