@@ -51,25 +51,13 @@ services:
     environment:
      - cassandra_contactPoints=${cassandra_service_name}
      - rabbitmq_connectionfactory_host=${rabbit_service_name}
-    depends_on:
-     - ${cassandra_initialization_service_name}
     volumes:
      - ./scripts:/tmp/scripts:ro
     command: /bin/bash /tmp/scripts/start_storage.sh
     networks:
       ${network}:
         aliases: []
-  ${cassandra_initialization_service_name}:
-    image: cassandra
-    depends_on:
-     - ${cassandra_service_name}
-    volumes:
-     - ./cql:/tmp/cql:ro
-     - ./scripts:/tmp/scripts:ro
-    command: /bin/bash /tmp/scripts/initialize_cassandra.sh
-    networks:
-      ${network}:
-        aliases: []
+
 
 networks:
   ${network}: {}

@@ -13,6 +13,8 @@ import org.springframework.cassandra.core.keyspace.CreateKeyspaceSpecification
 import org.springframework.cassandra.core.keyspace.KeyspaceOption
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.io.ClassPathResource
+import org.springframework.core.io.Resource
 import org.springframework.data.cassandra.config.CassandraEntityClassScanner
 import org.springframework.data.cassandra.config.CassandraSessionFactoryBean
 import org.springframework.data.cassandra.config.SchemaAction
@@ -41,18 +43,14 @@ class CassandraConfig extends AbstractCassandraConfiguration {
   //---
 
   @Value(value = "classpath:createKeyspaceAndTables.cql")
-  private File initDbScript
+  private Resource initDbScript
 
 //  @Bean
 //  @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
 //  @Override
 //  CassandraCqlClusterFactoryBean cluster() {
 //    verifyConnection()
-//    CassandraCqlClusterFactoryBean cluster = new CassandraCqlClusterFactoryBean()
-//    cluster.setContactPoints(contactPoints)
-//    cluster.setPort(port)
-//    cluster.setReconnectionPolicy(new ExponentialReconnectionPolicy(500, 32000))
-//    return cluster
+//    return super.cluster()
 //  }
 
   @Override
@@ -62,8 +60,9 @@ class CassandraConfig extends AbstractCassandraConfiguration {
 
   @Override
   protected List<String> getStartupScripts() {
-    List startUpScripts = initDbScript.text.trim().tokenize(';')
-    log.debug "Startup CQL scripts: $startUpScripts"
+    //File initDbScript = new ClassPathResource("createKeyspaceAndTables.cql").getFile()
+    List startUpScripts = initDbScript.getInputStream().text.trim().tokenize(';')
+    log.info "Startup CQL scripts: $startUpScripts"
     startUpScripts
   }
 
