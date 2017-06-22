@@ -1,8 +1,8 @@
-[![Stories in Ready](https://badge.waffle.io/cedardevs/metadata-catalog.png?label=ready&title=Ready)](https://waffle.io/cedardevs/metadata-catalog?utm_source=badge)
 Metadata Catalog
 ===
 
 [![Build Status](https://travis-ci.org/cedardevs/metadata-catalog.svg?branch=master)](https://travis-ci.org/cedardevs/metadata-catalog)
+[![Stories in Progress](https://badge.waffle.io/cedardevs/metadata-catalog.png?label=in%20progress&title=In%20Progress)](https://waffle.io/cedardevs/metadata-catalog?utm_source=badge)
 
 The intent of this project is to build a scalable system for storing canonical records of granule- and collection-level metadata to centralize metadata management and enable various ETL workflows.
 
