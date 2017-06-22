@@ -77,7 +77,6 @@ task copyCqlScript(type: Copy, description: 'Copies cql init script to build for
   expand(
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
   )
 }
 
@@ -95,7 +94,6 @@ task buildDockerTemplates(
   expand(network: "$network",
       cassandra_port: "$cassandra_port",
       cassandra_service_name: "$cassandra_service_name",
-      cassandra_initialization_service_name: "$cassandra_initialization_service_name",
       storage_service_name: "$storage_service_name",
       storage_port: "$storage_port",
       rabbit_service_name: "$rabbit_service_name",
