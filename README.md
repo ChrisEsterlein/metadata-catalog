@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/cedardevs/metadata-catalog.png?label=ready&title=Ready)](https://waffle.io/cedardevs/metadata-catalog?utm_source=badge)
 Metadata Catalog
 ===
 
