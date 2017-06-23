@@ -7,17 +7,6 @@ services:
     networks:
       ${network}:
         aliases: []
-  ${cassandra_initialization_service_name}:
-    image: cassandra
-    depends_on:
-     - ${cassandra_service_name}
-    volumes:
-     - ./cql:/tmp/cql:ro
-     - ./scripts:/tmp/scripts:ro
-    command: /bin/bash /tmp/scripts/initialize_cassandra.sh
-    networks:
-      ${network}:
-        aliases: []
   ${rabbit_service_name}:
     image: rabbitmq:management
     ports:
