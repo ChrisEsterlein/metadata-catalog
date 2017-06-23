@@ -2,6 +2,7 @@ package org.cedar.metadata.storage.service
 
 import groovy.util.logging.Slf4j
 import org.cedar.metadata.storage.domain.MetadataRecord
+import org.cedar.metadata.storage.util.ValidationUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.stereotype.Component
@@ -14,6 +15,9 @@ class RepoService {
 
   @Autowired
   MessageService messageService
+
+  @Autowired
+  ValidationUtil validationUtil
 
   final String INSERT = 'insert'
   final String DELETE = 'delete'
@@ -49,6 +53,8 @@ class RepoService {
       return saveDetails
     } else { //create a new one
       //save the row
+      log.debug("Validating new record: ${metadataRecord}")
+      validationUtil.validate(repositoryObject, metadataRecord)
       log.info("Saving new record: ${metadataRecord.id}")
       MetadataRecord saveResult = repositoryObject.save(metadataRecord)
       log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
