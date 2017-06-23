@@ -40,18 +40,20 @@ class CassandraConfig extends AbstractCassandraConfiguration {
   String keyspace
   String contactPoints
   Integer port
+  Boolean init
   //---
 
   @Value(value = "classpath:createKeyspaceAndTables.cql")
   private Resource initDbScript
 
-//  @Bean
-//  @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
-//  @Override
-//  CassandraCqlClusterFactoryBean cluster() {
-//    verifyConnection()
-//    return super.cluster()
-//  }
+  @Bean
+  @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
+  @Override
+  CassandraCqlClusterFactoryBean cluster() {
+    CassandraCqlClusterFactoryBean bean = super.cluster()
+    //verifyConnection()
+    return bean
+  }
 
   @Override
   protected ReconnectionPolicy getReconnectionPolicy() {
@@ -60,10 +62,9 @@ class CassandraConfig extends AbstractCassandraConfiguration {
 
   @Override
   protected List<String> getStartupScripts() {
-    //File initDbScript = new ClassPathResource("createKeyspaceAndTables.cql").getFile()
     List startUpScripts = initDbScript.getInputStream().text.trim().tokenize(';')
-    log.info "Startup CQL scripts: $startUpScripts"
-    startUpScripts
+    log.debug "Startup CQL scripts: $startUpScripts"
+    init ? startUpScripts : []
   }
 
   @Override
