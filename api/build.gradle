@@ -79,7 +79,6 @@ task dockerImage(type: Exec, description: 'Creates a docker image with the curre
 assemble.dependsOn dockerImage
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-  // dependsOn ':storage:dockerImage', ':index:dockerImage'
   executable "bash"
   environment "VERSION", "${project.version}"
   environment "NAME", "${project.name}"
