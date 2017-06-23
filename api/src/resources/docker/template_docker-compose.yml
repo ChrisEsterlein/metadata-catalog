@@ -49,6 +49,7 @@ services:
     ports:
      - "${storage_port}:8080"
     environment:
+     - cassandra_init=true
      - cassandra_contactPoints=${cassandra_service_name}
      - rabbitmq_connectionfactory_host=${rabbit_service_name}
     volumes:

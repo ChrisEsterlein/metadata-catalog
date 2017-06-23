@@ -46,15 +46,6 @@ class CassandraConfig extends AbstractCassandraConfiguration {
   @Value(value = "classpath:createKeyspaceAndTables.cql")
   private Resource initDbScript
 
-  @Bean
-  @Retryable(value = NoHostAvailableException, maxAttempts = 12, backoff = @Backoff(delay = 100L, maxDelay = 500L))
-  @Override
-  CassandraCqlClusterFactoryBean cluster() {
-    CassandraCqlClusterFactoryBean bean = super.cluster()
-    //verifyConnection()
-    return bean
-  }
-
   @Override
   protected ReconnectionPolicy getReconnectionPolicy() {
     new ExponentialReconnectionPolicy(500, 32000)
@@ -102,29 +93,6 @@ class CassandraConfig extends AbstractCassandraConfiguration {
   @Bean
   CassandraConverter converter() {
     new MappingCassandraConverter(mappingContext())
-  }
-
-  private void verifyConnection() {
-    def builder = Cluster.builder()
-    contactPoints.split(',').each {
-      builder.addContactPointsWithPorts(new InetSocketAddress(InetAddress.getByName(it), port))
-    }
-    def cluster = builder.build()
-    def exception = null
-    def tries = 30
-    while (tries > 0) {
-      try {
-        cluster.connect(keyspace)
-        return
-      }
-      catch (NoHostAvailableException e) {
-        exception = e
-        tries--
-        sleep(1000)
-      }
-    }
-    throw exception ?: new IllegalStateException(
-        "Failed to verify cassandra connection on port $port for contact points $contactPoints")
   }
 
 }
