@@ -1,6 +1,7 @@
 {
-  "id": "BasementProduct",
+  "id": "BathymetricProduct",
   "required": [
+    "dataType",
     "phase",
     "region",
     "title"
@@ -16,6 +17,14 @@
       "readOnly": true,
       "description": "Comma separated list of BOS Scenarios this entry is linked to"
     },
+    "dataType": {
+      "type": "string",
+      "enum": [
+        "Bathymetry",
+        "Slope",
+        "Curvature"
+      ]
+    },
     "dateCreated": {
       "readOnly": true,
       "type": "string",
@@ -30,10 +39,6 @@
       "items": {
         "$ref": "FileReference"
       }
-    },
-    "interpretation": {
-      "type": "string",
-      "maxLength": 2000
     },
     "keywords": {
       "type": "array",
@@ -63,15 +68,10 @@
         "4"
       ]
     },
-    "processingParameters": {
-      "type": "string",
-      "maxLength": 2000
-    },
     "productType": {
       "type": "string",
       "enum": [
         "Grid",
-        "Map",
         "Line",
         "Composite Grid"
       ]
@@ -89,15 +89,6 @@
       "items": {
         "$ref": "Link"
       }
-    },
-    "surveyDataType": {
-      "type": "string",
-      "enum": [
-        "Magnetic",
-        "Gravity",
-        "Geology",
-        "Composite"
-      ]
     },
     "targetOf": {
       "readOnly": true,

@@ -54,7 +54,9 @@ class RepoService {
     } else { //create a new one
       //save the row
       log.debug("Validating new record: ${metadataRecord}")
-      validationUtil.validate(repositoryObject, metadataRecord)
+
+      validationUtil.validate(metadataRecord)
+
       log.info("Saving new record: ${metadataRecord.id}")
       MetadataRecord saveResult = repositoryObject.save(metadataRecord)
       log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")

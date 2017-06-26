@@ -4,6 +4,7 @@ import groovy.util.logging.Slf4j
 import org.cedar.metadata.storage.domain.GranuleMetadata
 import org.cedar.metadata.storage.domain.GranuleMetadataRepository
 import org.cedar.metadata.storage.domain.MetadataRecord
+import org.cedar.metadata.storage.util.ValidationUtil
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -15,6 +16,7 @@ class RepoServiceSpec extends Specification {
 
   RepoService repoService
   MessageService messageService
+  ValidationUtil validationUtil
   GranuleMetadataRepository granuleMetadataRepository
   HttpServletResponse response
   Date now = new Date()
@@ -35,8 +37,9 @@ class RepoServiceSpec extends Specification {
   GranuleMetadata granuleMetadata
 
   def setup() {
+    validationUtil = Mock()
     messageService = Mock()
-    repoService = new RepoService(messageService: messageService)
+    repoService = new RepoService(messageService: messageService, validationUtil: validationUtil)
 
     granuleMetadataRepository = Mock()
     response = Mock()
