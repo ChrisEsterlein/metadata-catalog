@@ -1,6 +1,6 @@
 buildscript {
   ext {
-    springBootVersion = '1.5.2.RELEASE'
+    springBootVersion = '1.5.4.RELEASE'
   }
   repositories {
     mavenLocal()
@@ -65,7 +65,6 @@ task buildDockerTemplates(type: Copy, description: 'Copies docker files and scri
   expand(network: "$network",
           cassandra_port: "$cassandra_port",
           cassandra_service_name: "$cassandra_service_name",
-          cassandra_initialization_service_name: "$cassandra_initialization_service_name",
           rabbit_service_name: "$rabbit_service_name",
           rabbit_port: "$rabbit_port",
           rabbit_admin_port: "$rabbit_admin_port",
@@ -78,22 +77,9 @@ static def getDateTime() {
   return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
 }
 
-task cassandraDockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
-  dependsOn copyCql
-  dependsOn buildDockerTemplates
-  executable "bash"
-  args "-c", "docker build --no-cache \
-    --label org.cedar.metadata.${project.name}-version=${project.version} \
-    --label org.cedar.metadata.${project.name}-build-date=" + getDateTime() + " \
-    --label org.cedar.metadata.${project.name}-name=${project.name}-cassandra \
-    --label org.cedar.metadata.${project.name}-vendor=CEDAR \
-    -t cedardevs/${rootProject.name}-cassandra-init:${project.version} -f ${buildDir}/cassandraDockerfile ${buildDir}"
-}
-
 task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
   dependsOn buildDockerTemplates
   dependsOn bootRepackage
-  dependsOn cassandraDockerImage
   executable "bash"
   args "-c", "docker build --no-cache \
     --label org.cedar.metadata.${project.name}-version=${project.version} \
@@ -130,15 +116,29 @@ task dockerComposeDown(type: Exec, description: 'Stops the system using docker-c
   args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
 }
 
-task waitForCompose(type: Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
+//task waitForCompose(type: Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
+//  dependsOn dockerComposeUp
+//  executable "bash"
+//  args "-c", "docker wait ${project.name}_${cassandra_service_name}_1"
+//}
+
+task waitForCassandra(
+    type: Exec,
+    description: 'Waits for cassandra to be available.',
+    group: 'docker',
+) {
   dependsOn dockerComposeUp
   executable "bash"
-  args "-c", "docker wait ${project.name}_${cassandra_initialization_service_name}_1"
+  args "-c", "docker run \
+    --network ${project.name}_$network \
+    --rm willwill/wait-for-it \
+    -h cassandra \
+    -p 9042 -t 90"
 }
 
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
-  dependsOn waitForCompose
+  dependsOn waitForCassandra
   finalizedBy dockerComposeDown
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
@@ -148,15 +148,8 @@ task integrationTest(type: Test, description: 'Runs the integration tests', grou
 
 check.dependsOn integrationTest
 
-task publishCassandraImage(type: Exec, description: 'Publishes the cassandra docker image', group: 'publish') {
-  dependsOn cassandraDockerImage
-  executable "bash"
-  args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push cedardevs/${rootProject.name}-cassandra-init:${project.version} && docker logout"
-}
-
 task publishImage(type: Exec, description: 'Publishes the docker image', group: 'publish') {
   dependsOn "dockerImage"
-  dependsOn publishCassandraImage
   executable "bash"
   args "-c", "docker login -u \$DOCKER_USER -p \$DOCKER_PASSWORD && docker push cedardevs/${rootProject.name}-${project.name}:${project.version} && docker logout"
 }
@@ -168,10 +161,6 @@ task promote(type: Exec, description: 'Publishes the promoted docker image', gro
     docker tag cedardevs/${rootProject.name}-${project.name}:${project.version} cedardevs/${rootProject.name}-${project.name}:latest &&\
     docker push cedardevs/${rootProject.name}-${project.name}:$baseVersion &&\
     docker push cedardevs/${rootProject.name}-${project.name}:latest && \
-    docker tag cedardevs/${rootProject.name}-cassandra-init:${project.version} cedardevs/${rootProject.name}-cassandra-init:$baseVersion &&\
-    docker tag cedardevs/${rootProject.name}-cassandra-init:${project.version} cedardevs/${rootProject.name}-cassandra-init:latest &&\
-    docker push cedardevs/${rootProject.name}-cassandra-init:$baseVersion &&\
-    docker push cedardevs/${rootProject.name}-cassandra-init:latest &&\
     docker logout"
 }
 

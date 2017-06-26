@@ -1,2 +1,4 @@
 rabbitmq:
   queue: index-consumer
+
+cassandra.init: true
