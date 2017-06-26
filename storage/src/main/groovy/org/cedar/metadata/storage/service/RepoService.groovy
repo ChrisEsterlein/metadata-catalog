@@ -55,7 +55,7 @@ class RepoService {
       //save the row
       log.debug("Validating new record: ${metadataRecord}")
 
-      validationUtil.validate(metadataRecord)
+//      validationUtil.validate(metadataRecord)
 
       log.info("Saving new record: ${metadataRecord.id}")
       MetadataRecord saveResult = repositoryObject.save(metadataRecord)

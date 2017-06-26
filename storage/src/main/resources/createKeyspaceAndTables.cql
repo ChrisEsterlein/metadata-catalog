@@ -55,10 +55,10 @@ DROP TABLE IF exists MetadataSchema;
 CREATE TABLE IF NOT exists MetadataSchema (
 id timeuuid,
 last_update timestamp,
-metadata_schema text,
+name text,
 json_schema text,
 deleted boolean,
 PRIMARY KEY (id, last_update)
 ) WITH CLUSTERING ORDER BY (last_update DESC);
 
-CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (metadata_schema);
+CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (name);

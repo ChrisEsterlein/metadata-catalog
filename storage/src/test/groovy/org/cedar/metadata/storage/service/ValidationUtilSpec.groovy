@@ -53,6 +53,7 @@ class ValidationUtilSpec extends Specification{
 
     then:
     1 * repository.findByMetadataId(_ as UUID) >> [metadataSchema]
+    _ * repository.findBySchemaName()
 
     assert isValid
   }

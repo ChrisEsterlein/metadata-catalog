@@ -16,8 +16,10 @@ import org.cedar.metadata.storage.domain.MetadataSchema
 import org.cedar.metadata.storage.domain.MetadataSchemaRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
+import org.springframework.stereotype.Component
 
 @Slf4j
+@Component
 class ValidationUtil {
 
   @Autowired
@@ -40,6 +42,22 @@ class ValidationUtil {
 
     Map metadataJson = jsonSlurper.parseText(metadataRecord.metadata as String)
     Map schemaJson = jsonSlurper.parseText(metadataSchema.json_schema)
+
+//    schemaJson.each{ k, v ->
+//      if(k == '$ref'){
+//        Iterable<MetadataSchema> matchingSchemas = metadataSchemaRepository.findBySchemaName(v as String)
+//        if(!matchingSchemas){
+//          //no such schema
+//          return false
+//        }else{
+//          v = matchingSchemas.first()
+//        }
+//
+//      }
+//      if(v instanceof Map){
+//
+//      }
+//    }
 
     log.info "Metadata: \n $metadataJson"
     log.info "Schema: \n $schemaJson"
