@@ -27,7 +27,7 @@ class GranuleMetadata extends MetadataRecord {
   Integer size_bytes
   String metadata
   String geometry
-  List collections
+  List<String> collections
   Boolean deleted
 
   GranuleMetadata() {

@@ -1,11 +1,8 @@
-CREATE KEYSPACE IF NOT exists metacat
-WITH replication = {'class':'SimpleStrategy', 'replication_factor':'1'}  AND durable_writes = true
+CREATE KEYSPACE IF NOT exists metacat WITH replication = {'class':'SimpleStrategy', 'replication_factor':'1'}  AND durable_writes = true;
 
-;
-USE metacat
+USE metacat;
 
-;
-DROP TABLE IF exists GranuleMetadata;
+
 CREATE TABLE IF NOT exists GranuleMetadata (
 id uuid,
 last_update timestamp,
@@ -23,14 +20,11 @@ deleted boolean,
 PRIMARY KEY ((id), last_update)
 )
 WITH CLUSTERING
-  ORDER BY (last_update DESC)
-
-;
+  ORDER BY (last_update DESC);
 
 CREATE INDEX IF NOT exists DatasetIndex ON GranuleMetadata (dataset);
 CREATE INDEX IF NOT exists GranuleSchemaIndex ON GranuleMetadata (metadata_schema);
 
-DROP TABLE IF exists CollectionMetadata;
 CREATE TABLE IF NOT exists CollectionMetadata (
 id timeuuid,
 last_update timestamp,
@@ -42,28 +36,19 @@ geometry text,
 deleted boolean,
 submission_id text,
 PRIMARY KEY ((id), last_update)
-)
-WITH CLUSTERING
-  ORDER BY (last_update DESC)
-
-;
+) WITH CLUSTERING ORDER BY (last_update DESC);
 
 CREATE INDEX IF NOT exists CollectionIndex ON CollectionMetadata (name);
 CREATE INDEX IF NOT exists CollectionSchemaIndex ON CollectionMetadata (metadata_schema);
 
-DROP TABLE IF exists ServicesMetadata;
 CREATE TABLE IF NOT exists ServicesMetadata (
 last_update timestamp,
 service_name text,
 service_schema text,
 service_metadata text,
 deleted boolean,
-PRIMARY KEY (service_name, last_update)
-)
-WITH CLUSTERING
-  ORDER BY (last_update DESC)
-
-;
+PRIMARY KEY (service_name, last_update))
+WITH CLUSTERING ORDER BY (last_update DESC);
 
 DROP TABLE IF exists MetadataSchema;
 CREATE TABLE IF NOT exists MetadataSchema (
@@ -73,10 +58,6 @@ metadata_schema text,
 json_schema text,
 deleted boolean,
 PRIMARY KEY (id, last_update)
-)
-WITH CLUSTERING
-  ORDER BY (last_update DESC)
-
-;
+) WITH CLUSTERING ORDER BY (last_update DESC);
 
 CREATE INDEX IF NOT exists SchemaNameIndex ON MetadataSchema (metadata_schema);
