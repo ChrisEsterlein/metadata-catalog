@@ -48,7 +48,7 @@ class LegacyEndpointSpec extends Specification {
     setup:
 
     expect: 'SAVE: metadata-recorder saves 1 result and gets unchanged response from DB representing what was Posted'
-    RestAssured.given()
+    Map response = RestAssured.given()
         .body(postBody)
         .contentType(ContentType.JSON)
         .when()
@@ -56,6 +56,10 @@ class LegacyEndpointSpec extends Specification {
         .then()
         .assertThat()
         .statusCode(201)
+        .extract().response().as(Map)
+
+    assert response.data[0].id == postBody.trackingId
+    assert response.data[0].attributes.id == postBody.trackingId
   }
 
   def 'ETL performs GET with legacy paging params and gets expected response'() {
