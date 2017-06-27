@@ -71,7 +71,7 @@ class ValidationUtilSpec extends Specification{
     1 * repository.findBySchemaName('Region') >> [regionMetadataSchema]
     1 * repository.findBySchemaName('FileReference') >> [fileReferenceMetadataSchema]
     1 * repository.findBySchemaName('Link') >> [linkMetadataSchema]
-//    1 * repository.findBySchemaName('LinkEntry') >> [linkEntryMetadataSchema]
+    1 * repository.findBySchemaName('LinkEntry') >> [linkEntryMetadataSchema]
 
     assert isValid
   }

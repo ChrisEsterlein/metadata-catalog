@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.fge.jsonschema.core.report.ProcessingReport
 import com.github.fge.jsonschema.main.JsonSchema
 import com.github.fge.jsonschema.main.JsonSchemaFactory
+import groovy.json.JsonBuilder
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
@@ -39,8 +40,7 @@ class ValidationUtil {
     Map metadataJson = jsonSlurper.parseText(metadataRecord.metadata as String)
     Map schemaJson = jsonSlurper.parseText(metadataSchema.json_schema)
     schemaJson.definitions = fetchDefinitions(schemaJson)
-
-    log.info "Schema: \n ${schemaJson}"
+    log.info "Schema: \n ${new JsonBuilder(schemaJson).toPrettyString()}"
 
     JsonNode metadataNode = objectMapper.valueToTree(metadataJson)
     JsonNode metadataSchemaNode = objectMapper.valueToTree(schemaJson)
@@ -53,12 +53,25 @@ class ValidationUtil {
     return report.isSuccess()
   }
 
-  Map fetchDefinitions(Map schemaJson){
+  Map fetchDefinitions(Map schemaJson, Map definitions = [:]){
     Set refs = findRefsUpdateValues(schemaJson) as Set
-    Map definitions = [:]
     refs.each{
-      MetadataRecord subSchema = metadataSchemaRepository.findBySchemaName(it)?.first()
-      definitions."$it" = jsonSlurper.parseText(subSchema.json_schema)
+      if(!(it in schemaJson) && !(it in definitions)){
+        MetadataRecord subSchema = metadataSchemaRepository.findBySchemaName(it)?.first()
+        Map js = jsonSlurper.parseText(subSchema.json_schema)
+        js.remove('id')
+        definitions."$it" = js
+      }
+    }
+
+    List definitionRefs = findRefsUpdateValues(definitions)
+    definitionRefs.each{
+      if(!(it in definitions)){
+        MetadataRecord subSchema = metadataSchemaRepository.findBySchemaName(it)?.first()
+        Map js = jsonSlurper.parseText(subSchema.json_schema)
+        js.remove('id')
+        definitions."$it" = js
+      }
     }
     definitions
   }
@@ -67,7 +80,7 @@ class ValidationUtil {
     map.collectMany{it ->
       if (it.key == '$ref') {
         String s = it.value
-        it.value = "#/definitions/$it.value"
+        it.value = '#/definitions/'+it.value
         return [s]
       }
       else if (it.value instanceof Map){
