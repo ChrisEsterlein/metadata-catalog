@@ -1,15 +1,12 @@
 package org.cedar.metadata.storage.service
 
+import groovy.json.JsonSlurper
 import org.cedar.metadata.storage.domain.CollectionMetadata
 import org.cedar.metadata.storage.domain.MetadataRecord
 import org.cedar.metadata.storage.domain.MetadataSchema
 import org.cedar.metadata.storage.domain.MetadataSchemaRepository
 import org.cedar.metadata.storage.util.ValidationUtil
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ClassPathResource
-import org.springframework.core.io.Resource
-import org.springframework.data.cassandra.repository.CassandraRepository
 import spock.lang.Specification
 
 class ValidationUtilSpec extends Specification{
@@ -24,8 +21,11 @@ class ValidationUtilSpec extends Specification{
 
   MetadataSchemaRepository repository
   CollectionMetadata collectionMetadata
-  MetadataSchema metadataSchema
-  Iterable<MetadataRecord> resultList
+  MetadataSchema bathyMetadataSchema
+  MetadataSchema regionMetadataSchema
+  MetadataSchema linkMetadataSchema
+  MetadataSchema linkEntryMetadataSchema
+  MetadataSchema fileReferenceMetadataSchema
 
   def collectionMetadataMap = [
       "name"     : "collectionFace",
@@ -34,17 +34,32 @@ class ValidationUtilSpec extends Specification{
       "metadata_schema" : '10686c20-27cc-11e7-9fdf-ef7bfecc6188'
   ]
 
-  def metadataSchemaMap = [
-      "metadata_schema": "schemaFace"
-  ]
+  def metadataSchemaMap = [:]
 
   def setup(){
     repository = Mock(MetadataSchemaRepository)
     validationUtil = new ValidationUtil(metadataSchemaRepository:  repository)
     collectionMetadataMap.metadata = new ClassPathResource("bathymetryMetadata.json").getFile().text
-    metadataSchemaMap.json_schema = new ClassPathResource("testSchema.json").getFile().text
+    metadataSchemaMap.name = 'BathymetricProduct'
+    metadataSchemaMap.json_schema = new ClassPathResource("bathymetricProductSchema.json").getFile().text
     collectionMetadata = new CollectionMetadata(collectionMetadataMap)
-    metadataSchema = new MetadataSchema(metadataSchemaMap)
+    bathyMetadataSchema = new MetadataSchema(metadataSchemaMap)
+
+    metadataSchemaMap.name = 'Region'
+    metadataSchemaMap.json_schema = new ClassPathResource("regionSchema.json").getFile().text
+    regionMetadataSchema = new MetadataSchema(metadataSchemaMap)
+
+    metadataSchemaMap.name = 'FileReference'
+    metadataSchemaMap.json_schema = new ClassPathResource("fileReferenceSchema.json").getFile().text
+    fileReferenceMetadataSchema = new MetadataSchema(metadataSchemaMap)
+
+    metadataSchemaMap.name = 'Link'
+    metadataSchemaMap.json_schema = new ClassPathResource("linkSchema.json").getFile().text
+    linkMetadataSchema = new MetadataSchema(metadataSchemaMap)
+
+    metadataSchemaMap.name = 'LinkEntry'
+    metadataSchemaMap.json_schema = new ClassPathResource("linkEntrySchema.json").getFile().text
+    linkEntryMetadataSchema = new MetadataSchema(metadataSchemaMap)
   }
 
   def 'schema is valid'(){
@@ -52,8 +67,11 @@ class ValidationUtilSpec extends Specification{
     Boolean isValid = validationUtil.validate(collectionMetadata)
 
     then:
-    1 * repository.findByMetadataId(_ as UUID) >> [metadataSchema]
-    _ * repository.findBySchemaName()
+    1 * repository.findByMetadataId(_ as UUID) >> [bathyMetadataSchema]
+    1 * repository.findBySchemaName('Region') >> [regionMetadataSchema]
+    1 * repository.findBySchemaName('FileReference') >> [fileReferenceMetadataSchema]
+    1 * repository.findBySchemaName('Link') >> [linkMetadataSchema]
+//    1 * repository.findBySchemaName('LinkEntry') >> [linkEntryMetadataSchema]
 
     assert isValid
   }

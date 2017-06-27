@@ -1,21 +1,17 @@
 package org.cedar.metadata.storage.util
 
-import com.fasterxml.jackson.core.PrettyPrinter
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.github.fge.jsonschema.core.report.ListReportProvider
-import com.github.fge.jsonschema.core.report.LogLevel
 import com.github.fge.jsonschema.core.report.ProcessingReport
+import com.github.fge.jsonschema.main.JsonSchema
 import com.github.fge.jsonschema.main.JsonSchemaFactory
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
-import org.cedar.metadata.storage.domain.CollectionMetadataRepository
 import org.cedar.metadata.storage.domain.MetadataRecord
-import com.github.fge.jsonschema.main.JsonSchema
 import org.cedar.metadata.storage.domain.MetadataSchema
 import org.cedar.metadata.storage.domain.MetadataSchemaRepository
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.stereotype.Component
 
 @Slf4j
@@ -24,6 +20,8 @@ class ValidationUtil {
 
   @Autowired
   MetadataSchemaRepository metadataSchemaRepository
+
+  JsonSlurper jsonSlurper = new JsonSlurper()
 
   boolean validate(MetadataRecord metadataRecord){
     if(!metadataRecord.metadata_schema){
@@ -34,33 +32,15 @@ class ValidationUtil {
     Iterable<MetadataRecord> results = metadataSchemaRepository.findByMetadataId(schemaId)
     MetadataSchema metadataSchema = results.first()
     JsonSchemaFactory schemaFactory = JsonSchemaFactory.byDefault()
-//    JsonSchemaFactory schemaFactory = JsonSchemaFactory.newBuilder()
-//        .setReportProvider(new ListReportProvider(LogLevel.ERROR, LogLevel.ERROR))
-//        .freeze()
+
     ObjectMapper objectMapper = new ObjectMapper()
-    JsonSlurper jsonSlurper = new JsonSlurper()
+
 
     Map metadataJson = jsonSlurper.parseText(metadataRecord.metadata as String)
     Map schemaJson = jsonSlurper.parseText(metadataSchema.json_schema)
+    schemaJson.definitions = fetchDefinitions(schemaJson)
 
-//    schemaJson.each{ k, v ->
-//      if(k == '$ref'){
-//        Iterable<MetadataSchema> matchingSchemas = metadataSchemaRepository.findBySchemaName(v as String)
-//        if(!matchingSchemas){
-//          //no such schema
-//          return false
-//        }else{
-//          v = matchingSchemas.first()
-//        }
-//
-//      }
-//      if(v instanceof Map){
-//
-//      }
-//    }
-
-    log.info "Metadata: \n $metadataJson"
-    log.info "Schema: \n $schemaJson"
+    log.info "Schema: \n ${schemaJson}"
 
     JsonNode metadataNode = objectMapper.valueToTree(metadataJson)
     JsonNode metadataSchemaNode = objectMapper.valueToTree(schemaJson)
@@ -70,8 +50,29 @@ class ValidationUtil {
     ProcessingReport report = schema.validate(metadataNode)
     println(report)
 
-
     return report.isSuccess()
   }
 
+  Map fetchDefinitions(Map schemaJson){
+    Set refs = findRefsUpdateValues(schemaJson) as Set
+    Map definitions = [:]
+    refs.each{
+      MetadataRecord subSchema = metadataSchemaRepository.findBySchemaName(it)?.first()
+      definitions."$it" = jsonSlurper.parseText(subSchema.json_schema)
+    }
+    definitions
+  }
+
+  List findRefsUpdateValues(Map map){
+    map.collectMany{it ->
+      if (it.key == '$ref') {
+        String s = it.value
+        it.value = "#/definitions/$it.value"
+        return [s]
+      }
+      else if (it.value instanceof Map){
+        return findRefsUpdateValues(it.value)
+      }else{return []}
+    }
+  }
 }

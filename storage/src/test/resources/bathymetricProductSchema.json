@@ -1,5 +1,4 @@
 {
-  "id": "BathymetricProduct",
   "required": [
     "dataType",
     "phase",
@@ -10,7 +9,7 @@
     "id": {
       "type": "integer",
       "format": "int64",
-      "minimum": "0"
+      "minimum": 0
     },
     "bosScenarios": {
       "type": "string",
