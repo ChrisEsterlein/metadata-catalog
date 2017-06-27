@@ -1,6 +1,5 @@
 package org.cedar.metadata.storage.domain
 
-import com.datastax.driver.core.utils.UUIDs
 import org.springframework.cassandra.core.Ordering
 import org.springframework.cassandra.core.PrimaryKeyType
 import org.springframework.data.cassandra.mapping.Indexed
@@ -21,7 +20,6 @@ class GranuleMetadata extends MetadataRecord {
 
   @Indexed
   String metadata_schema
-  String tracking_id
   String filename
   String type
   String access_protocol
@@ -33,7 +31,7 @@ class GranuleMetadata extends MetadataRecord {
   Boolean deleted
 
   GranuleMetadata() {
-    this.id = UUIDs.timeBased()
+    this.id = UUID.randomUUID()
     this.last_update = new Date()
     this.deleted = false
   }

@@ -22,8 +22,10 @@ class GranuleController {
 
   @RequestMapping(method = RequestMethod.POST)
   @ResponseBody
-  Map save(@RequestBody GranuleMetadata metadataObject, HttpServletResponse response) {
-    repoService.save(response, granuleMetadataRepository, metadataObject)
+  Map save(@RequestBody Map metadataObject, HttpServletResponse response) {
+    metadataObject.id = metadataObject?.id ? UUID.fromString(metadataObject.id) : UUID.randomUUID()
+
+    repoService.save(response, granuleMetadataRepository, new GranuleMetadata(metadataObject))
   }
 
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
@@ -33,7 +35,7 @@ class GranuleController {
     metadataObject.id = UUID.fromString(id)
     metadataObject.last_update = null
 
-    def previousUpdate = version ? new Date(version) : null
+    def previousUpdate = version ?new Date(version) : null
     repoService.update(response, granuleMetadataRepository, new GranuleMetadata(metadataObject), previousUpdate)
   }
 

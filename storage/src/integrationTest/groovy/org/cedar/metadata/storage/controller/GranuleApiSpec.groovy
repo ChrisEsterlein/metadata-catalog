@@ -17,6 +17,7 @@ import org.springframework.test.context.ActiveProfiles
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
+import static org.hamcrest.Matchers.notNullValue
 import static org.hamcrest.Matchers.equalTo
 import static org.hamcrest.Matchers.isA
 import static org.hamcrest.Matchers.not
@@ -51,7 +52,6 @@ class GranuleApiSpec extends Specification {
   }
 
   def postBody = [
-      "tracking_id"    : "abc123",
       "filename"       : "granuleFace",
       "metadata_schema": "a granule metadata_schema",
       "size_bytes"     : 1024,
@@ -76,7 +76,8 @@ class GranuleApiSpec extends Specification {
         .assertThat()
         .statusCode(201)
         .body('data[0].type', equalTo('granule'))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].id', notNullValue())
+        .body('data[0].attributes.id', notNullValue())
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -99,7 +100,6 @@ class GranuleApiSpec extends Specification {
         .statusCode(200)
         .body('data[0].type', equalTo('granule'))
         .body('data[0].id', equalTo(granuleMetadata.id))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -125,11 +125,9 @@ class GranuleApiSpec extends Specification {
         .put("/granules/${granuleMetadata.id}")
         .then()
         .assertThat()
-//            .statusCode(200)
         .body('data[0].type', equalTo('granule'))
         .body('data[0].id', equalTo(granuleMetadata.id))
         .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -152,7 +150,6 @@ class GranuleApiSpec extends Specification {
     //first one is the newest
         .body('data[0].type', equalTo('granule'))
         .body('data[0].attributes.last_update', not(granuleMetadata.last_update))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -166,7 +163,6 @@ class GranuleApiSpec extends Specification {
     //second one is the original
         .body('data[1].type', equalTo('granule'))
         .body('data[1].attributes.last_update', equalTo(granuleMetadata.last_update))
-        .body('data[1].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[1].attributes.filename', equalTo(postBody.filename))
         .body('data[1].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -212,7 +208,6 @@ class GranuleApiSpec extends Specification {
         .statusCode(200)
         .body('data.size', equalTo(1))
         .body('data[0].type', equalTo('granule'))
-        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
         .body('data[0].attributes.filename', equalTo(postBody.filename))
         .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
         .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
@@ -284,7 +279,6 @@ class GranuleApiSpec extends Specification {
       }
     }
   }
-
 
   def 'trigger recovery - only latest version is sent'() {
     setup:
@@ -359,6 +353,58 @@ class GranuleApiSpec extends Specification {
         }
       }
     }
+  }
+
+  def 'create with specified id and verify id of the granule metadata'() {
+    setup: 'define a granule metadata record'
+    def postBodyWId = postBody.clone()
+    postBodyWId.id = "eb62bc6b-ef72-49ec-9de7-08a3f7153e99"
+
+    when: 'we post, a new record is created and returned in response'
+    Map granuleMetadata = RestAssured.given()
+        .body(postBodyWId)
+        .contentType(ContentType.JSON)
+        .when()
+        .post('/granules')
+        .then()
+        .assertThat()
+        .statusCode(201)
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].id', equalTo(postBodyWId.id))
+        .body('data[0].attributes.id', equalTo(postBodyWId.id))
+        .body('data[0].attributes.last_update', notNullValue())
+        .body('data[0].attributes.filename', equalTo(postBodyWId.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBodyWId.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBodyWId.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBodyWId.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBodyWId.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBodyWId.file_path))
+        .body('data[0].attributes.type', equalTo(postBodyWId.type))
+        .body('data[0].attributes.metadata', equalTo(postBodyWId.metadata))
+        .body('data[0].attributes.collections', equalTo(postBodyWId.collections))
+        .extract()
+        .path('data[0].attributes')
+
+    then: 'we can get it by id'
+    RestAssured.given()
+        .contentType(ContentType.JSON)
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].id', equalTo(granuleMetadata.id))
+        .body('data[0].attributes.id', equalTo(postBodyWId.id))
+        .body('data[0].attributes.filename', equalTo(postBodyWId.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBodyWId.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBodyWId.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBodyWId.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBodyWId.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBodyWId.file_path))
+        .body('data[0].attributes.type', equalTo(postBodyWId.type))
+        .body('data[0].attributes.metadata', equalTo(postBodyWId.metadata))
+        .body('data[0].attributes.collections', equalTo(postBodyWId.collections))
   }
 
   def 'update with locking'() {
