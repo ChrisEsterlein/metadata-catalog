@@ -1,16 +1,13 @@
 package org.cedar.metadata.storage.service
 
 import com.github.fge.jsonschema.core.report.ProcessingReport
-import groovy.json.JsonSlurper
 import org.cedar.metadata.storage.domain.CollectionMetadata
-import org.cedar.metadata.storage.domain.MetadataRecord
 import org.cedar.metadata.storage.domain.MetadataSchema
 import org.cedar.metadata.storage.domain.MetadataSchemaRepository
-import org.cedar.metadata.storage.util.ValidationUtil
 import org.springframework.core.io.ClassPathResource
 import spock.lang.Specification
 
-class ValidationUtilSpec extends Specification{
+class ValidationServiceSpec extends Specification{
 
 //  @Value(value = 'classpath:testSchema.json')
 //  Resource jsonSchemaFile
@@ -18,7 +15,7 @@ class ValidationUtilSpec extends Specification{
 //  @Value(value = 'classpath:bathymetryMetadata.json')
 //  Resource metadata
 
-  ValidationUtil validationUtil
+  ValidationService validationUtil
 
   MetadataSchemaRepository repository
   CollectionMetadata collectionMetadata
@@ -39,7 +36,7 @@ class ValidationUtilSpec extends Specification{
 
   def setup(){
     repository = Mock(MetadataSchemaRepository)
-    validationUtil = new ValidationUtil(metadataSchemaRepository:  repository)
+    validationUtil = new ValidationService(metadataSchemaRepository:  repository)
     collectionMetadataMap.metadata = new ClassPathResource("bathymetryMetadata.json").getFile().text
     metadataSchemaMap.name = 'BathymetricProduct'
     metadataSchemaMap.json_schema = new ClassPathResource("bathymetricProductSchema.json").getFile().text

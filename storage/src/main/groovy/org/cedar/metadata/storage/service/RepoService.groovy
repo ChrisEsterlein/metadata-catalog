@@ -3,7 +3,6 @@ package org.cedar.metadata.storage.service
 import com.github.fge.jsonschema.core.report.ProcessingReport
 import groovy.util.logging.Slf4j
 import org.cedar.metadata.storage.domain.MetadataRecord
-import org.cedar.metadata.storage.util.ValidationUtil
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
 import org.springframework.stereotype.Component
@@ -18,7 +17,7 @@ class RepoService {
   MessageService messageService
 
   @Autowired
-  ValidationUtil validationUtil
+  ValidationService validationUtil
 
   final String INSERT = 'insert'
   final String DELETE = 'delete'

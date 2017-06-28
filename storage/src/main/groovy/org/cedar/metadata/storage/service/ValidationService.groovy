@@ -1,4 +1,4 @@
-package org.cedar.metadata.storage.util
+package org.cedar.metadata.storage.service
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component
 
 @Slf4j
 @Component
-class ValidationUtil {
+class ValidationService {
 
   @Autowired
   MetadataSchemaRepository metadataSchemaRepository
@@ -26,7 +26,7 @@ class ValidationUtil {
   ObjectMapper objectMapper
   JsonSlurper jsonSlurper
 
-  ValidationUtil(){
+  ValidationService(){
     schemaFactory = JsonSchemaFactory.byDefault()
     objectMapper = new ObjectMapper()
     jsonSlurper = new JsonSlurper()
