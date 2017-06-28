@@ -55,15 +55,20 @@ class RepoService {
       //save the row
       log.debug("Validating new record: ${metadataRecord}")
 
-//      validationUtil.validate(metadataRecord)
-
-      log.info("Saving new record: ${metadataRecord.id}")
-      MetadataRecord saveResult = repositoryObject.save(metadataRecord)
-      log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
-      saveDetails.data = []
-      saveDetails.data.add(createDataItem(metadataRecord, INSERT))
-      response.status = HttpServletResponse.SC_CREATED
-      messageService.notifyIndex(saveDetails)
+      if(validationUtil.validate(metadataRecord)){
+        log.info("Saving new record: ${metadataRecord.id}")
+        MetadataRecord saveResult = repositoryObject.save(metadataRecord)
+        log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
+        saveDetails.data = []
+        saveDetails.data.add(createDataItem(metadataRecord, INSERT))
+        response.status = HttpServletResponse.SC_CREATED
+        messageService.notifyIndex(saveDetails)
+      }else{
+        log.warn("Invalid schema: ${metadataRecord?.metadata_schema ?: metadataRecord.json_schema}")
+        log.debug("Existing record: ${result.first()}")
+        response.status = HttpServletResponse.SC_BAD_REQUEST
+        saveDetails.errors = ['Invalid schema']
+      }
     }
     saveDetails
   }

@@ -76,4 +76,19 @@ class ValidationUtilSpec extends Specification{
     assert isValid
   }
 
+  def 'schema references non-existent schema'(){
+    when:
+    Boolean isValid = validationUtil.validate(collectionMetadata)
+
+    then:
+    1 * repository.findByMetadataId(_ as UUID) >> [bathyMetadataSchema]
+    1 * repository.findBySchemaName('Region') >> [regionMetadataSchema]
+    1 * repository.findBySchemaName('FileReference') >> [fileReferenceMetadataSchema]
+    1 * repository.findBySchemaName('Link') >> [linkMetadataSchema]
+    1 * repository.findBySchemaName('LinkEntry') >> []
+
+    thrown Exception
+    assert !isValid
+  }
+
 }

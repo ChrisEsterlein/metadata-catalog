@@ -53,7 +53,7 @@ class GranuleApiSpec extends Specification {
   def postBody = [
       "tracking_id"    : "abc123",
       "filename"       : "granuleFace",
-      "metadata_schema": "a granule metadata_schema",
+      "metadata_schema": "",
       "size_bytes"     : 1024,
       "geometry"       : "POLYGON()",
       "access_protocol": "FILE",
