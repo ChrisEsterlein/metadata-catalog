@@ -4,9 +4,8 @@ USE metacat;
 
 
 CREATE TABLE IF NOT exists GranuleMetadata (
-id timeuuid,
+id uuid,
 last_update timestamp,
-tracking_id text,
 filename text,
 dataset text,
 type text,
