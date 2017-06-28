@@ -22,12 +22,17 @@ class ValidationUtil {
   @Autowired
   MetadataSchemaRepository metadataSchemaRepository
 
+  JsonSchemaFactory schemaFactory
+  ObjectMapper objectMapper
+  JsonSlurper jsonSlurper
 
-  boolean validate(MetadataRecord metadataRecord){
-    //allow records with no schema and metadataSchemas to pass validation
-    if(metadataRecord.recordTable() == 'schema' || !metadataRecord?.metadata_schema){
-      return true
-    }
+  ValidationUtil(){
+    schemaFactory = JsonSchemaFactory.byDefault()
+    objectMapper = new ObjectMapper()
+    jsonSlurper = new JsonSlurper()
+  }
+
+  ProcessingReport validate(MetadataRecord metadataRecord){
     log.info "Attempting to validate record $metadataRecord.id against schema $metadataRecord.metadata_schema"
     //todo- determine if metadata_schema is going to store an id or a schema name?
     UUID schemaId = metadataRecord.metadata_schema instanceof  UUID ? metadataRecord.metadata_schema : UUID.fromString(metadataRecord.metadata_schema)
@@ -35,21 +40,18 @@ class ValidationUtil {
     Iterable<MetadataRecord> results = metadataSchemaRepository.findByMetadataId(schemaId)
     MetadataSchema metadataSchema = results.first()
 
-    JsonSchemaFactory schemaFactory = JsonSchemaFactory.byDefault()
-    ObjectMapper objectMapper = new ObjectMapper()
-    JsonSlurper jsonSlurper = new JsonSlurper()
     Map metadataJson = jsonSlurper.parseText(metadataRecord.metadata as String)
     Map schemaJson = jsonSlurper.parseText(metadataSchema.json_schema)
 
-    schemaJson = fetchDefinitions(schemaJson)
-    updateRefs(schemaJson)
+    Map completeJsonSchema = fetchDefinitions(schemaJson)
+    updateRefs(completeJsonSchema)
 
-    log.debug "Validating schema: \n ${schemaJson}"
+    log.debug "Validating ${jsonSlurper.parseText(metadataRecord.metadata)} against schema: \n ${completeJsonSchema}"
     JsonNode metadataNode = objectMapper.valueToTree(metadataJson)
-    JsonNode metadataSchemaNode = objectMapper.valueToTree(schemaJson)
+    JsonNode metadataSchemaNode = objectMapper.valueToTree(completeJsonSchema)
     JsonSchema schema = schemaFactory.getJsonSchema(metadataSchemaNode)
-
-    return schema.validate(metadataNode).isSuccess()
+    ProcessingReport report = schema.validate(metadataNode)
+    return report
   }
 
   Map fetchDefinitions(Map schemaJson){
@@ -64,8 +66,8 @@ class ValidationUtil {
       if(!(it in definitions)){
         Iterable<MetadataRecord> subSchema = metadataSchemaRepository.findBySchemaName(it)
         if(!subSchema){throw Exception("Schema references unrecognized object $it")} //then have controller advice catch it?
-//        if(!subSchema){return [(it):[:]]}  //this doesnt work
-        Map js = new JsonSlurper().parseText( subSchema.first().json_schema )
+//        if(!subSchema){return [(it):[:]]}  //this doesnt work, allows anything
+        Map js = jsonSlurper.parseText( subSchema.first().json_schema )
         js.remove('id') //todo determine if id will be there when we load these schemas
         [(it): js]
       }

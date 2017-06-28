@@ -1,5 +1,6 @@
 package org.cedar.metadata.storage.service
 
+import com.github.fge.jsonschema.core.report.ProcessingReport
 import groovy.json.JsonSlurper
 import org.cedar.metadata.storage.domain.CollectionMetadata
 import org.cedar.metadata.storage.domain.MetadataRecord
@@ -64,7 +65,7 @@ class ValidationUtilSpec extends Specification{
 
   def 'schema is valid'(){
     when:
-    Boolean isValid = validationUtil.validate(collectionMetadata)
+    ProcessingReport report = validationUtil.validate(collectionMetadata)
 
     then:
     1 * repository.findByMetadataId(_ as UUID) >> [bathyMetadataSchema]
@@ -73,12 +74,12 @@ class ValidationUtilSpec extends Specification{
     1 * repository.findBySchemaName('Link') >> [linkMetadataSchema]
     1 * repository.findBySchemaName('LinkEntry') >> [linkEntryMetadataSchema]
 
-    assert isValid
+    assert report.isSuccess()
   }
 
   def 'schema references non-existent schema'(){
     when:
-    Boolean isValid = validationUtil.validate(collectionMetadata)
+    ProcessingReport report = validationUtil.validate(collectionMetadata)
 
     then:
     1 * repository.findByMetadataId(_ as UUID) >> [bathyMetadataSchema]
@@ -88,7 +89,7 @@ class ValidationUtilSpec extends Specification{
     1 * repository.findBySchemaName('LinkEntry') >> []
 
     thrown Exception
-    assert !isValid
+//    assert !report.isSuccess()
   }
 
 }

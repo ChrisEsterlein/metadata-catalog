@@ -1,5 +1,6 @@
 package org.cedar.metadata.storage.service
 
+import com.github.fge.jsonschema.core.report.ProcessingReport
 import groovy.util.logging.Slf4j
 import org.cedar.metadata.storage.domain.MetadataRecord
 import org.cedar.metadata.storage.util.ValidationUtil
@@ -54,20 +55,21 @@ class RepoService {
     } else { //create a new one
       //save the row
       log.debug("Validating new record: ${metadataRecord}")
-
-      if(validationUtil.validate(metadataRecord)){
+      ProcessingReport report = validationUtil.validate(metadataRecord)
+      //allow records with no schema and metadataSchemas to pass validation
+      if(metadataRecord.recordTable() == 'schema' || !metadataRecord?.metadata_schema || report.isSuccess()){
         log.info("Saving new record: ${metadataRecord.id}")
         MetadataRecord saveResult = repositoryObject.save(metadataRecord)
         log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
-        saveDetails.data = []
-        saveDetails.data.add(createDataItem(metadataRecord, INSERT))
+        saveDetails.data = [createDataItem(metadataRecord, INSERT)]
+        saveDetails.meta = [report:report]
         response.status = HttpServletResponse.SC_CREATED
         messageService.notifyIndex(saveDetails)
       }else{
-        log.warn("Invalid schema: ${metadataRecord?.metadata_schema ?: metadataRecord.json_schema}")
-        log.debug("Existing record: ${result.first()}")
+        log.warn("Invalid schema: ${metadataRecord?.metadata_schema}")
         response.status = HttpServletResponse.SC_BAD_REQUEST
         saveDetails.errors = ['Invalid schema']
+        saveDetails.meta = [report:report]
       }
     }
     saveDetails
@@ -86,6 +88,9 @@ class RepoService {
         response.status = HttpServletResponse.SC_CONFLICT
         return updateDetails
       } else {
+        log.debug("Validating update for record: ${metadataRecord}")
+        ProcessingReport report = validationUtil.validate(metadataRecord)
+//        if(){}
         log.info("Updating record with id: $metadataId")
         log.debug("Updated record: ${metadataRecord}")
         metadataRecord.last_update = new Date()
