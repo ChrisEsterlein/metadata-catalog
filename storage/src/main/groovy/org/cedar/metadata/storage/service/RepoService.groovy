@@ -42,6 +42,7 @@ class RepoService {
   Map save(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
     log.info("Attempting to save ${metadataRecord.class} with id: ${metadataRecord.id}")
     log.debug("Metadata record ${metadataRecord.id}- ${metadataRecord.asMap()}")
+    Boolean doValidate = !(metadataRecord.recordTable() == 'schema') && metadataRecord?.metadata_schema
     Map saveDetails = [:]
     UUID metadataId = metadataRecord.id
     //Make sure record does not already exist
@@ -55,9 +56,12 @@ class RepoService {
     } else { //create a new one
       //save the row
       log.debug("Validating new record: ${metadataRecord}")
-      ProcessingReport report = validationUtil.validate(metadataRecord)
+      ProcessingReport report
       //allow records with no schema and metadataSchemas to pass validation
-      if(metadataRecord.recordTable() == 'schema' || !metadataRecord?.metadata_schema || report.isSuccess()){
+      if(doValidate) {
+        report = validationUtil.validate(metadataRecord)
+      }
+      if(!doValidate || report.isSuccess()){
         log.info("Saving new record: ${metadataRecord.id}")
         MetadataRecord saveResult = repositoryObject.save(metadataRecord)
         log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
@@ -77,6 +81,7 @@ class RepoService {
 
   Map update(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord, Date previousUpdate = null) {
     log.info("Attempting to update ${metadataRecord.class} with id: ${metadataRecord.id}")
+    Boolean doValidate = !(metadataRecord.recordTable() == 'schema') && metadataRecord?.metadata_schema
     Map updateDetails = [:]
     UUID metadataId = metadataRecord.id
     //get existing row
@@ -89,15 +94,24 @@ class RepoService {
         return updateDetails
       } else {
         log.debug("Validating update for record: ${metadataRecord}")
-        ProcessingReport report = validationUtil.validate(metadataRecord)
-//        if(){}
-        log.info("Updating record with id: $metadataId")
-        log.debug("Updated record: ${metadataRecord}")
-        metadataRecord.last_update = new Date()
-        MetadataRecord record = repositoryObject.save(metadataRecord)
-        updateDetails.data = [createDataItem(record, UPDATE)]
-        response.status = HttpServletResponse.SC_OK
-        messageService.notifyIndex(updateDetails)
+        ProcessingReport report
+        if(doValidate){
+          report = validationUtil.validate(metadataRecord)
+        }
+        if(!doValidate || report.isSuccess()) {
+          log.info("Updating record with id: $metadataId")
+          log.debug("Updated record: ${metadataRecord}")
+          metadataRecord.last_update = new Date()
+          MetadataRecord record = repositoryObject.save(metadataRecord)
+          updateDetails.data = [createDataItem(record, UPDATE)]
+          response.status = HttpServletResponse.SC_OK
+          messageService.notifyIndex(updateDetails)
+        }else{
+          log.warn("Invalid schema: ${metadataRecord?.metadata_schema}")
+          response.status = HttpServletResponse.SC_BAD_REQUEST
+          updateDetails.errors = ['Invalid schema']
+          updateDetails.meta = [report:report]
+        }
       }
     } else {
       log.debug("No record found for id: $metadataId")

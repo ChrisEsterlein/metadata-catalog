@@ -127,7 +127,7 @@ task waitForCassandra(
     description: 'Waits for cassandra to be available.',
     group: 'docker',
 ) {
-  dependsOn dockerComposeUp
+//  dependsOn dockerComposeUp
   executable "bash"
   args "-c", "docker run \
     --network ${project.name}_$network \
@@ -138,8 +138,8 @@ task waitForCassandra(
 
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
   mustRunAfter test
-  dependsOn waitForCassandra
-  finalizedBy dockerComposeDown
+//  dependsOn waitForCassandra
+//  finalizedBy dockerComposeDown
   testClassesDir = sourceSets.integrationTest.output.classesDir
   classpath = sourceSets.integrationTest.runtimeClasspath
   reports.junitXml.destination = 'build/integration-test-results'
