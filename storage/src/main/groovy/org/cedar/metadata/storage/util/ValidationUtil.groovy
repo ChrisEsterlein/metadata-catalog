@@ -36,10 +36,11 @@ class ValidationUtil {
 
     ObjectMapper objectMapper = new ObjectMapper()
 
-
     Map metadataJson = jsonSlurper.parseText(metadataRecord.metadata as String)
     Map schemaJson = jsonSlurper.parseText(metadataSchema.json_schema)
-    schemaJson.definitions = fetchDefinitions(schemaJson)
+
+    schemaJson = fetchDefinitions(schemaJson)
+    updateRefs(schemaJson)
     log.info "Schema: \n ${new JsonBuilder(schemaJson).toPrettyString()}"
 
     JsonNode metadataNode = objectMapper.valueToTree(metadataJson)
@@ -48,44 +49,51 @@ class ValidationUtil {
     JsonSchema schema = schemaFactory.getJsonSchema(metadataSchemaNode)
 
     ProcessingReport report = schema.validate(metadataNode)
-    println(report)
 
     return report.isSuccess()
   }
 
-  Map fetchDefinitions(Map schemaJson, Map definitions = [:]){
-    Set refs = findRefsUpdateValues(schemaJson) as Set
-    refs.each{
-      if(!(it in schemaJson) && !(it in definitions)){
-        MetadataRecord subSchema = metadataSchemaRepository.findBySchemaName(it)?.first()
-        Map js = jsonSlurper.parseText(subSchema.json_schema)
-        js.remove('id')
-        definitions."$it" = js
-      }
-    }
+  Map fetchDefinitions(Map schemaJson){
+    Set refs = findRefs(schemaJson) as Set
+    Set defs = schemaJson?.definitions ? schemaJson.definitions.keySet() : []
 
-    List definitionRefs = findRefsUpdateValues(definitions)
-    definitionRefs.each{
+    if(!refs || defs.sort() == refs.sort()){return schemaJson}
+
+    Map definitions = schemaJson?.definitions ?: [:]
+
+    (refs - defs).collectEntries(definitions){
       if(!(it in definitions)){
         MetadataRecord subSchema = metadataSchemaRepository.findBySchemaName(it)?.first()
         Map js = jsonSlurper.parseText(subSchema.json_schema)
-        js.remove('id')
-        definitions."$it" = js
+        js.remove('id') //todo determine if id will be there when we load these schemas
+        [(it): js]
       }
     }
-    definitions
+    schemaJson.definitions = schemaJson?.definitions ? schemaJson.definitions + definitions : definitions
+    fetchDefinitions(schemaJson)
   }
 
-  List findRefsUpdateValues(Map map){
-    map.collectMany{it ->
+  List findRefs(Map map){
+    map.collectMany{ it ->
+      if (it.key == '$ref') {
+        return [it.value]
+      }
+      else if (it.value instanceof Map){
+        return findRefs(it.value)
+      }else{return []}
+    }
+  }
+
+  //destructively corrects refs (e.g. Link -> #/definitions/Link)
+  void updateRefs(Map map){
+    map.each{it ->
       if (it.key == '$ref') {
         String s = it.value
         it.value = '#/definitions/'+it.value
-        return [s]
       }
       else if (it.value instanceof Map){
-        return findRefsUpdateValues(it.value)
-      }else{return []}
+        updateRefs(it.value)
+      }
     }
   }
 }
