@@ -41,6 +41,7 @@ class RepoService {
   Map save(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord) {
     log.info("Attempting to save ${metadataRecord.class} with id: ${metadataRecord.id}")
     log.debug("Metadata record ${metadataRecord.id}- ${metadataRecord.asMap()}")
+    //allow records with no schema and metadataSchemas to pass validation
     Boolean doValidate = !(metadataRecord.recordTable() == 'schema') && metadataRecord?.metadata_schema
     Map saveDetails = [:]
     UUID metadataId = metadataRecord.id
@@ -51,12 +52,10 @@ class RepoService {
       log.debug("Existing record: ${result.first()}")
       response.status = HttpServletResponse.SC_CONFLICT
       saveDetails.errors = ['Record already exists']
-      return saveDetails
     } else { //create a new one
       //save the row
       log.debug("Validating new record: ${metadataRecord}")
       ProcessingReport report
-      //allow records with no schema and metadataSchemas to pass validation
       if(doValidate) {
         report = validationUtil.validate(metadataRecord)
       }
@@ -65,21 +64,23 @@ class RepoService {
         MetadataRecord saveResult = repositoryObject.save(metadataRecord)
         log.debug("Response from cassandra for record with id ${metadataRecord.id}: $saveResult")
         saveDetails.data = [createDataItem(metadataRecord, INSERT)]
-        saveDetails.meta = [report:report]
+        saveDetails.meta = [schemaReport:report]
         response.status = HttpServletResponse.SC_CREATED
         messageService.notifyIndex(saveDetails)
       }else{
         log.warn("Invalid schema: ${metadataRecord?.metadata_schema}")
         response.status = HttpServletResponse.SC_BAD_REQUEST
         saveDetails.errors = ['Invalid schema']
-        saveDetails.meta = [report:report]
+        saveDetails.meta = [schemaReport:report]
       }
     }
+    log.info "Responding to save request with $saveDetails"
     saveDetails
   }
 
   Map update(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord, Date previousUpdate = null) {
     log.info("Attempting to update ${metadataRecord.class} with id: ${metadataRecord.id}")
+    //allow records with no schema and metadataSchemas to pass validation
     Boolean doValidate = !(metadataRecord.recordTable() == 'schema') && metadataRecord?.metadata_schema
     Map updateDetails = [:]
     UUID metadataId = metadataRecord.id
@@ -90,7 +91,6 @@ class RepoService {
         log.info("Failing update for out-of-date version: $metadataId")
         updateDetails.errors = ['You are not editing the most recent version.']
         response.status = HttpServletResponse.SC_CONFLICT
-        return updateDetails
       } else {
         log.debug("Validating update for record: ${metadataRecord}")
         ProcessingReport report
@@ -103,21 +103,22 @@ class RepoService {
           metadataRecord.last_update = new Date()
           MetadataRecord record = repositoryObject.save(metadataRecord)
           updateDetails.data = [createDataItem(record, UPDATE)]
+          updateDetails.meta = [schemaReport:report]
           response.status = HttpServletResponse.SC_OK
           messageService.notifyIndex(updateDetails)
         }else{
           log.warn("Invalid schema: ${metadataRecord?.metadata_schema}")
           response.status = HttpServletResponse.SC_BAD_REQUEST
           updateDetails.errors = ['Invalid schema']
-          updateDetails.meta = [report:report]
+          updateDetails.meta = [schemaReport:report]
         }
       }
     } else {
       log.debug("No record found for id: $metadataId")
       updateDetails.errors = ['Record does not exist.']
       response.status = HttpServletResponse.SC_NOT_FOUND
-      return updateDetails
     }
+    log.info "Responding to update request with $updateDetails"
     updateDetails
   }
 

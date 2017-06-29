@@ -38,6 +38,7 @@ class ValidationService {
     UUID schemaId = metadataRecord.metadata_schema instanceof  UUID ? metadataRecord.metadata_schema : UUID.fromString(metadataRecord.metadata_schema)
 
     Iterable<MetadataRecord> results = metadataSchemaRepository.findByMetadataId(schemaId)
+    if(!results && !results.size()){throw new IllegalArgumentException('Record references non-existent schema: ' + schemaId)} //controller advice catches it and returns 400
     MetadataSchema metadataSchema = results.first()
 
     Map metadataJson = jsonSlurper.parseText(metadataRecord.metadata as String)
@@ -64,10 +65,9 @@ class ValidationService {
 
     (refs - defs).collectEntries(definitions){
       if(!(it in definitions)){
-        Iterable<MetadataRecord> subSchema = metadataSchemaRepository.findBySchemaName(it)
-        if(!subSchema){throw Exception("Schema references unrecognized object $it")} //then have controller advice catch it?
-//        if(!subSchema){return [(it):[:]]}  //this doesnt work, allows anything
-        Map js = jsonSlurper.parseText( subSchema.first().json_schema )
+        Iterable<MetadataRecord> schemaList = metadataSchemaRepository.findBySchemaName(it)
+        if(!schemaList && !schemaList.size()){throw new IllegalArgumentException('Schema references non-existent object: ' + it)} //controller advice catches it and returns 400
+        Map js = jsonSlurper.parseText( schemaList.first().json_schema )
         js.remove('id') //todo determine if id will be there when we load these schemas
         [(it): js]
       }

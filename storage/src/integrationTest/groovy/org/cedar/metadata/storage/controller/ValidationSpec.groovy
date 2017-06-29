@@ -1,6 +1,7 @@
 package org.cedar.metadata.storage.controller
 
 import com.datastax.driver.core.utils.UUIDs
+import groovy.json.JsonSlurper
 import io.restassured.RestAssured
 import io.restassured.http.ContentType
 import org.cedar.metadata.storage.Application
@@ -15,6 +16,7 @@ import org.springframework.core.io.ClassPathResource
 import org.springframework.test.context.ActiveProfiles
 import spock.lang.Specification
 
+import static org.hamcrest.Matchers.containsString
 import static org.hamcrest.Matchers.equalTo
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 
@@ -29,15 +31,15 @@ class ValidationSpec extends Specification {
   MetadataSchemaRepository metadataSchemaRepository
 
   MetadataSchema bathyMetadataSchema
-  MetadataSchema regionMetadataSchema
-  MetadataSchema linkMetadataSchema
-  MetadataSchema linkEntryMetadataSchema
-  MetadataSchema fileReferenceMetadataSchema
+  MetadataSchema regionSchema
+  MetadataSchema linkSchema
+  MetadataSchema linkEntrySchema
+  MetadataSchema fileReferenceSchema
   CollectionMetadata collectionMetadata
   UUID id
 
   def collectionMetadataMap = [
-      "name"     : "collectionFace",
+      "name"     : "sampleBathymetryProduct",
       "type"     : "bathyProduct",
       "geometry" : "point()"
   ]
@@ -60,26 +62,32 @@ class ValidationSpec extends Specification {
     metadataSchemaMap.json_schema = new ClassPathResource("bathymetricProductSchema.json").getFile().text
     bathyMetadataSchema = new MetadataSchema(metadataSchemaMap)
     metadataSchemaRepository.save(bathyMetadataSchema)
+    assert metadataSchemaRepository.findByMetadataId(id)
+    assert metadataSchemaRepository.findBySchemaName(metadataSchemaMap.name)
 
     metadataSchemaMap.name = 'Region'
     metadataSchemaMap.json_schema = new ClassPathResource("regionSchema.json").getFile().text
-    regionMetadataSchema = new MetadataSchema(metadataSchemaMap)
-    metadataSchemaRepository.save(regionMetadataSchema)
+    regionSchema = new MetadataSchema(metadataSchemaMap)
+    metadataSchemaRepository.save(regionSchema)
+    assert metadataSchemaRepository.findBySchemaName(metadataSchemaMap.name)
 
     metadataSchemaMap.name = 'FileReference'
     metadataSchemaMap.json_schema = new ClassPathResource("fileReferenceSchema.json").getFile().text
-    fileReferenceMetadataSchema = new MetadataSchema(metadataSchemaMap)
-    metadataSchemaRepository.save(fileReferenceMetadataSchema)
+    fileReferenceSchema = new MetadataSchema(metadataSchemaMap)
+    metadataSchemaRepository.save(fileReferenceSchema)
+    assert metadataSchemaRepository.findBySchemaName(metadataSchemaMap.name)
 
     metadataSchemaMap.name = 'Link'
     metadataSchemaMap.json_schema = new ClassPathResource("linkSchema.json").getFile().text
-    linkMetadataSchema = new MetadataSchema(metadataSchemaMap)
-    metadataSchemaRepository.save(linkMetadataSchema)
+    linkSchema = new MetadataSchema(metadataSchemaMap)
+    metadataSchemaRepository.save(linkSchema)
+    assert metadataSchemaRepository.findBySchemaName(metadataSchemaMap.name)
 
     metadataSchemaMap.name = 'LinkEntry'
     metadataSchemaMap.json_schema = new ClassPathResource("linkEntrySchema.json").getFile().text
-    linkEntryMetadataSchema = new MetadataSchema(metadataSchemaMap)
-    metadataSchemaRepository.save(linkEntryMetadataSchema)
+    linkEntrySchema = new MetadataSchema(metadataSchemaMap)
+    metadataSchemaRepository.save(linkEntrySchema)
+    assert metadataSchemaRepository.findBySchemaName(metadataSchemaMap.name)
 
   }
 
@@ -99,7 +107,45 @@ class ValidationSpec extends Specification {
         .body('data[0].attributes.metadata', equalTo(collectionMetadataMap.metadata))
         .body('data[0].attributes.geometry', equalTo(collectionMetadataMap.geometry))
         .body('data[0].attributes.type', equalTo(collectionMetadataMap.type))
+        .body('meta.schemaReport.success', equalTo(true))
+  }
+
+  def 'collection referencing non-existent schema is invalid'(){
+
+    collectionMetadataMap.metadata_schema = UUIDs.timeBased()
+
+    expect: 'we post, the metadata is validated, record is created'
+    RestAssured.given()
+        .body(collectionMetadataMap)
+        .contentType(ContentType.JSON)
+        .when()
+        .post('/collections')
+        .then()
+        .assertThat()
+        .statusCode(400)  //should be a 201
+        .body('errors[0]', containsString('java.lang.IllegalArgumentException: Record references non-existent schema:'))
 
   }
 
+  def 'schema referencing non-existant object is invalid'(){
+
+    //insert new LinkEntry schema with bad schema
+    metadataSchemaMap.name = 'LinkEntry'
+    metadataSchemaMap.json_schema = new ClassPathResource("badRefSchema.json").getFile().text
+    linkEntrySchema = new MetadataSchema(metadataSchemaMap)
+    metadataSchemaRepository.save(linkEntrySchema)
+    assert metadataSchemaRepository.findBySchemaName(metadataSchemaMap.name)
+
+    expect: 'we post, the metadata is validated, record is created'
+    RestAssured.given()
+        .body(collectionMetadataMap)
+        .contentType(ContentType.JSON)
+        .when()
+        .post('/collections')
+        .then()
+        .assertThat()
+        .statusCode(400)  //should be a 201
+        .body('errors[0]', containsString('java.lang.IllegalArgumentException: Schema references non-existent object'))
+
+  }
 }
