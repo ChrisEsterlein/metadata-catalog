@@ -86,7 +86,6 @@ class ValidationServiceSpec extends Specification{
     1 * repository.findBySchemaName('LinkEntry') >> []
 
     thrown IllegalArgumentException
-//    assert !report.isSuccess()
   }
 
 }
