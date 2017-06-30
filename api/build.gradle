@@ -62,83 +62,34 @@ sourceSets {
   }
 }
 
-task copyCql(type: Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
-  from '../storage/src/resources/cql'
-  into "$buildDir/cql"
-}
-
-task copyCqlScript(type: Copy, description: 'Copies cql init script to build for use in docker-compose wait.', group: 'docker') {
-  from '../storage/src/resources/docker/scripts'
-  into "$buildDir/scripts"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
-  }
-
-  expand(
-      cassandra_port: "$cassandra_port",
-      cassandra_service_name: "$cassandra_service_name",
-  )
-}
-
-task buildDockerTemplates(
-    type: Copy,
-    description: 'Copies docker files and scripts, substituting properties for consistency.',
-    group: 'docker'
-) {
-  from 'src/resources/docker'
-  into "$buildDir"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
-  }
-
-  expand(network: "$network",
-      cassandra_port: "$cassandra_port",
-      cassandra_service_name: "$cassandra_service_name",
-      storage_service_name: "$storage_service_name",
-      storage_port: "$storage_port",
-      rabbit_service_name: "$rabbit_service_name",
-      rabbit_port: "$rabbit_port",
-      rabbit_admin_port: "$rabbit_admin_port",
-      elasticsearch_service_name: "$elasticsearch_service_name",
-      elasticsearch_rest_port: "$elasticsearch_rest_port",
-      elasticsearch_node_port: "$elasticsearch_node_port",
-      index_port: "$index_port",
-      index_service_name: "$index_service_name",
-      index_image: "cedardevs/${rootProject.name}-${rootProject.childProjects.index.name}:${project.version}",
-      storage_image: "cedardevs/${rootProject.name}-${rootProject.childProjects.storage.name}:${project.version}",
-      storage_jar: "${rootProject.childProjects.storage.name}-${project.version}.jar",
-      index_jar: "${rootProject.childProjects.index.name}-${project.version}.jar",
-      jar_dir: 'libs',
-      jar: "${project.name}-${project.version}.jar")
-}
-
 static def getDateTime() {
   return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
 }
 
 task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
-  dependsOn buildDockerTemplates
   dependsOn bootRepackage
   executable "bash"
   args "-c", "docker build --no-cache \
-    --label org.cedar.metadata.${project.name}-version=${project.version} \
-    --label org.cedar.metadata.${project.name}-build-date=" + getDateTime() + " \
-    --label org.cedar.metadata.${project.name}-name=${project.name}Module \
-    --label org.cedar.metadata.${project.name}-vendor=CEDAR \
-    -t cedardevs/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    --build-arg NAME=${project.name} \
+    --build-arg VERSION=${project.version} \
+    --build-arg DATE=" + getDateTime() + " \
+    -t cedardevs/${rootProject.name}-${project.name}:${project.version} ."
 }
 
 assemble.dependsOn dockerImage
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-  dependsOn ':storage:dockerImage', ':index:dockerImage', copyCql, copyCqlScript, buildDockerTemplates
+  dependsOn ':storage:bootRepackage', ':index:bootRepackage'
   executable "bash"
-  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
+  environment "VERSION", "${project.version}"
+  environment "NAME", "${project.name}"
+  environment "DATE", getDateTime()
+  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} up -d"
 }
 
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
-  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
+  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} down || true"
 }
 
 task waitForStorage(
@@ -149,7 +100,7 @@ task waitForStorage(
   dependsOn dockerComposeUp
   executable "bash"
   args "-c", "docker run \
-    --network ${project.name}_$network \
+    --network ${project.name}_net \
     --rm willwill/wait-for-it \
     -h storage \
     -p 8080 -t 90"
@@ -163,7 +114,7 @@ task waitForIndex(
   dependsOn dockerComposeUp
   executable "bash"
   args "-c", "docker run \
-    --network ${project.name}_$network \
+    --network ${project.name}_net \
     --rm willwill/wait-for-it \
     -h index \
     -p 8080 -t 90"

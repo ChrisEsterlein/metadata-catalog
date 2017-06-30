@@ -1,0 +1,19 @@
+version: '2'
+services:
+  cassandra:
+    image: cassandra
+    ports:
+      - "9042:9042"
+    networks:
+      net:
+        aliases: []
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+     - "5672:5672"
+     - "15672:15672"
+    networks:
+      net:
+        aliases: []
+networks:
+  net: {}

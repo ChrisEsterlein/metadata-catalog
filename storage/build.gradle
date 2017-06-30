@@ -49,43 +49,18 @@ dependencies {
 //  testCompile 'org.objenesis:objenesis:1.2' // For mocking final classes
 }
 
-task copyCql(type: Copy, description: 'Copies cql to build for use in docker-compose wait.', group: 'docker') {
-  from 'src/resources/cql'
-  into "$buildDir/cql"
-}
-
-task buildDockerTemplates(type: Copy, description: 'Copies docker files and scripts, substituting properties for consistency.', group: 'docker') {
-  dependsOn copyCql
-  from 'src/resources/docker'
-  into "$buildDir"
-  rename { fileName ->
-    "${(fileName - 'template_')}" // strips the first instance of 'template_' from the filename using subtraction
-  }
-  expand(network: "$network",
-          cassandra_port: "$cassandra_port",
-          cassandra_service_name: "$cassandra_service_name",
-          rabbit_service_name: "$rabbit_service_name",
-          rabbit_port: "$rabbit_port",
-          rabbit_admin_port: "$rabbit_admin_port",
-          jar_dir: 'libs',
-          jar: "${project.name}-${project.version}.jar",
-          image: "cedardevs/${rootProject.name}-${project.name}:${project.version}")
-}
-
 static def getDateTime() {
   return new Date().format("YYYY-MM-DD'T'HH:mm:ss.SSS'Z'", TimeZone.getTimeZone('UTC'))
 }
 
 task dockerImage(type: Exec, description: 'Creates a docker image with the current jar.', group: 'docker') {
-  dependsOn buildDockerTemplates
   dependsOn bootRepackage
   executable "bash"
   args "-c", "docker build --no-cache \
-    --label org.cedar.metadata.${project.name}-version=${project.version} \
-    --label org.cedar.metadata.${project.name}-build-date=" + getDateTime() + " \
-    --label org.cedar.metadata.${project.name}-name=${project.name}Module \
-    --label org.cedar.metadata.${project.name}-vendor=CEDAR \
-    -t cedardevs/${rootProject.name}-${project.name}:${project.version} ${buildDir}"
+    --build-arg NAME=${project.name} \
+    --build-arg VERSION=${project.version} \
+    --build-arg DATE=" + getDateTime() + " \
+    -t cedardevs/${rootProject.name}-${project.name}:${project.version} ."
 }
 
 assemble.dependsOn dockerImage
@@ -105,14 +80,13 @@ sourceSets {
 }
 
 task dockerComposeUp(type: Exec, description: 'Starts the system using docker-compose.', group: 'docker') {
-  dependsOn buildDockerTemplates
   executable "bash"
-  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} up -d"
+  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} up -d"
 }
 
 task dockerComposeDown(type: Exec, description: 'Stops the system using docker-compose.', group: 'docker') {
   executable "bash"
-  args "-c", "docker-compose -f $buildDir/docker-compose.yml -p ${project.name} down || true"
+  args "-c", "docker-compose -f docker-compose.yml -p ${project.name} down || true"
 }
 
 //task waitForCompose(type: Exec, description: 'Waits for Cassandra to be available.', group: 'docker') {
@@ -129,10 +103,9 @@ task waitForCassandra(
   dependsOn dockerComposeUp
   executable "bash"
   args "-c", "docker run \
-    --network ${project.name}_$network \
+    --network ${project.name}_net \
     --rm willwill/wait-for-it \
-    -h cassandra \
-    -p 9042 -t 90"
+    -h cassandra -p 9042 -t 90"
 }
 
 task integrationTest(type: Test, description: 'Runs the integration tests', group: 'verification') {
