@@ -32,7 +32,6 @@ class ValidationService {
 
   ProcessingReport validate(MetadataRecord metadataRecord) {
     log.info "Attempting to validate record $metadataRecord.id against schema $metadataRecord.metadata_schema"
-    //todo- determine if [metadata_schema] is going to store an id or a schema name
     UUID schemaId = metadataRecord.metadata_schema instanceof UUID ? metadataRecord.metadata_schema : UUID.fromString(metadataRecord.metadata_schema)
 
     Iterable<MetadataRecord> results = metadataSchemaRepository.findByMetadataId(schemaId)
@@ -97,7 +96,6 @@ class ValidationService {
   void updateRefs(Map map) {
     map.each { it ->
       if (it.key == '$ref') {
-        String s = it.value
         it.value = '#/definitions/' + it.value
       } else if (it.value instanceof Map) {
         updateRefs(it.value)
