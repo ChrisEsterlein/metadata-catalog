@@ -33,3 +33,6 @@ zuul:
     index:
       path: /index/**
       url: http://${index.host}:${index.port}
+    ecs-catalog:
+      path: /ecs-catalog/**
+      url: http://${storage.host}:${storage.port}

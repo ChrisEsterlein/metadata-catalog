@@ -1,0 +1,15 @@
+{
+    "title": "MGL1109",
+    "description": "Sonobuoys were sparsely deployed along multichannel seismic lines.  The sonobuoys were surplus military model 53F, and were programmed for Difar transmit mode with slow AGC.  Hydrophone depths were 90 ft (27 m), and scuttle time 8 hours.  Sonobuoys were launched with a compressed-air cannon from the OBS deck on either side of the vessel, depending on prevailing wind and streamer set.\n\nSonobuoy radio signals were received with a WiNRADIO WR-G39WSBe sonobuoy receiver with input from an omnidirectional sonobuoy antenna mounted on the protected species observation tower.  Data were digitized and recorded using Triton SB-Logger in SEG-Y format at 0.5 msec sample (2 kHz) and 16-second record length.  Position information from the SEAPATH navigation string were written into the headers.",
+    "ecsImportance": "The purpose of this field program was to determine sediment thickness and velocity structure, stratigraphic architecture, and basement structure of the North Pacific seafloor in support of requirements for continental shelf maritime zone definition in the Gulf of Alaska.  The program was focused on the geologic structures and dynamic processes that control the distribution of sediment, including the manner in which the processes of the slope meet the deep sea floor, and the places where sediment is thickest due to the coincidence of basement depressions and abundant sediment supply. The survey explored portions of the Surveyor and Baranof sedimentary systems, the Aja Fracture Zone and the Kodiak Bowie seamount corridor.",
+    "geometryType": "[Linestring]",
+    "region": {"id": 67},
+    "shape": "LINESTRING(-60 -90, -60.1 -90.1)",
+    "surveyDataType": "Sonobuoy",
+    "versionNumber": 1,
+    "acquisitionParameters": "receiverType=Hydrophone_Sonobuoy\\nsourceType=SeismicSource_Gun_Air\\nacquisitionSystemName=Triton SB-Logger\\nacquisitionSystemType=digital\\nseismicNavSystem=Spectra\\nsurveyDatum=WGS84\\nantennaToSource_inMeters=213\\nnumberOfChannelsRecorded=1\\ncableReceiverDepth_inMeters=27\\ncableReceiverDepthRecorded=yes\\nnumberSourceArrays=4\\nflipFlopShooting=no\\nsourceVolume=6600\\nsourceVolumeUnits=cubicInches\\nsourcePressure_inBars=2000\\nsourceNumber=36\\nsourceDepth_inMeters=9\\nshotControl=distance\\nshotInterval_inSecondsOrMeters=50\\nsampleInterval_inMicroseconds=500\\nrecordLength_inSeconds=16\\ncompassBirds=no\\ntailBuoyPositioning=no\\nrecordingDelay=no\\n",
+    "processingParameters": "processingScope=dataset\\nprocessingStep=TBD\\n",
+    "uncertaintyDescription": "",
+    "owner":"test.admin",
+    "lastModifiedBy":"test.admin"
+}

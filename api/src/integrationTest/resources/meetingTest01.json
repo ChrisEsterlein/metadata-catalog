@@ -1,0 +1,20 @@
+{
+    "class":"ecs.catalog.entries.meetings.Meeting",
+    "id":null,
+    "agenda":"Domain Refactor",
+    "attendees":"Matt Arsenault, Jason Chaytor, Jim Gardner,Larry Mayer, Barbara, Moore, Greg Mountain",
+    "dateCreated":"2013-05-20T16:54:13Z",
+    "description":"Meeting Test01 Description.",
+    "endDate":"11/11/2011",
+    "keywords":[],
+    "lastModifiedBy":"John.G.Campagnoli",
+    "lastUpdated":"2013-05-20T16:54:13Z",
+    "location":"CCOM/JHC UNH Durham, New Hampshire",
+    "owner":"John.G.Campagnoli",
+    "phase":"1",
+    "region": {"id": 67},
+    "startDate":"11/10/2011",
+    "subjectOf":[],
+    "targetOf":[],
+    "title":"My First Spock Test"
+}

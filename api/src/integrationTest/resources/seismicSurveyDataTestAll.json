@@ -1,0 +1,18 @@
+{
+  "description": "Data consists of unprocessed multichannel seismic reflection field data",
+  "owner":"test.admin",
+  "lastModifiedBy":"test.admin",
+  "geometryType": "[Linestring]",
+  "region": {"id": 67},
+  "shape": "LINESTRING(-60 -90, -60.1 -90.1)",
+  "title": "MGL1109 MCS - US Extended Continental Shelf Project: Gulf of Alaska 2D Seismic Reflection",
+  "versionNumber": 1,
+  "surveyDataType":"MCS",
+  "acquisitionParameters":"acquisitionParameters",
+  "processingParameters":"processingParameters",
+  "ecsImportance":"ecsImportance",
+  "currentResidence":"currentResidence",
+  "uncertaintyDescription":"uncertaintyDescription",
+  "surveyIds":"surveyIds",
+  "purpose": "purpose"
+}

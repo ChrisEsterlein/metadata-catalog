@@ -1,0 +1,7 @@
+{
+    "class":"ecs.catalog.entries.spatial.products.SeismicProduct",
+    "title":"Test title number 1",
+    "description":"Test a single line string",
+    "phase":"1",
+    "lastModifiedBy":"fozzard"
+}

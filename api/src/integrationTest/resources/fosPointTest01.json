@@ -1,0 +1,19 @@
+{
+ "class": "ecs.catalog.entries.spatial.products.FosPoint",
+ "dateCreated": "2012-12-27T18:07:04Z",
+ "description": "FOS Point Test01 Description.",
+ "ecsId": "WGAP-FOSPOINT-1",
+ "geometryType": "point",
+ "horizontalDatum": {"class": "HorizontalDatum", "id": 30},
+ "keywords": [],
+ "lastModifiedBy": "elim",
+ "lastUpdated": "2012-12-27T18:07:04Z",
+ "owner": "elim",
+ "depth": "None",
+ "phase": "1",
+ "region": {"id": 86},
+ "shape": "POINT (-92.25055 25.862001)",
+ "subjectOf": [],
+ "targetOf": [],
+ "title": "gom_wg_s1_fos_12"
+}

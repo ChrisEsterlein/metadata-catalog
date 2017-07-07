@@ -1,7 +1,12 @@
 package org.cedar.metadata.api.filters.utils
 
+import com.netflix.zuul.context.RequestContext
+import com.netflix.zuul.http.ServletInputStreamWrapper
 import groovy.util.logging.Slf4j
 import org.codehaus.jettison.json.JSONObject
+
+import javax.servlet.ServletInputStream
+import javax.servlet.http.HttpServletRequestWrapper
 
 @Slf4j
 class RequestConversionUtil {
@@ -90,4 +95,25 @@ class RequestConversionUtil {
     dataset != 'null' ? searchTerms.dataset = dataset : ''
     return searchTerms
   }
+
+  static void setRequestPostBody(RequestContext ctx, byte[] bytes) {
+    ctx.setRequest(new HttpServletRequestWrapper(ctx.getRequest()) {
+      @Override
+      ServletInputStream getInputStream() throws IOException {
+        return new ServletInputStreamWrapper(bytes)
+      }
+
+      @Override
+      int getContentLength() {
+        return bytes.length
+      }
+
+      @Override
+      long getContentLengthLong() {
+        return bytes.length
+      }
+    })
+  }
+
+
 }

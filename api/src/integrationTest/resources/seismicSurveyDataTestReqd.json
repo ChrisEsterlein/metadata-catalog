@@ -1,0 +1,11 @@
+{
+  "description": "Sonobuoys were sparsely deployed along multichannel seismic lines.",
+  "geometryType": "[Linestring]",
+  "shape": "LINESTRING(-60 -90, -60.1 -90.1)",
+  "versionNumber": 1,
+  "surveyDataType":"Sonobuoy",
+  "title": "MGL1109",
+  "region": {"id": 67},
+  "owner":"test.admin",
+  "lastModifiedBy":"test.admin"
+}
