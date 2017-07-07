@@ -43,6 +43,18 @@ class CollectionController {
     repoService.update(response, collectionMetadataRepository, new CollectionMetadata(metadataObject), previousUpdate)
   }
 
+  @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
+  @ResponseBody
+  Map patch(@PathVariable String id, @RequestParam(required = false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+    // coerce id to a UUID and remove client-provided last_update
+    metadataObject.id = UUID.fromString(id)
+    metadataObject.last_update = null
+    def previousUpdate = version ? new Date(version) : null
+    def existingRecord = collectionMetadataRepository.findByMetadataIdLimitOne(metadataObject.id)?.first()?.asMap()
+    existingRecord << metadataObject
+    repoService.update(response, collectionMetadataRepository, new CollectionMetadata(existingRecord), previousUpdate)
+  }
+
   @RequestMapping(value = "/{id}", method = RequestMethod.GET)
   @ResponseBody
   Map listById(@PathVariable id, @RequestParam Map params, HttpServletResponse response) {

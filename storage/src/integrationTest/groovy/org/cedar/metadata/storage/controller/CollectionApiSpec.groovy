@@ -194,6 +194,88 @@ class CollectionApiSpec extends Specification {
     }
   }
 
+  def 'patch and read'() {
+    setup: 'define a collection metadata record'
+    CollectionMetadata collectionMetadata = collectionMetadataRepository.save(new CollectionMetadata(postBody))
+
+    when: 'we update the postBody with the id and new metadata'
+
+    String updatedMetadata = "different metadata"
+    Map updatedPostBody = [:] //dont clone the entire object, just send the column you need to update
+    updatedPostBody.metadata = updatedMetadata
+
+    then: 'we can update the record (create a new version)'
+
+    RestAssured.given()
+        .body(updatedPostBody)
+        .param('version', collectionMetadata.last_update.time)
+        .contentType(ContentType.JSON)
+        .when()
+        .patch("/collections/${collectionMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].id', equalTo(collectionMetadata.id as String))
+        .body('data[0].type', equalTo('collection'))
+        .body('data[0].attributes.id', equalTo(collectionMetadata.id as String))
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(updatedPostBody.metadata))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+
+    then: 'by default we only get the latest version'
+    RestAssured.given()
+        .when()
+        .get("/collections/${collectionMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+
+    and: 'we can get both versions'
+    RestAssured.given()
+        .param('showVersions', true)
+        .when()
+        .get("/collections/${collectionMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data.size', equalTo(2))
+
+    //first one is the newest
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+    //second one is the original
+        .body('data[1].attributes.name', equalTo(postBody.name))
+        .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[1].attributes.metadata', equalTo(postBody.metadata))
+        .body('data[1].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[1].attributes.type', equalTo(postBody.type))
+
+    then: 'finally, we should have sent a rabbit message'
+
+    List<String> actions = []
+
+    poller.eventually {
+      String m
+      List<String> expectedActions = ['update']
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        actions.add(object.data[0].meta.action)
+        assert actions == expectedActions
+      }
+    }
+  }
+
   def 'update with locking'() {
     when: 'define a collection metadata record'
 

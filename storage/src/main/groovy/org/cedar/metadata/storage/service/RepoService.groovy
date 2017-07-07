@@ -2,6 +2,7 @@ package org.cedar.metadata.storage.service
 
 import com.github.fge.jsonschema.core.report.ProcessingReport
 import groovy.util.logging.Slf4j
+import org.cedar.metadata.storage.domain.CollectionMetadata
 import org.cedar.metadata.storage.domain.MetadataRecord
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.cassandra.repository.CassandraRepository
@@ -120,6 +121,51 @@ class RepoService {
     }
     log.info "Responding to update request with $updateDetails"
     updateDetails
+  }
+
+  Map patch(HttpServletResponse response, CassandraRepository repositoryObject, MetadataRecord metadataRecord, Date previousUpdate = null){
+    log.info("Attempting to patch ${metadataRecord.class} with id: ${metadataRecord.id}")
+    //allow records with no schema and metadataSchemas to pass validation
+    Boolean doValidate = !(metadataRecord.recordTable() == 'schema') && metadataRecord?.metadata_schema
+    Map patchDetails = [:]
+    UUID metadataId = metadataRecord.id
+    //get existing row
+    MetadataRecord existingRecord = repositoryObject.findByMetadataIdLimitOne(metadataId)?.first()
+    if (existingRecord) {
+      if (optimisticLockIsBlocking(existingRecord, previousUpdate)) {
+        log.info("Failing update for out-of-date version: $metadataId")
+        patchDetails.errors = ['You are not editing the most recent version.']
+        response.status = HttpServletResponse.SC_CONFLICT
+      } else {
+        ProcessingReport report
+        if(doValidate){
+          log.debug("Validating patch for record: ${metadataRecord}")
+          report = validationUtil.validate(metadataRecord)
+        }
+        if(!doValidate || report.isSuccess()) {
+          log.info("Patching record with id: $metadataId")
+          log.debug("Patching record: ${metadataRecord.asMap()}")
+          MetadataRecord mergedRecord  =  existingRecord.first() << metadataRecord
+          mergedRecord.last_update = new Date()
+          MetadataRecord record = repositoryObject.save(mergedRecord)
+          patchDetails.data = [createDataItem(record, UPDATE)]
+          patchDetails.meta = [schemaReport:report]
+          response.status = HttpServletResponse.SC_OK
+          messageService.notifyIndex(patchDetails)
+        }else{
+          log.warn("Invalid schema: ${metadataRecord?.metadata_schema}")
+          response.status = HttpServletResponse.SC_BAD_REQUEST
+          patchDetails.errors = ['Invalid schema']
+          patchDetails.meta = [schemaReport:report]
+        }
+      }
+    } else {
+      log.debug("No record found for id: $metadataId")
+      patchDetails.errors = ['Record does not exist.']
+      response.status = HttpServletResponse.SC_NOT_FOUND
+    }
+    log.info "Responding to update request with $patchDetails"
+    patchDetails
   }
 
   Map list(HttpServletResponse response, CassandraRepository repositoryObject, Map params = null) {
@@ -250,4 +296,15 @@ class RepoService {
     return record && previousUpdate && record.last_update != previousUpdate
   }
 
+  private MetadataRecord recordFactory(String table, Map metadataRecord){
+    switch (table){
+      case 'collection':
+        return new CollectionMetadata(metadataRecord)
+        break
+      case 'granule':
+        break
+      case 'schema':
+        break
+    }
+  }
 }
