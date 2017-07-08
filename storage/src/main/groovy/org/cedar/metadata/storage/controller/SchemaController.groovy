@@ -37,6 +37,17 @@ class SchemaController {
     repoService.update(response, schemaRepository, new MetadataSchema(metadataObject), previousUpdate)
   }
 
+  @RequestMapping(value = "/{id}", method = RequestMethod.PATCH)
+  @ResponseBody
+  Map patch(@PathVariable String id, @RequestParam(required=false) Long version, @RequestBody Map metadataObject, HttpServletResponse response) {
+    // coerce id to a UUID and remove client-provided last_update
+    metadataObject.id = UUID.fromString(id)
+    metadataObject.last_update = null
+
+    def previousUpdate = version ? new Date(version) : null
+    repoService.patch(response, schemaRepository, new MetadataSchema(metadataObject), previousUpdate)
+  }
+
   @RequestMapping(method = RequestMethod.GET)
   @ResponseBody
   Map list(@RequestParam Map params, HttpServletResponse response) {

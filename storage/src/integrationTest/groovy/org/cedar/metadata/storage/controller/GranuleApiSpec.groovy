@@ -524,4 +524,106 @@ class GranuleApiSpec extends Specification {
             .body('data[0].attributes.collections', equalTo(postBody.collections))
 
   }
+
+  def 'patch and read'() {
+    setup: 'define a collection metadata record'
+    GranuleMetadata granuleMetadata = granuleMetadataRepository.save(new GranuleMetadata(postBody))
+
+    when: 'we update the postBody with the id and new metadata'
+
+    String updatedMetadata = "different metadata"
+    Map updatedPostBody = [metadata:updatedMetadata] //dont clone the entire object, just send the column you need to update
+
+    then: 'we can update the record (create a new version)'
+
+    RestAssured.given()
+        .body(updatedPostBody)
+        .param('version', granuleMetadata.last_update.time)
+        .contentType(ContentType.JSON)
+        .when()
+        .patch("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
+
+    then: 'by default we only get the latest version'
+    RestAssured.given()
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
+
+    and: 'we can get both versions'
+    RestAssured.given()
+        .param('showVersions', true)
+        .when()
+        .get("/granules/${granuleMetadata.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data.size', equalTo(2))
+
+    //first one is the newest
+        .body('data[0].type', equalTo('granule'))
+        .body('data[0].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[0].attributes.filename', equalTo(postBody.filename))
+        .body('data[0].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[0].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[0].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[0].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[0].attributes.file_path', equalTo(postBody.file_path))
+        .body('data[0].attributes.type', equalTo(postBody.type))
+        .body('data[0].attributes.metadata', equalTo(updatedMetadata))
+        .body('data[0].attributes.collections', equalTo(postBody.collections))
+    //second one is the original
+        .body('data[1].type', equalTo('granule'))
+        .body('data[1].attributes.tracking_id', equalTo(postBody.tracking_id))
+        .body('data[1].attributes.filename', equalTo(postBody.filename))
+        .body('data[1].attributes.size_bytes', equalTo(postBody.size_bytes))
+        .body('data[1].attributes.metadata_schema', equalTo(postBody.metadata_schema))
+        .body('data[1].attributes.geometry', equalTo(postBody.geometry))
+        .body('data[1].attributes.access_protocol', equalTo(postBody.access_protocol))
+        .body('data[1].attributes.file_path', equalTo(postBody.file_path))
+        .body('data[1].attributes.type', equalTo(postBody.type))
+        .body('data[1].attributes.metadata', equalTo(postBody.metadata))
+        .body('data[1].attributes.collections', equalTo(postBody.collections))
+
+    then: 'finally, we should have sent a rabbit message'
+
+    List<String> actions = []
+
+    poller.eventually {
+      String m
+      List<String> expectedActions = ['update']
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        actions.add(object.data[0].meta.action)
+        assert actions == expectedActions
+      }
+    }
+  }
 }

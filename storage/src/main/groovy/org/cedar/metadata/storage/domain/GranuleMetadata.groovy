@@ -39,8 +39,4 @@ class GranuleMetadata extends MetadataRecord {
   String recordTable() {
     return 'granule'
   }
-
-  String toString() {
-    "id: $id, last_update: $last_update, metadata: $metadata"
-  }
 }

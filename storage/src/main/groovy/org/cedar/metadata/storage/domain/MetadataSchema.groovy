@@ -33,8 +33,4 @@ class MetadataSchema extends MetadataRecord {
     return 'schema'
   }
 
-  String toString() {
-    "id: $id, last_update: $last_update, metadata: $json_schema"
-  }
-
 }

@@ -130,7 +130,8 @@ class RepoService {
     Map patchDetails = [:]
     UUID metadataId = metadataRecord.id
     //get existing row
-    MetadataRecord existingRecord = repositoryObject.findByMetadataIdLimitOne(metadataId)?.first()
+    Iterable<MetadataRecord> existingRecordList = repositoryObject.findByMetadataIdLimitOne(metadataId)
+    MetadataRecord existingRecord = existingRecordList ? existingRecordList.first() : null
     if (existingRecord) {
       if (optimisticLockIsBlocking(existingRecord, previousUpdate)) {
         log.info("Failing update for out-of-date version: $metadataId")
@@ -145,9 +146,9 @@ class RepoService {
         if(!doValidate || report.isSuccess()) {
           log.info("Patching record with id: $metadataId")
           log.debug("Patching record: ${metadataRecord.asMap()}")
-          MetadataRecord mergedRecord  =  existingRecord.first() << metadataRecord
-          mergedRecord.last_update = new Date()
-          MetadataRecord record = repositoryObject.save(mergedRecord)
+          existingRecord << metadataRecord
+          existingRecord.last_update = new Date()
+          MetadataRecord record = repositoryObject.save(existingRecord)
           patchDetails.data = [createDataItem(record, UPDATE)]
           patchDetails.meta = [schemaReport:report]
           response.status = HttpServletResponse.SC_OK

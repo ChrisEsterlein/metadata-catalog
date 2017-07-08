@@ -201,8 +201,7 @@ class CollectionApiSpec extends Specification {
     when: 'we update the postBody with the id and new metadata'
 
     String updatedMetadata = "different metadata"
-    Map updatedPostBody = [:] //dont clone the entire object, just send the column you need to update
-    updatedPostBody.metadata = updatedMetadata
+    Map updatedPostBody = [metadata:updatedMetadata] //dont clone the entire object, just send the column you need to update
 
     then: 'we can update the record (create a new version)'
 
@@ -274,6 +273,18 @@ class CollectionApiSpec extends Specification {
         assert actions == expectedActions
       }
     }
+  }
+
+  def '404 on bad patch'() {
+    expect:
+    RestAssured.given()
+        .body(postBody)
+        .contentType(ContentType.JSON)
+        .when()
+        .patch("/collections/${UUIDs.timeBased()}")
+        .then()
+        .assertThat()
+        .statusCode(404)
   }
 
   def 'update with locking'() {

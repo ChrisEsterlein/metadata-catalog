@@ -50,9 +50,7 @@ class CollectionController {
     metadataObject.id = UUID.fromString(id)
     metadataObject.last_update = null
     def previousUpdate = version ? new Date(version) : null
-    def existingRecord = collectionMetadataRepository.findByMetadataIdLimitOne(metadataObject.id)?.first()?.asMap()
-    existingRecord << metadataObject
-    repoService.update(response, collectionMetadataRepository, new CollectionMetadata(existingRecord), previousUpdate)
+    repoService.patch(response, collectionMetadataRepository, new CollectionMetadata(metadataObject), previousUpdate)
   }
 
   @RequestMapping(value = "/{id}", method = RequestMethod.GET)

@@ -368,6 +368,75 @@ class SchemaApiSpec extends Specification {
             .body('data[0].type', equalTo('schema'))
             .body('data[0].attributes.name', equalTo(updatedRecord.name))
             .body('data[0].attributes.json_schema', equalTo(postBody.json_schema))
+  }
 
+  def 'patch and read'() {
+    setup: 'define a collection metadata record'
+    MetadataSchema metadataSchema = metadataSchemaRepository.save(new MetadataSchema(postBody))
+
+    when: 'we update the postBody with the id and new metadata'
+
+    String updatedSchema = "different schema"
+    Map updatedPostBody = [json_schema: updatedSchema] //dont clone the entire object, just send the column you need to update
+
+    then: 'we can update the record (create a new version)'
+
+    RestAssured.given()
+        .body(updatedPostBody)
+        .param('version', metadataSchema.last_update.time)
+        .contentType(ContentType.JSON)
+        .when()
+        .patch("/schemas/${metadataSchema.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+    //first one is the newest
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.json_schema', equalTo(updatedSchema))
+
+
+    then: 'by default we only get the latest version'
+    RestAssured.given()
+        .when()
+        .get("/schemas/${metadataSchema.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+    //first one is the newest
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.json_schema', equalTo(updatedSchema))
+    //second one is the original
+
+    and: 'we can get both versions'
+    RestAssured.given()
+        .param('showVersions', true)
+        .when()
+        .get("/schemas/${metadataSchema.id}")
+        .then()
+        .assertThat()
+        .statusCode(200)
+        .body('data.size', equalTo(2))
+
+    //first one is the newest
+        .body('data[0].attributes.name', equalTo(postBody.name))
+        .body('data[0].attributes.json_schema', equalTo(updatedSchema))
+    //second one is the original
+        .body('data[1].attributes.name', equalTo(postBody.name))
+        .body('data[1].attributes.json_schema', equalTo(postBody.json_schema))
+
+    then: 'finally, we should have sent a rabbit message'
+
+    List<String> actions = []
+
+    poller.eventually {
+      String m
+      List<String> expectedActions = ['update']
+      while (m = (rabbitTemplate.receive(queueName))?.getBodyContentAsString()) {
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(m)
+        actions.add(object.data[0].meta.action)
+        assert actions == expectedActions
+      }
+    }
   }
 }
