@@ -14,14 +14,8 @@ interface MetadataSchemaRepository extends CassandraRepository<MetadataSchema> {
   @Query("Select * from MetadataSchema where id =?0 LIMIT 1")
   Iterable<MetadataSchema> findByMetadataIdLimitOne(UUID id)
 
-  @Query("SELECT*FROM MetadataSchema WHERE metadata_schema=?0")
-  Iterable<MetadataSchema> findBySchemaName(String metadata_schema)
-
-  @Query("SELECT*FROM MetadataSchema WHERE metadata_schema=?0")
-  Iterable<MetadataSchema> findBySchema(String schema)
-
-  @Query("SELECT*FROM MetadataSchema WHERE metadata_schema =?0 AND metadata_schema=?1")
-  Iterable<MetadataSchema> findBySchemaNameAndSchema(String metadata_schema, String schema)
+  @Query("SELECT*FROM MetadataSchema WHERE name=?0")
+  Iterable<MetadataSchema> findBySchemaName(String name)
 
   @Query("SELECT id FROM MetadataSchema WHERE id=?0 LIMIT 1")
   Iterable<MetadataSchema> findLatestByMetadataId(UUID id)

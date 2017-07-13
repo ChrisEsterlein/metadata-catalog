@@ -1,0 +1,119 @@
+{
+  "region": {
+    "id": 70,
+    "objectid": 70,
+    "name": "Foo Bar Sea",
+    "abbreviatedName": "FBR",
+    "minx": "-100.0",
+    "miny": "10.0",
+    "maxx": "-150.0",
+    "maxy": "98.0",
+    "parent_id": 69
+  },
+  "dateCreated": "2011-08-28T16:40:33Z",
+  "shape": "POLYGON (())",
+  "keywords": [],
+  "targetOf": [{
+    "id": 22131422,
+    "type": "derivationLink",
+    "name": "Derived from",
+    "subject": {
+      "id": 21723125,
+      "type": "fo0Profile",
+      "title": "FOO-BAR-PROFILE-02"
+    },
+    "target": {
+      "id": 7212093,
+      "type": "bathymetricProduct",
+      "title": "foo0301_bathymetry"
+    }
+  }, {
+    "id": 22913321,
+    "type": "derivationLink",
+    "name": "Derived from",
+    "subject": {
+      "id": 21725824,
+      "type": "fosProfile",
+      "title": "FOO-BAR-PROFILE-01"
+    },
+    "target": {
+      "id": 7259093,
+      "type": "bathymetricProduct",
+      "title": "foo0301_bathymetry"
+    }
+  }, {
+    "id": 22911612,
+    "type": "derivationLink",
+    "name": "Derived from",
+    "subject": {
+      "id": 21725826,
+      "type": "fosProfile",
+      "title": "FOO-BAR-PROFILE-03"
+    },
+    "target": {
+      "id": 7259093,
+      "type": "bathymetricProduct",
+      "title": "foo0301_bathymetry"
+    }
+  }],
+  "productType": "Grid",
+  "csbId": "FBR-BATHYPROD-1",
+  "geometryType": "polygon",
+  "owner": "jsmish",
+  "fileReferences": [{
+    "location": "file:/nfs/test/location/foo_sea/phase_12/data_products/bathymetry/multibeam/foo0301_bathymetry.tar.gz",
+    "type": "General"
+  }],
+  "dataType": "Bathymetry",
+  "lastModifiedBy": "elton",
+  "description": "bathymetric data",
+  "regionId": 20,
+  "subjectOf": [{
+    "id": 16304412,
+    "type": "derivationLink",
+    "name": "Derived from",
+    "subject": {
+      "id": 342423,
+      "type": "bathymetricProduct",
+      "title": "bar301_bathymetry"
+    },
+    "target": {
+      "id": 12795439,
+      "type": "bathymetricSurveyData",
+      "title": "DA0301"
+    }
+  }, {
+    "id": 7259095,
+    "type": "productFileLink",
+    "name": "Product file(s)",
+    "subject": {
+      "id": 7252493,
+      "type": "bathymetricProduct",
+      "title": "bar0301_bathymetry"
+    },
+    "target": {
+      "id": 7259294,
+      "type": "entryFile",
+      "title": "FooBarringMargin_ASCII_bathy.xyz.gz"
+    }
+  }, {
+    "id": 722439097,
+    "type": "metadataFileLink",
+    "name": "Metadata file(s)",
+    "subject": {
+      "id": 7259093,
+      "type": "bathymetricProduct",
+      "title": "da0301_bathymetry"
+    },
+    "target": {
+      "id": 7259096,
+      "type": "entryFile",
+      "title": "FooBarringMargin_ASCII_bathy.xml"
+    }
+  }],
+  "phase": "2",
+  "lastUpdated": "2013-12-31T00:54:08Z",
+  "title": "foo0301_bathymetry",
+  "id": 7251093,
+  "bosScenarios": ""
+}

@@ -1,0 +1,103 @@
+{
+  "required": [
+    "dataType",
+    "phase",
+    "region",
+    "title"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "format": "int64",
+      "minimum": 0
+    },
+    "bosScenarios": {
+      "type": "string",
+      "readOnly": true,
+      "description": "Comma separated list of BOS Scenarios this entry is linked to"
+    },
+    "dataType": {
+      "type": "string",
+      "enum": [
+        "Bathymetry",
+        "Slope",
+        "Curvature"
+      ]
+    },
+    "dateCreated": {
+      "readOnly": true,
+      "type": "string",
+      "format": "date-time"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "fileReferences": {
+      "type": "array",
+      "items": {
+        "$ref": "FileReference"
+      }
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lastModifiedBy": {
+      "readOnly": true,
+      "type": "string"
+    },
+    "lastUpdated": {
+      "readOnly": true,
+      "type": "string",
+      "format": "date-time"
+    },
+    "owner": {
+      "readOnly": true,
+      "type": "string"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ]
+    },
+    "productType": {
+      "type": "string",
+      "enum": [
+        "Grid",
+        "Line",
+        "Composite Grid"
+      ]
+    },
+    "region": {
+      "$ref": "Region"
+    },
+    "shape": {
+      "type": "string",
+      "description": "A Well-Known Text representation of a geometry"
+    },
+    "subjectOf": {
+      "readOnly": true,
+      "type": "array",
+      "items": {
+        "$ref": "Link"
+      }
+    },
+    "targetOf": {
+      "readOnly": true,
+      "type": "array",
+      "items": {
+        "$ref": "Link"
+      }
+    },
+    "title": {
+      "type": "string"
+    }
+  }
+}

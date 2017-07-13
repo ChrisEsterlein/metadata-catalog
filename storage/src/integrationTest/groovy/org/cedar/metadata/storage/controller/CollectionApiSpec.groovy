@@ -54,7 +54,7 @@ class CollectionApiSpec extends Specification {
 
   def postBody = [
       "name"    : "collectionFace",
-      "metadata_schema"  : "a collection schema",
+      "metadata_schema"  : "",
       "type"               : "fos",
       "metadata": "{blah:blah}",
       "geometry" : "point()"

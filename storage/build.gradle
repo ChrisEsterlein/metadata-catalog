@@ -40,6 +40,7 @@ dependencies {
   compile 'org.springframework.boot:spring-boot-starter-tomcat'
   compile 'org.springframework.boot:spring-boot-starter-web'
   compile 'org.springframework.retry:spring-retry'
+  compile 'com.github.java-json-tools:json-schema-validator:2.2.8'
 
   testCompile 'org.springframework.boot:spring-boot-starter-test'
   testCompile 'org.spockframework:spock-spring:1.1-groovy-2.4-rc-4'

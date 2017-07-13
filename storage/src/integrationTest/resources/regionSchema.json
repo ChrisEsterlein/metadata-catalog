@@ -1,0 +1,36 @@
+{
+  "id": "Region",
+  "required": [
+    "name",
+    "abbreviatedName"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "format": "int64",
+      "minimum": 0
+    },
+    "name": {
+      "type": "string"
+    },
+    "abbreviatedName": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "parent": {
+      "$ref": "Region"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "articleImplications": {
+      "type": "string"
+    },
+    "shape": {
+      "type": "string",
+      "description": "A Well-Known Text representation of a geometry"
+    }
+  }
+}

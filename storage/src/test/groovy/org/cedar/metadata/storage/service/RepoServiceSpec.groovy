@@ -1,5 +1,6 @@
 package org.cedar.metadata.storage.service
 
+import com.github.fge.jsonschema.core.report.ProcessingReport
 import groovy.util.logging.Slf4j
 import org.cedar.metadata.storage.domain.GranuleMetadata
 import org.cedar.metadata.storage.domain.GranuleMetadataRepository
@@ -14,9 +15,12 @@ import javax.servlet.http.HttpServletResponse
 class RepoServiceSpec extends Specification {
 
   RepoService repoService
-  MessageService messageService
-  GranuleMetadataRepository granuleMetadataRepository
-  HttpServletResponse response
+  MessageService messageService = Mock(MessageService)
+  ValidationService validationUtil = Mock(ValidationService)
+  ProcessingReport report = Mock(ProcessingReport)
+
+  GranuleMetadataRepository granuleMetadataRepository = Mock(GranuleMetadataRepository)
+  HttpServletResponse response = Mock(HttpServletResponse)
   Date now = new Date()
 
   final def granuleMetadataMap = [
@@ -34,12 +38,9 @@ class RepoServiceSpec extends Specification {
   GranuleMetadata granuleMetadata
 
   def setup() {
-    messageService = Mock()
-    repoService = new RepoService(messageService: messageService)
+    report.isSuccess() >> true
 
-    granuleMetadataRepository = Mock()
-    response = Mock()
-
+    repoService = new RepoService(messageService: messageService, validationUtil: validationUtil)
     granuleMetadata = new GranuleMetadata(granuleMetadataMap)
   }
 
@@ -59,6 +60,8 @@ class RepoServiceSpec extends Specification {
     1 * messageService.notifyIndex({
       it.data[0].meta.action == 'insert'
     })
+
+    1 * repoService.validationUtil.validate(_) >> report
 
     and: 'the status is good'
     1 * response.setStatus(HttpServletResponse.SC_CREATED)

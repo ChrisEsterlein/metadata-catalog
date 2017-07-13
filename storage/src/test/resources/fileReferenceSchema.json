@@ -1,0 +1,18 @@
+{
+  "id": "FileReference",
+  "properties": {
+    "location": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "General",
+        "Profile Image",
+        "Perspective Image",
+        "Thumbnail Image",
+        "Plan View Image"
+      ]
+    }
+  }
+}

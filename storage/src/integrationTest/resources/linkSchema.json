@@ -1,0 +1,22 @@
+{
+  "id": "Link",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "format": "int32",
+      "minimum": 0
+    },
+    "type": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "subject": {
+      "$ref": "LinkEntry"
+    },
+    "target": {
+      "$ref": "LinkEntry"
+    }
+  }
+}

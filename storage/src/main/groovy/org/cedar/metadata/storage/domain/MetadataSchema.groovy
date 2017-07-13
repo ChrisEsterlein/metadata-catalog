@@ -1,6 +1,7 @@
 package org.cedar.metadata.storage.domain
 
 import com.datastax.driver.core.utils.UUIDs
+import groovy.json.JsonOutput
 import org.springframework.cassandra.core.Ordering
 import org.springframework.cassandra.core.PrimaryKeyType
 import org.springframework.data.cassandra.mapping.Indexed
@@ -17,7 +18,7 @@ class MetadataSchema extends MetadataRecord {
   Date last_update
 
   @Indexed
-  String metadata_schema
+  String name
 
   String json_schema
   Boolean deleted

@@ -25,7 +25,6 @@ class GranulesEndpointSpec extends Specification {
   static final String INDEX_ENDPOINT = '/index/search'
 
   def postBody = [
-      "metadata_schema": "a granule schema",
       "filename"       : "granuleFace",
       "type"           : "fos",
       "access_protocol": "FILE",

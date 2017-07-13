@@ -1,0 +1,16 @@
+{
+  "id": "LinkEntry",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "format": "int32",
+      "minimum": 0
+    },
+    "type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    }
+  }
+}
