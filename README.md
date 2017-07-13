@@ -48,7 +48,7 @@ The storage, index, and api modules are each running in their own container usin
 
 NOTE: Make sure to do a clean if you make any changes to docker or gradle files.
 
-* `./gradlew clean buildDeployment`
+* `./gradlew clean build`
 * `docker-compose -f build/docker-compose.yml -p metadata up -d`
 
 ### Verification of Containers Running
