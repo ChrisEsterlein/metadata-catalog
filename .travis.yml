@@ -34,6 +34,4 @@ deploy:
   # publish SNAPSHOT build and images to artifactory
   # run promote if the commit was tagged with a version
   - provider: script
-    script: bash -c "./gradlew publishImage artifactoryPublish; if [[ \"$(git tag -l --points-at HEAD)\" == v* ]]; then ./gradlew promote; fi"
-    on:
-      branch: master
+    script: bash -c "if [[ \"$(git tag -l --points-at HEAD)\" == v* ]]; then ./gradlew publishImage artifactoryPublish promote; elif [[ \"$(git rev-parse --abbrev-ref HEAD)\" == "master" ]]; then ./gradlew publishImage artifactoryPublish; fi"
